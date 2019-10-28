@@ -1,0 +1,60 @@
+plugins {
+    id 'java'
+    id 'groovy'
+    id 'maven-publish'
+}
+
+ext {
+    wrapperGradleVersion = ext.gradleVersion
+}
+
+group = 'com.archiuse.mindis'
+version = '0.0.1-SNAPSHOT'
+description = 'Mindis tools for vertx based projects'
+
+sourceCompatibility = 13
+targetCompatibility = 13
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/dburyak/mindis")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
+                password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+        }
+    }
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.codehaus.groovy:groovy-all:${groovyVersion}"
+    implementation "io.vertx:vertx-core:${vertxVersion}"
+
+    // logging
+    implementation "org.slf4j:slf4j-api:${slf4ApiVersion}"
+
+    // spock
+    testImplementation "org.spockframework:spock-core:${spockVersion}"
+    testImplementation "com.athaydes:spock-reports:${spockReportsVersion}"
+
+    // postgresql
+    // slf4j/logback/vertx logging
+    // liquibase
+}
+
+wrapper {
+    gradleVersion = wrapperGradleVersion
+}
