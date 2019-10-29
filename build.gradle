@@ -9,17 +9,25 @@ ext {
 }
 
 group = 'com.archiuse.mindis'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.2'
+ext { isRelease = false } // defines whther "snapshot" suffix should be added to artifacts
 description = 'Mindis tools for vertx based projects'
 
+if (!isRelease) {
+    version += '-snapshot'
+}
+
 sourceCompatibility = 13
-targetCompatibility = 13
+
+// using java12 compatibility only for compatibility with spock
+// when spock for groovy3 and java13 is released, move this to java13
+targetCompatibility = 12
 
 publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/dburyak/mindis")
+            url = uri("https://maven.pkg.github.com/dburyak/mindis-tools-vertx")
             credentials {
                 username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
                 password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
@@ -37,24 +45,49 @@ repositories {
     mavenLocal()
     jcenter()
     mavenCentral()
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {
     implementation "org.codehaus.groovy:groovy-all:${groovyVersion}"
     implementation "io.vertx:vertx-core:${vertxVersion}"
+    implementation "io.vertx:vertx-lang-groovy:${vertxVersion}"
 
     // logging
     implementation "org.slf4j:slf4j-api:${slf4ApiVersion}"
 
     // spock
     testImplementation "org.spockframework:spock-core:${spockVersion}"
-    testImplementation "com.athaydes:spock-reports:${spockReportsVersion}"
+    testImplementation("com.athaydes:spock-reports:${spockReportsVersion}") {
+        transitive = false
+    }
 
     // postgresql
     // slf4j/logback/vertx logging
     // liquibase
 }
 
+defaultTasks 'build'
+
 wrapper {
     gradleVersion = wrapperGradleVersion
 }
+
+private def readGprCreds() {
+    def gprUser = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
+    def gprKey = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY')
+    [user: gprUser?.strip() as boolean, key: gprKey?.strip() as boolean]
+}
+
+tasks.findAll { it.name.startsWith 'publish' }
+        .each { pubTask ->
+            pubTask.doFirst {
+                def creds = readGprCreds()
+                if (!creds.values().every()) {
+                    System.err.println 'github package registry creds must be set via env variables : ' +
+                            'GPR_USER, GPR_API_KEY'
+                    throw new GradleException("no github package registry creds are set : " +
+                            "user=${creds.user}, key=${creds.key}")
+                }
+            }
+        }
