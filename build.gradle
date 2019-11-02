@@ -85,9 +85,8 @@ dependencies {
         transitive = false
     }
 
-    // postgresql
-    // slf4j/logback/vertx logging
-    // liquibase
+    // logback impl used only for tests
+    testImplementation "ch.qos.logback:logback-classic:${logbackVersion}"
 }
 
 defaultTasks 'build'
