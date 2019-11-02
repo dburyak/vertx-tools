@@ -1,3 +1,10 @@
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+}
+
 plugins {
     id 'java'
     id 'groovy'
@@ -6,15 +13,18 @@ plugins {
 
 ext {
     wrapperGradleVersion = ext.gradleVersion
+    githubArtifactRepoOwner = 'dburyak'
+    githubArtifactRepoName = project.name
 }
 
 group = 'com.archiuse.mindis'
 version = '0.0.2'
-ext { isRelease = false } // defines whther "snapshot" suffix should be added to artifacts
+ext { isRelease = false } // defines whether "snapshot" suffix should be added to artifacts
 description = 'Mindis tools for vertx based projects'
+archivesBaseName = project.name
 
 if (!isRelease) {
-    version += '-snapshot'
+    project.version += '-SNAPSHOT'
 }
 
 sourceCompatibility = 13
@@ -27,16 +37,29 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/dburyak/mindis-tools-vertx")
+            url = uri("https://maven.pkg.github.com/${githubArtifactRepoOwner}/${githubArtifactRepoName}")
             credentials {
                 username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
                 password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
             }
         }
     }
-    publications {
-        gpr(MavenPublication) {
-            from(components.java)
+    afterEvaluate {
+        publications {
+            githubPackagesRepository(MavenPublication) {
+                groupId = project.group
+                artifactId = githubArtifactRepoName
+                version = project.version
+
+                from components.java
+                artifact tasks['sourcesJar']
+                artifact tasks['javadocJar']
+
+                pom {
+                    url.set "https://github.com/${githubArtifactRepoOwner}/${githubArtifactRepoName}"
+                    description project.description
+                }
+            }
         }
     }
 }
@@ -81,13 +104,39 @@ private def readGprCreds() {
 
 tasks.findAll { it.name.startsWith 'publish' }
         .each { pubTask ->
-            pubTask.doFirst {
-                def creds = readGprCreds()
-                if (!creds.values().every()) {
-                    System.err.println 'github package registry creds must be set via env variables : ' +
-                            'GPR_USER, GPR_API_KEY'
-                    throw new GradleException("no github package registry creds are set : " +
-                            "user=${creds.user}, key=${creds.key}")
+            pubTask.with {
+                dependsOn build, test, groovydoc
+                doFirst {
+                    def creds = readGprCreds()
+                    if (!creds.values().every()) {
+                        System.err.println 'github package registry creds must be set via env variables : ' +
+                                'GPR_USER, GPR_API_KEY'
+                        throw new GradleException("no github package registry creds are set : " +
+                                "user=${creds.user}, key=${creds.key}")
+                    }
                 }
             }
         }
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    group 'build'
+    archiveClassifier.set 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: groovydoc) {
+    group 'build'
+    archiveClassifier.set 'javadoc'
+    from groovydoc.destinationDir
+}
+
+tasks.withType(Javadoc) {
+    options.encoding 'UTF-8'
+    options.charSet 'UTF-8'
+}
+
+artifacts {
+    archives jar, sourcesJar, javadocJar
+}
+
+tasks.findAll { it.name.startsWith 'publish' }
