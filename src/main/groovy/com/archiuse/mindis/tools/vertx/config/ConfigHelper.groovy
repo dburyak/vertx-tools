@@ -1,4 +1,4 @@
-package com.archiuse.mindis.tools.vertx
+package com.archiuse.mindis.tools.vertx.config
 
 import io.vertx.core.json.JsonObject
 
@@ -14,5 +14,15 @@ class ConfigHelper {
 
     Map<String, Object> findAllWithPrefixAndStrip(String prefix, JsonObject cfgJson) {
         findAllWithPrefix prefix, cfgJson, true
+    }
+
+    JsonObject toPlain(JsonObject cfgJson) {
+        // TODO: implement
+        assert false: 'not implemented'
+    }
+
+    Map<String, Object> toPlain(Map<String, Object> cfgMap) {
+        // TODO: implement
+        assert false: 'not implemented'
     }
 }

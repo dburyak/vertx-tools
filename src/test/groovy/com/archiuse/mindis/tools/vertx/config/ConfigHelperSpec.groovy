@@ -1,4 +1,4 @@
-package com.archiuse.mindis.tools.vertx
+package com.archiuse.mindis.tools.vertx.config
 
 import io.vertx.core.json.JsonObject
 import spock.lang.Specification
