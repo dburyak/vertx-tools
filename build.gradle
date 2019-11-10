@@ -99,11 +99,13 @@ dependencies {
     implementation "org.slf4j:slf4j-api:${slf4ApiVersion}"
 
     // micronaut DI
-    compileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
-    testCompileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
     implementation "io.micronaut:micronaut-inject:${micronautDiVersion}"
     implementation "io.micronaut:micronaut-validation:${micronautDiVersion}"
+    /*  should be set up by each lib user, those are applied only at compilation
+    compileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
+    testCompileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
     annotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}"
+     */
 
     // spock
     testImplementation "org.spockframework:spock-core:${spockVersion}"
