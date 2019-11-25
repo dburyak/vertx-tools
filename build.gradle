@@ -112,6 +112,8 @@ dependencies {
     testImplementation("com.athaydes:spock-reports:${spockReportsVersion}") {
         transitive = false
     }
+    testImplementation "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
+    testImplementation "org.objenesis:objenesis:${objenesisVersion}"
 
     // vertx testing
     testImplementation "io.vertx:vertx-unit:${vertxVersion}"
