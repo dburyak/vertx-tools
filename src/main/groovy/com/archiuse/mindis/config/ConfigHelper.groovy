@@ -1,6 +1,5 @@
-package com.archiuse.mindis.tools.vertx.config
+package com.archiuse.mindis.config
 
-import com.archiuse.mindis.config.ComplexListConfigException
 import io.vertx.core.json.JsonObject
 
 class ConfigHelper {

@@ -1,11 +1,10 @@
-package com.archiuse.mindis.tools.vertx.config
+package com.archiuse.mindis.config
 
-import com.archiuse.mindis.config.ComplexListConfigException
 import io.vertx.core.json.JsonObject
 import spock.lang.Specification
 
-import static com.archiuse.mindis.tools.vertx.config.ConfigHelper.defaultListJoinSeparator
-import static com.archiuse.mindis.tools.vertx.config.ConfigHelper.defaultMapKeySeparator
+import static com.archiuse.mindis.config.ConfigHelper.defaultListJoinSeparator
+import static com.archiuse.mindis.config.ConfigHelper.defaultMapKeySeparator
 
 class ConfigHelperSpec extends Specification {
     ConfigHelper configHelper
@@ -197,9 +196,9 @@ class ConfigHelperSpec extends Specification {
 
         where:
         cfgMap                                             | listSep || expectedFlatMap
-        [k1: [], k2: [k3: []]]                             | ':'    || [k1: '', 'k2.k3': '']
-        [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]] | null   || [k1: '1,2,a,b', 'k2.k3': '3,4,c,d']
-        [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]] | '|'    || [k1: '1|2|a|b', 'k2.k3': '3|4|c|d']
+        [k1: [], k2: [k3: []]]                             | ':'     || [k1: '', 'k2.k3': '']
+        [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]] | null    || [k1: '1,2,a,b', 'k2.k3': '3,4,c,d']
+        [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]] | '|'     || [k1: '1|2|a|b', 'k2.k3': '3|4|c|d']
     }
 
     def 'flatten map throws for nested complex lists'() {
