@@ -6,7 +6,7 @@ buildscript {
 }
 
 plugins {
-    id 'java'
+    id 'java-library'
     id 'groovy'
     id 'maven-publish'
 
@@ -99,8 +99,10 @@ dependencies {
     implementation "org.slf4j:slf4j-api:${slf4ApiVersion}"
 
     // micronaut DI
-    implementation "io.micronaut:micronaut-inject:${micronautDiVersion}"
-    implementation "io.micronaut:micronaut-validation:${micronautDiVersion}"
+    api "io.micronaut:micronaut-inject:${micronautDiVersion}"
+    api "io.micronaut:micronaut-validation:${micronautDiVersion}"
+    testCompileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
+    testAnnotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}"
     /*  should be set up by each lib user, those are applied only at compilation
     compileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
     testCompileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"

@@ -7,11 +7,7 @@ import static com.archiuse.mindis.config.ConfigHelper.defaultListJoinSeparator
 import static com.archiuse.mindis.config.ConfigHelper.defaultMapKeySeparator
 
 class ConfigHelperSpec extends Specification {
-    ConfigHelper configHelper
-
-    void setup() {
-        configHelper = new ConfigHelper()
-    }
+    ConfigHelper configHelper = new ConfigHelper()
 
     def 'findAllWithPrefix wit default stripping'() {
         given: 'config json object'
@@ -265,10 +261,134 @@ class ConfigHelperSpec extends Specification {
         configHelper.flattenToMap(jsonCfg, keySep1)
         configHelper.flattenToMap(jsonCfg, keySep2, listSep2)
 
-        then: 'call is delegated to flatten from json to json impl'
+        then: 'call is delegated to flatten from map to map impl'
         noExceptionThrown()
         1 * configHelper.flatten(cfgMap, defaultMapKeySeparator, defaultListJoinSeparator)
         1 * configHelper.flatten(cfgMap, keySep1, defaultListJoinSeparator)
         1 * configHelper.flatten(cfgMap, keySep2, listSep2)
+    }
+
+    def 'unflatten json'() {
+        given: 'flat json'
+        def cfgJson = new JsonObject(flatJsonMap)
+
+        when: 'unflatten json'
+        def unflattenJson = keySep ? configHelper.unflatten(cfgJson, keySep)
+                : configHelper.unflatten(cfgJson)
+
+        then: 'result non-flat json is as expected'
+        noExceptionThrown()
+        unflattenJson == new JsonObject(expectedUnflattenMap)
+
+        where:
+        flatJsonMap        | keySep || expectedUnflattenMap
+        [:]                | null   || [:]
+        ['k1.k2': 'v1']    | null   || ['k1.k2': 'v1']
+        ['k1.k2': 'v1']    | null   || ['k1': ['k2': 'v1']]
+        ['k1.k2.k3': 'v1'] | null   || ['k1': ['k2': ['k3': 'v1']]]
+        [:]                | ':'    || [:]
+        ['k1.k1': 'v1']    | ':'    || ['k1.k1': 'v1']
+        ['k1:k1': 'v1']    | ':'    || ['k1': ['k1': 'v1']]
+        ['k1_k2_k3': 'v1'] | '_'    || ['k1': ['k2': ['k3': 'v1']]]
+    }
+
+    def 'unflatten json with nested lists'() {
+        given: 'flat json with nested lists'
+        def cfgJson = new JsonObject(flatJsonMap)
+
+        when: 'unflatten json'
+        def unflattenJson = listSep ? configHelper.unflatten(cfgJson, defaultMapKeySeparator, listSep)
+                : configHelper.flatten(cfgJson)
+
+        then: 'result non-flat json is as expected'
+        noExceptionThrown()
+        unflattenJson == new JsonObject(expectedUnflattenMap)
+
+        where:
+        flatJsonMap                         | listSep || expectedUnflattenMap
+        [k1: '', 'k2.k3': '']               | ':'     || [k1: [], k2: [k3: []]]
+        [k1: '1,2,a,b', 'k2.k3': '3,4,c,d'] | null    || [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]]
+        [k1: '1|2|a|b', 'k2.k3': '3|4|c|d'] | '|'     || [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]]
+    }
+
+    def 'unflatten map'() {
+        given: 'flat map'
+
+        when: 'unflatten map'
+        def unflattenMap = keySep ? configHelper.unflatten(flatMap, keySep)
+                : configHelper.unflatten(flatMap)
+
+        then: 'result non-flat map is as expected'
+        noExceptionThrown()
+        unflattenMap == expectedUnflattenMap
+
+        where:
+        flatMap            | keySep || expectedUnflattenMap
+        [:]                | null   || [:]
+        ['k1.k2': 'v1']    | null   || ['k1.k2': 'v1']
+        ['k1.k2': 'v1']    | null   || ['k1': ['k2': 'v1']]
+        ['k1.k2.k3': 'v1'] | null   || ['k1': ['k2': ['k3': 'v1']]]
+        [:]                | ':'    || [:]
+        ['k1.k1': 'v1']    | ':'    || ['k1.k1': 'v1']
+        ['k1:k1': 'v1']    | ':'    || ['k1': ['k1': 'v1']]
+        ['k1_k2_k3': 'v1'] | '_'    || ['k1': ['k2': ['k3': 'v1']]]
+    }
+
+    def 'unflatten map with nested lists'() {
+        given: 'flat comfig map with nested lists'
+        when: 'unflatten map'
+        def unflattenMap = listSep ? configHelper.unflatten(flatMap, listSep)
+                : configHelper.unflatten(flatMap)
+
+        then: 'result non-flat map is as expected'
+        noExceptionThrown()
+        unflattenMap == expectedUnflattenMap
+
+        where:
+        flatMap                             | listSep || expectedUnflattenMap
+        [k1: '', 'k2.k3': '']               | ':'     || [k1: [], k2: [k3: []]]
+        [k1: '1,2,a,b', 'k2.k3': '3,4,c,d'] | null    || [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]]
+        [k1: '1|2|a|b', 'k2.k3': '3|4|c|d'] | '|'     || [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]]
+    }
+
+    def 'unflattenToJson from map'() {
+        given: 'flat map'
+        def cfgMap = [not_used: 'map']
+        configHelper = Spy(configHelper)
+        def keySep1 = '.'
+        def keySep2 = ':'
+        def listSep2 = '|'
+
+        when: 'unflattem map to json'
+        configHelper.unflattenToJson(cfgMap)
+        configHelper.unflattenToJson(cfgMap, keySep1)
+        configHelper.unflattenToJson(cfgMap, keySep2, listSep2)
+
+        then: 'call is delegated to unflatten from json to json impl'
+        noExceptionThrown()
+        1 * configHelper.unflatten(cfgMap, defaultMapKeySeparator, defaultListJoinSeparator)
+        1 * configHelper.unflatten(cfgMap, keySep1, defaultListJoinSeparator)
+        1 * configHelper.unflatten(cfgMap, keySep2, listSep2)
+    }
+
+    def 'unflattenToMap from json'() {
+        given: 'flat json config'
+        def cfgMap = [not_used: 'json_cfg']
+        def jsonCfg = new JsonObject(cfgMap)
+        configHelper = Spy(configHelper)
+        def keySep1 = '.'
+        def keySep2 = ':'
+        def listSep2 = '|'
+
+        when: 'unflatten json to map'
+        configHelper.unflattenToMap(jsonCfg)
+        configHelper.unflattenToMap(jsonCfg, keySep1)
+        configHelper.unflattenToMap(jsonCfg, keySep2, listSep2)
+
+        then: 'call is delegated to unflatten from map to map impl'
+        noExceptionThrown()
+        1 * configHelper.unflatten(cfgMap, defaultMapKeySeparator, defaultListJoinSeparator)
+        1 * configHelper.unflatten(cfgMap, keySep1, defaultListJoinSeparator)
+        1 * configHelper.unflatten(cfgMap, keySep2, listSep2)
     }
 }

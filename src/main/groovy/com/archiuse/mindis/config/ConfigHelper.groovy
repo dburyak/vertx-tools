@@ -48,6 +48,26 @@ class ConfigHelper {
         flatten(cfgJson.map, keySep, listSep)
     }
 
+    JsonObject unflatten(JsonObject cfgJson, String keyKep = defaultMapKeySeparator,
+            String listSep = defaultListJoinSeparator) {
+        throw new AssertionError('not implemented')
+    }
+
+    Map<String, Object> unflatten(Map<String, Object> cfgMap, String keySep = defaultMapKeySeparator,
+            String listSep = defaultListJoinSeparator) {
+        throw new AssertionError('not implemented')
+    }
+
+    JsonObject unflattenToJson(Map<String, Object> cfgMap, String keySep = defaultMapKeySeparator,
+            String listSep = defaultListJoinSeparator) {
+        throw new AssertionError('not implemented')
+    }
+
+    Map<String, Object> unflattenToMap(JsonObject cfgJson, String keySep = defaultMapKeySeparator,
+            String listSep = defaultListJoinSeparator) {
+        throw new AssertionError('not implemented')
+    }
+
     private def flattenWithPrefix(Map value, String prefix, String mapSep = defaultMapKeySeparator,
             String listSep = defaultListJoinSeparator) {
         value.inject([:]) { flatMap, e ->
