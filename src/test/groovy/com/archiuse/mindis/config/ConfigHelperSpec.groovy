@@ -228,7 +228,7 @@ class ConfigHelperSpec extends Specification {
         ]
     }
 
-    def 'flattenToJson from map'() {
+    def 'flattenToJson from map delegates to flatten from map'() {
         given: 'cfg map and config util'
         def cfgMap = [not_used: 'map']
         configHelper = Spy(configHelper)
@@ -248,7 +248,7 @@ class ConfigHelperSpec extends Specification {
         1 * configHelper.flatten(cfgMap, keySep2, listSep2)
     }
 
-    def 'flattenToMap from json'() {
+    def 'flattenToMap from json delegates to flatten from map'() {
         given: 'json cfg'
         def cfgMap = [not_used: 'val']
         def jsonCfg = new JsonObject(cfgMap)
@@ -359,7 +359,7 @@ class ConfigHelperSpec extends Specification {
         [k1: '1|2|a|b', 'k2.k3': '3|4|c|d'] | '|'     || [k1: ['1', '2', 'a', 'b'], k2: [k3: ['3', '4', 'c', 'd']]]
     }
 
-    def 'unflattenToJson from map'() {
+    def 'unflattenToJson from map delegates to unflatten from map'() {
         given: 'flat map'
         def cfgMap = [not_used: 'map']
         configHelper = Spy(configHelper)
@@ -380,7 +380,7 @@ class ConfigHelperSpec extends Specification {
         1 * configHelper.unflatten(cfgMap, keySep2, listSep2)
     }
 
-    def 'unflattenToMap from json'() {
+    def 'unflattenToMap from json delegates to unflatten from map'() {
         given: 'flat json config'
         def cfgMap = [not_used: 'json_cfg']
         def jsonCfg = new JsonObject(cfgMap)
