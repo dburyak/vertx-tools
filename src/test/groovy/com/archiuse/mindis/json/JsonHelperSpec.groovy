@@ -237,12 +237,6 @@ class JsonHelperSpec extends Specification {
 
         when: 'parse json to map and decode special objects'
         def actualMap = jsonHelper.fromJson jsonObj, decodeSpecial
-        actualMap.each { k, v ->
-            println '*' * 10
-            def expectedVal = expectedMap[k]
-            println "expected ${k} : ${expectedVal?.class} : ${expectedVal}"
-            println "actual   ${k} : ${v?.class} : ${v}"
-        }
 
         then: 'map is parsed correctly, types are detected correctly'
         noExceptionThrown()

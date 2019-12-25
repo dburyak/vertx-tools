@@ -1,5 +1,6 @@
 package com.archiuse.mindis.config
 
+import com.archiuse.mindis.util.MapHelper
 import io.vertx.core.json.JsonObject
 import spock.lang.Specification
 
@@ -271,6 +272,7 @@ class ConfigHelperSpec extends Specification {
     def 'unflatten json'() {
         given: 'flat json'
         def cfgJson = new JsonObject(flatJsonMap)
+        configHelper.mapHelper = new MapHelper()
 
         when: 'unflatten json'
         def unflattenJson = keySep ? configHelper.unflatten(cfgJson, keySep)
@@ -283,7 +285,6 @@ class ConfigHelperSpec extends Specification {
         where:
         flatJsonMap        | keySep || expectedUnflattenMap
         [:]                | null   || [:]
-        ['k1.k2': 'v1']    | null   || ['k1.k2': 'v1']
         ['k1.k2': 'v1']    | null   || ['k1': ['k2': 'v1']]
         ['k1.k2.k3': 'v1'] | null   || ['k1': ['k2': ['k3': 'v1']]]
         [:]                | ':'    || [:]
@@ -295,24 +296,27 @@ class ConfigHelperSpec extends Specification {
     def 'unflatten json with nested lists'() {
         given: 'flat json with nested lists'
         def cfgJson = new JsonObject(flatJsonMap)
+        configHelper.mapHelper = new MapHelper()
 
         when: 'unflatten json'
         def unflattenJson = listSep ? configHelper.unflatten(cfgJson, defaultMapKeySeparator, listSep)
-                : configHelper.flatten(cfgJson)
+                : configHelper.unflatten(cfgJson)
 
         then: 'result non-flat json is as expected'
+        new JsonObject(expectedUnflattenMap) == new JsonObject(expectedUnflattenMap)
         noExceptionThrown()
-        unflattenJson == new JsonObject(expectedUnflattenMap)
+        new JsonObject(unflattenJson.encode()) == new JsonObject(new JsonObject(expectedUnflattenMap).encode())
 
         where:
         flatJsonMap                         | listSep || expectedUnflattenMap
-        [k1: '', 'k2.k3': '']               | ':'     || [k1: [], k2: [k3: []]]
-        [k1: '1,2,a,b', 'k2.k3': '3,4,c,d'] | null    || [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]]
-        [k1: '1|2|a|b', 'k2.k3': '3|4|c|d'] | '|'     || [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]]
+        [k1: '', 'k2.k3': '']               | ':'     || [k1: '', k2: [k3: '']]
+        [k1: '1,2,a,b', 'k2.k3': '3,4,c,d'] | null    || [k1: ['1', '2', 'a', 'b'], k2: [k3: ['3', '4', 'c', 'd']]]
+        [k1: '1|2|a|b', 'k2.k3': '3|4|c|d'] | '|'     || [k1: ['1', '2', 'a', 'b'], k2: [k3: ['3', '4', 'c', 'd']]]
     }
 
     def 'unflatten map'() {
         given: 'flat map'
+        configHelper.mapHelper = new MapHelper()
 
         when: 'unflatten map'
         def unflattenMap = keySep ? configHelper.unflatten(flatMap, keySep)
@@ -323,21 +327,25 @@ class ConfigHelperSpec extends Specification {
         unflattenMap == expectedUnflattenMap
 
         where:
-        flatMap            | keySep || expectedUnflattenMap
-        [:]                | null   || [:]
-        ['k1.k2': 'v1']    | null   || ['k1.k2': 'v1']
-        ['k1.k2': 'v1']    | null   || ['k1': ['k2': 'v1']]
-        ['k1.k2.k3': 'v1'] | null   || ['k1': ['k2': ['k3': 'v1']]]
-        [:]                | ':'    || [:]
-        ['k1.k1': 'v1']    | ':'    || ['k1.k1': 'v1']
-        ['k1:k1': 'v1']    | ':'    || ['k1': ['k1': 'v1']]
-        ['k1_k2_k3': 'v1'] | '_'    || ['k1': ['k2': ['k3': 'v1']]]
+        flatMap                              | keySep || expectedUnflattenMap
+        [:]                                  | null   || [:]
+        ['k1.k2': 'v1']                      | null   || ['k1': ['k2': 'v1']]
+        ['k1.k2.k3': 'v1']                   | null   || ['k1': ['k2': ['k3': 'v1']]]
+        ['k1.k2': 'v2', 'k1.k3': 'v2']       | null   || [k1: [k2: 'v2', k3: 'v2']]
+        ['k1.k2': 'v2', 'k1.k3': 'v3']       | null   || [k1: [k2: 'v2', k3: 'v3']]
+        ['k1.k2.k3': 'v3', 'k1.k2.k4': 'v4'] | null   || [k1: [k2: [k3: 'v3', k4: 'v4']]]
+        [:]                                  | ':'    || [:]
+        ['k1.k1': 'v1']                      | ':'    || ['k1.k1': 'v1']
+        ['k1:k1': 'v1']                      | ':'    || ['k1': ['k1': 'v1']]
+        ['k1_k2_k3': 'v1']                   | '_'    || ['k1': ['k2': ['k3': 'v1']]]
     }
 
     def 'unflatten map with nested lists'() {
         given: 'flat comfig map with nested lists'
+        configHelper.mapHelper = new MapHelper()
+
         when: 'unflatten map'
-        def unflattenMap = listSep ? configHelper.unflatten(flatMap, listSep)
+        def unflattenMap = listSep ? configHelper.unflatten(flatMap, defaultMapKeySeparator, listSep)
                 : configHelper.unflatten(flatMap)
 
         then: 'result non-flat map is as expected'
@@ -346,15 +354,16 @@ class ConfigHelperSpec extends Specification {
 
         where:
         flatMap                             | listSep || expectedUnflattenMap
-        [k1: '', 'k2.k3': '']               | ':'     || [k1: [], k2: [k3: []]]
-        [k1: '1,2,a,b', 'k2.k3': '3,4,c,d'] | null    || [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]]
-        [k1: '1|2|a|b', 'k2.k3': '3|4|c|d'] | '|'     || [k1: [1, 2, 'a', 'b'], k2: [k3: [3, 4, 'c', 'd']]]
+        [k1: '', 'k2.k3': '']               | ':'     || [k1: '', k2: [k3: '']]
+        [k1: '1,2,a,b', 'k2.k3': '3,4,c,d'] | null    || [k1: ['1', '2', 'a', 'b'], k2: [k3: ['3', '4', 'c', 'd']]]
+        [k1: '1|2|a|b', 'k2.k3': '3|4|c|d'] | '|'     || [k1: ['1', '2', 'a', 'b'], k2: [k3: ['3', '4', 'c', 'd']]]
     }
 
     def 'unflattenToJson from map'() {
         given: 'flat map'
         def cfgMap = [not_used: 'map']
         configHelper = Spy(configHelper)
+        configHelper.mapHelper = new MapHelper()
         def keySep1 = '.'
         def keySep2 = ':'
         def listSep2 = '|'
@@ -376,6 +385,7 @@ class ConfigHelperSpec extends Specification {
         def cfgMap = [not_used: 'json_cfg']
         def jsonCfg = new JsonObject(cfgMap)
         configHelper = Spy(configHelper)
+        configHelper.mapHelper = new MapHelper()
         def keySep1 = '.'
         def keySep2 = ':'
         def listSep2 = '|'

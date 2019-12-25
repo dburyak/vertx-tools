@@ -7,4 +7,6 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class MalformedConfigException extends ConfigException {
+    String key
+    Object value
 }

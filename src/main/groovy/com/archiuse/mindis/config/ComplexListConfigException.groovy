@@ -17,4 +17,14 @@ class ComplexListConfigException extends MalformedConfigException {
 
     Object complexElement
     Integer complexElementIndex
+
+    void setList(Iterable list) {
+        this.list = list
+        super.setValue(list)
+    }
+
+    @Override
+    void setValue(Object value) {
+        setList(value)
+    }
 }
