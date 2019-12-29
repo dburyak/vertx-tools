@@ -19,3 +19,5 @@ appender(console, ConsoleAppender) {
 
 root DEBUG, [console]
 logger 'com.athaydes.spockframework.report', INFO
+logger 'io.netty', INFO
+logger 'io.vertx', INFO

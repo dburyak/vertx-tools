@@ -177,3 +177,7 @@ tasks.findAll { it.name.startsWith 'publish' }
         .each { pubTask ->
             pubTask.dependsOn build, test, groovydoc
         }
+
+test {
+    systemProperty 'vertx.logger-delegate-factory-class-name', 'io.vertx.core.logging.SLF4JLogDelegateFactory'
+}
