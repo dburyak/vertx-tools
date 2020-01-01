@@ -18,6 +18,7 @@ ext {
     wrapperGradleVersion = ext.gradleVersion
     githubArtifactRepoOwner = 'dburyak'
     githubArtifactRepoName = project.name
+    integrationTestDirName = 'integration-test'
 }
 
 group = 'com.archiuse.mindis'
@@ -145,6 +146,7 @@ defaultTasks 'build'
 
 wrapper {
     gradleVersion = wrapperGradleVersion
+    distributionType Wrapper.DistributionType.ALL
 }
 
 private def readGprCreds() {
@@ -203,6 +205,8 @@ task integrationTest(type: Test) {
     group 'verification'
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false }
+    mustRunAfter test
 }
 
 check.dependsOn integrationTest
