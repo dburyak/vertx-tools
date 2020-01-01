@@ -74,6 +74,20 @@ repositories {
     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
+sourceSets {
+    integrationTest {
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+configurations {
+    integrationTestApi.extendsFrom testApi
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestCompileOnly.extendsFrom testCompileOnly
+    integrationTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+}
+
 dependencies {
     implementation "org.codehaus.groovy:groovy-all:${groovyVersion}"
     implementation "io.vertx:vertx-core:${vertxVersion}"
@@ -99,15 +113,16 @@ dependencies {
     implementation "org.slf4j:slf4j-api:${slf4ApiVersion}"
 
     // micronaut DI
+    def excludeMicronautHttp = {
+        exclude group: 'io.micronaut', module: 'micronaut-http'
+    }
     api "io.micronaut:micronaut-inject:${micronautDiVersion}"
-    api "io.micronaut:micronaut-validation:${micronautDiVersion}"
-    testCompileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
-    testAnnotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}"
-    /*  should be set up by each lib user, those are applied only at compilation
+    api "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
     compileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
+    api "io.micronaut:micronaut-runtime-groovy:${micronautGroovyRuntimeVersion}"
+    annotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
     testCompileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
-    annotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}"
-     */
+    testAnnotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
 
     // spock
     testImplementation "org.spockframework:spock-core:${spockVersion}"
@@ -122,7 +137,8 @@ dependencies {
     testImplementation "io.vertx:vertx-junit5:${vertxVersion}"
 
     // logback impl used only for tests
-    testImplementation "ch.qos.logback:logback-classic:${logbackVersion}"
+//    testImplementation "ch.qos.logback:logback-classic:${logbackVersion}"
+    implementation "ch.qos.logback:logback-classic:${logbackVersion}"
 }
 
 defaultTasks 'build'
@@ -181,3 +197,12 @@ tasks.findAll { it.name.startsWith 'publish' }
 test {
     systemProperty 'vertx.logger-delegate-factory-class-name', 'io.vertx.core.logging.SLF4JLogDelegateFactory'
 }
+
+task integrationTest(type: Test) {
+    description 'Run integration tests'
+    group 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+check.dependsOn integrationTest

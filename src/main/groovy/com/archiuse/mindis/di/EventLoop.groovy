@@ -1,15 +1,11 @@
 package com.archiuse.mindis.di
 
-import javax.inject.Singleton
+import javax.inject.Qualifier
 import java.lang.annotation.Retention
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME
 
-/**
- * Verticle local singleton bean scope.
- */
-@Singleton
-@Vertx
+@Qualifier
 @Retention(RUNTIME)
-@interface VerticleSingleton {
+@interface EventLoop {
 }
