@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Slf4j
 abstract class MindisVertxApplication {
-    static final PROP_BEAN_CTX_APP = 'vertx.bean.ctx.app'
+    static final PROP_IS_APP_BEAN_CTX = 'vertx.app.bean.ctx'
 
     volatile ApplicationContext applicationContext
     final Map<String, Tuple2<String, BeanContext>> beanContexts = new ConcurrentHashMap<>()
@@ -33,10 +33,7 @@ abstract class MindisVertxApplication {
 
                 .andThen(startAppContext())
                 .doOnSubscribe { log.info 'starting application' }
-                .doOnSuccess {
-                    log.debug 'setting applicationContext'
-                    applicationContext = it
-                }
+                .doOnSuccess { applicationContext = it }
 
                 .flatMapCompletable { appCtx ->
                     def vertx = appCtx.getBean(Vertx)
@@ -74,6 +71,7 @@ abstract class MindisVertxApplication {
                             }
                 }
                 .doOnComplete { log.info 'application started' }
+                .doOnError { log.error 'failed to start application', it }
     }
 
     final Completable stop() {
@@ -124,7 +122,7 @@ abstract class MindisVertxApplication {
                 }
                 .ignoreElements()
                 .doOnComplete { log.info 'application stopped' }
-
+                .doOnError { log.error 'failed to stop application', it }
     }
 
     abstract List<String> getVerticleNames()
@@ -133,14 +131,14 @@ abstract class MindisVertxApplication {
         Single.<ApplicationContext> fromCallable {
             log.debug 'starting application bean context'
             def appCtx = ApplicationContext.build()
-                    .properties((PROP_BEAN_CTX_APP): true)
+                    .properties((PROP_IS_APP_BEAN_CTX): true)
                     .start()
             log.debug 'application bean context started'
             appCtx
         }
     }
 
-    private static void injectAppBeansToVerticleBeanContext(BeanContext beanCtx, ApplicationContext appCtx) {
+    protected void injectAppBeansToVerticleBeanContext(BeanContext beanCtx, ApplicationContext appCtx) {
         [[ApplicationContext, appCtx],
          [Vertx, appCtx.getBean(Vertx)]
         ].each { Class beanType, def bean ->

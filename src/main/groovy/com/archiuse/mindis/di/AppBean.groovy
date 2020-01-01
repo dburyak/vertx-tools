@@ -13,7 +13,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME
  */
 @Qualifier
 @Vertx
-@Requires(property = 'vertx.bean.ctx.app', value = 'true')
+@Requires(property = 'vertx.app.bean.ctx', value = 'true')
 @Retention(RUNTIME)
 @interface AppBean {
 }

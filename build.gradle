@@ -135,7 +135,6 @@ dependencies {
 
     // vertx testing
     testImplementation "io.vertx:vertx-unit:${vertxVersion}"
-    testImplementation "io.vertx:vertx-junit5:${vertxVersion}"
 
     // logback impl used only for tests
 //    testImplementation "ch.qos.logback:logback-classic:${logbackVersion}"

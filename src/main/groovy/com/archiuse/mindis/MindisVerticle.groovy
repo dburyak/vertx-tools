@@ -11,18 +11,23 @@ import javax.inject.Singleton
 @Vertx
 @Slf4j
 abstract class MindisVerticle extends AbstractVerticle {
+
     @Override
     final Completable rxStart() {
-        doStart()
-                .doOnSubscribe { log.info 'starting verticle: {}', this }
+        Completable
+                .fromAction { log.info 'starting verticle: {}', this }
+                .andThen(doStart())
                 .doOnComplete { log.info 'verticle started: {}', this }
+                .doOnError { log.error 'failed to start verticle: {}', this, it }
     }
 
     @Override
     final Completable rxStop() {
-        doStop()
-                .doOnSubscribe { log.info 'stopping verticle: {}', this }
+        Completable
+                .fromAction { log.info 'stopping verticle: {}', this }
+                .andThen(doStop())
                 .doOnComplete { log.info 'verticle stopped: {}', this }
+                .doOnError { log.error 'failed to stop verticle: {}', this, it }
     }
 
     protected Completable doStart() {
