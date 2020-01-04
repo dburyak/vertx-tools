@@ -98,10 +98,13 @@ dependencies {
     implementation "io.vertx:vertx-config:${vertxVersion}"
     implementation "io.vertx:vertx-auth-jwt:${vertxVersion}"
     implementation "io.vertx:vertx-service-discovery:${vertxVersion}"
-    implementation "io.vertx:vertx-service-proxy:${vertxVersion}"
-    implementation "io.vertx:vertx-service-factory:${vertxVersion}"
     implementation "io.vertx:vertx-circuit-breaker:${vertxVersion}"
     implementation "io.vertx:vertx-web-client:${vertxVersion}"
+
+    // service proxy
+    implementation "io.vertx:vertx-service-proxy:${vertxVersion}"
+    implementation "io.vertx:vertx-codegen:${vertxVersion}"
+    implementation "io.vertx:vertx-rx-java2-gen:${vertxVersion}"
 
     // TODO: this may be a separate repo/lib : web
     implementation "io.vertx:vertx-web:${vertxVersion}"
