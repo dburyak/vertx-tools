@@ -1,13 +1,11 @@
 package com.archiuse.mindis
 
-
-import spock.lang.Specification
 import spock.lang.Timeout
 
 import static java.util.concurrent.TimeUnit.SECONDS
 
 @Timeout(value = 2, unit = SECONDS)
-class MindisVerticleSpec extends Specification {
+class MindisVerticleSpec extends VertxRxJavaSpec {
 
     MindisVerticle mindisVerticle = Spy(MindisVerticle)
 

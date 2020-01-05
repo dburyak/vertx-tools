@@ -1,21 +1,24 @@
 package com.archiuse.mindis.config
 
+import com.archiuse.mindis.VertxRxJavaSpec
 import com.archiuse.mindis.json.JsonHelper
-import io.reactivex.Scheduler
+import groovy.util.logging.Slf4j
+import io.reactivex.Observable
 import io.reactivex.Single
+import io.vertx.config.ConfigChange
+import io.vertx.core.Handler
 import io.vertx.core.json.JsonObject
 import io.vertx.reactivex.config.ConfigRetriever
-import io.vertx.reactivex.core.RxHelper
-import io.vertx.reactivex.core.Vertx
-import spock.lang.Shared
-import spock.lang.Specification
 import spock.lang.Timeout
 
 import java.time.Duration
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS
 import static java.util.concurrent.TimeUnit.SECONDS
 
-class AppConfigSpec extends Specification {
+@Timeout(value = 3, unit = SECONDS)
+@Slf4j
+class AppConfigSpec extends VertxRxJavaSpec {
     AppConfig appConfig = new AppConfig()
 
     static k7Duration = Duration.ofSeconds(3)
@@ -45,12 +48,6 @@ class AppConfigSpec extends Specification {
             ]
     ]
 
-    @Shared
-    Vertx vertx = Vertx.vertx()
-
-    @Shared
-    Scheduler vertxRxScheduler = RxHelper.scheduler(vertx)
-
     void setup() {
         appConfig.vertxConfigRetriever = Mock(ConfigRetriever)
         appConfig.jsonHelper = Mock(JsonHelper)
@@ -59,7 +56,7 @@ class AppConfigSpec extends Specification {
 
     def 'getConfig delegates correctly'() {
         when:
-        def cfg = appConfig.getConfig().blockingGet()
+        def cfg = appConfig.getConfig().test().await()
 
         then:
         noExceptionThrown()
@@ -67,25 +64,59 @@ class AppConfigSpec extends Specification {
         1 * appConfig.jsonHelper.fromJson(cfgJson, appConfig.decodeSpecial) >> cfgDecodedMap
         1 * appConfig.configHelper.unflatten(cfgDecodedMap, appConfig.mapKeySeparator,
                 appConfig.listJoinSeparator) >> cfgUnflattenMap
-        cfg == cfgUnflattenMap
+        cfg.assertValue(cfgUnflattenMap)
     }
 
-    @Timeout(value = 5, unit = SECONDS)
-    def 'getPeriodicStream delegates correctly'() {
+    def 'getConfigStream delegates correctly'() {
         given:
         appConfig = Spy(appConfig)
-        def num = 3
-        appConfig.vertxRxScheduler = vertxRxScheduler
+        def numChanges = 3
+        def cfgsJson = (1..numChanges).collect { new JsonObject(k: it) }
+        def cfgsMap = (1..numChanges).collect { [k: it] }
+        Handler<ConfigChange> configChangeEmitter = null
 
-        when:
-        def cfg = appConfig.getPeriodicStream(Duration.ZERO, Duration.ofMillis(1))
-                .take(num)
+        when: 'subscribe to config stream'
+        appConfig.init()
+        def cfg = appConfig.getConfigStream(Duration.ofMillis(1))
+                .take(numChanges + 1)
                 .test()
-                .await()
+
+        and: 'emit change events, not too rapidly to not run into throttling'
+        Observable.interval(10, MILLISECONDS)
+                .take(numChanges)
+                .subscribe { configChangeEmitter(new ConfigChange(new JsonObject(), cfgsJson[it])) }
+
+        and: 'wait for numChanges to be received'
+        cfg = cfg.await()
 
         then:
         noExceptionThrown()
-        num * appConfig.getConfig() >> Single.just(cfgUnflattenMap)
-        cfg.assertValueSequence([cfgUnflattenMap] * num)
+
+        and: 'first config is retrieved eagerly by explicit call to getConfig()'
+        1 * appConfig.getConfig() >> Single.just(cfgUnflattenMap)
+
+        and: 'single change source subscription is active while appConfig is not disposed'
+        appConfig.changeStreamSharedSubscription != null
+        !appConfig.changeStreamSharedSubscription.disposed
+
+        and: 'config change listener is registered'
+        1 * appConfig.vertxConfigRetriever.listen(_) >> { configChangeEmitter = it[0] }
+
+        and: 'each cfg change is converted and unflattened'
+        cfgsJson.eachWithIndex { json, idx ->
+            1 * appConfig.jsonHelper.fromJson(json, appConfig.decodeSpecial) >> cfgsMap[idx]
+            1 * appConfig.configHelper.unflatten(cfgsMap[idx], appConfig.mapKeySeparator,
+                    appConfig.listJoinSeparator) >> cfgsMap[idx]
+        }
+
+        and: 'cfg stream results are: first eager cfg followed by subsequent change events'
+        cfg.assertValueSequence([cfgUnflattenMap] + cfgsMap)
+
+
+        when:
+        appConfig.dispose()
+
+        then:
+        appConfig.changeStreamSharedSubscription.disposed
     }
 }

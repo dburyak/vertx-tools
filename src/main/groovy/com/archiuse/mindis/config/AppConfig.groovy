@@ -1,13 +1,17 @@
 package com.archiuse.mindis.config
 
 import com.archiuse.mindis.json.JsonHelper
+import io.micronaut.context.annotation.Property
 import io.reactivex.Observable
-import io.reactivex.Scheduler
 import io.reactivex.Single
+import io.reactivex.disposables.Disposable
 import io.vertx.core.json.JsonObject
 import io.vertx.reactivex.config.ConfigRetriever
 
 import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
+import javax.inject.Inject
+import javax.inject.Singleton
 import java.time.Duration
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS
@@ -16,24 +20,36 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS
  * Mindis app config retriever.
  * Provides types conversion and destructuring from flat form into nested groovy map.
  */
+@Singleton
 class AppConfig {
-    boolean decodeSpecial = true
-    String mapKeySeparator = '.'
-    String listJoinSeparator = ','
-    Duration configPeriodicStreamPeriod = Duration.ofMinutes(1)
-    Duration configPeriodicStreamInitialDelay = Duration.ZERO
-    Duration configChangeStreamMinInterval = Duration.ofMinutes(1)
 
+    @Property(name = 'mindis.config.format.decode-special')
+    boolean decodeSpecial = true
+
+    @Property(name = 'mindis.config.format.map-key-separator')
+    String mapKeySeparator = '.'
+
+    @Property(name = 'mindis.config.format.list-join-separator')
+    String listJoinSeparator = ','
+
+    @Property(name = 'mindis.config.reader.stream-min-interval')
+    Duration configStreamMinInterval = Duration.ofSeconds(30)
+
+    @Inject
     ConfigRetriever vertxConfigRetriever
+
+    @Inject
     JsonHelper jsonHelper
+
+    @Inject
     ConfigHelper configHelper
-    Scheduler vertxRxScheduler
 
     private Observable<Map<String, Object>> changeStreamShared
+    private Disposable changeStreamSharedSubscription
 
     /**
      * Get app config.
-     * @return app config map
+     * @return type converted app config nested map
      */
     Single<Map<String, Object>> getConfig() {
         vertxConfigRetriever.rxGetConfig()
@@ -45,24 +61,10 @@ class AppConfig {
      * @param minInterval smallest interval between two config change events, allows to throttle rapid config changes
      * @return app config stream
      */
-    Observable<Map<String, Object>> getChangeStream(Duration minInterval = configChangeStreamMinInterval) {
+    Observable<Map<String, Object>> getConfigStream(Duration minInterval = configStreamMinInterval) {
         changeStreamShared
                 .sample(minInterval.toMillis(), MILLISECONDS, true)
                 .startWith(config.toObservable())
-    }
-
-    /**
-     * Get app config periodic stream
-     * @param initialDelay initial delay before retrieving config
-     * @param period period of config retrieval
-     * @return config stream
-     */
-    Observable<Map<String, Object>> getPeriodicStream(Duration initialDelay = configPeriodicStreamInitialDelay,
-            Duration period = configPeriodicStreamPeriod) {
-        def initialMs = initialDelay.toMillis()
-        def periodMs = period.toMillis()
-        Observable.interval(initialMs, periodMs, MILLISECONDS, vertxRxScheduler)
-                .flatMapSingle { config }
     }
 
     @PostConstruct
@@ -76,7 +78,21 @@ class AppConfig {
                     }
                 }
                 .map { toUnflattenConfigMap(it) }
-                .share()
+
+        // we never dispose the single connection to the upstream config change source since there's no vertx API to
+        // unregister the listener from configRetriever; if "refCount" was used here instead, then there would be an
+        // open door for listeners resource leak in case when number of downstream subscribers dropped down to zero
+        // and go up again - new subscription would be made and the previous one is never unregistered
+                .publish()
+                .autoConnect(1, {
+                    // store single upstream subscription to be able to dispose it on bean destruction
+                    changeStreamSharedSubscription = it
+                })
+    }
+
+    @PreDestroy
+    protected void dispose() {
+        changeStreamSharedSubscription?.dispose()
     }
 
     private Map<String, Object> toUnflattenConfigMap(JsonObject flatJsonCfg) {
