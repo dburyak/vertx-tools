@@ -3,13 +3,12 @@ import java.time.Duration
 mindis {
     config {
         format {
-            it['decode-special'] = true
-            it['map-key-separator'] = '.'
-            it['list-join-separator'] = ','
+            decodeSpecial = true
+            mapKeySeparator = '.'
+            listJoinSeparator = ','
         }
-
         reader {
-            it['stream-min-interval'] = Duration.ofSeconds(30)
+            streamMinInterval = Duration.ofSeconds(35)
         }
     }
 }

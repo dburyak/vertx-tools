@@ -1,8 +1,11 @@
 package com.archiuse.mindis
 
+import com.archiuse.mindis.di.AppBean
 import groovy.util.logging.Slf4j
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.BeanContext
+import io.micronaut.context.Qualifier
+import io.micronaut.inject.qualifiers.Qualifiers
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -13,19 +16,19 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Mindis vertx application carcass.
- * Defines initialization of ApplicationContext and per-verticle BeanContexts.
+ * Defines initialization of main ApplicationContext and isolated per-verticle ApplicationContexts.
  */
 @Slf4j
 abstract class MindisVertxApplication {
-    static final PROP_IS_APP_BEAN_CTX = 'vertx.app.bean.ctx'
+    static final PROP_IS_APP_BEAN_CTX = 'vertx.app.bean.ctx.main'
 
-    volatile ApplicationContext applicationContext
-    final Map<String, Tuple2<String, BeanContext>> beanContexts = new ConcurrentHashMap<>()
+    volatile ApplicationContext applicationBeanContext
+    final Map<String, Tuple2<String, ApplicationContext>> verticlesBeanContexts = new ConcurrentHashMap<>()
 
     final Completable start() {
         Completable
                 .fromAction {
-                    def isRunning = applicationContext as Boolean
+                    def isRunning = applicationBeanContext as Boolean
                     if (isRunning) {
                         return Completable.error(new MindisException('application is already running'))
                     }
@@ -33,39 +36,41 @@ abstract class MindisVertxApplication {
 
                 .andThen(startAppContext())
                 .doOnSubscribe { log.info 'starting application' }
-                .doOnSuccess { applicationContext = it }
+                .doOnSuccess { applicationBeanContext = it }
 
-                .flatMapCompletable { appCtx ->
-                    def vertx = appCtx.getBean(Vertx)
+                .flatMapCompletable { mainCtx ->
+                    def vertx = mainCtx.getBean(Vertx)
                     Observable
                             .fromIterable(verticleNames)
 
-                    // create bean context for each verticle before deploying the verticle
+                    // create per-verticle bean context for each verticle before deploying the verticle
                             .map {
                                 log.debug 'creating bean context for verticle: verticle={}', it
-                                def beanCtx = BeanContext.run()
+                                def verticleCtx = ApplicationContext.build()
+                                        .properties((PROP_IS_APP_BEAN_CTX): false)
+                                        .start()
                                 log.debug 'bean context for verticle created: verticle={}, beanCtx={}',
-                                        it, beanCtx
-                                [verticleName: it, beanContext: beanCtx]
+                                        it, verticleCtx
+                                [verticleName: it, beanContext: verticleCtx]
                             }
                             .doOnNext {
-                                log.debug 'inject app beans into verticle bean context: verticle={}, beanCtx={}',
+                                log.debug 'inject main app beans into verticle bean context: verticle={}, beanCtx={}',
                                         it.verticleName, it.beanContext
-                                injectAppBeansToVerticleBeanContext(it.beanContext, appCtx)
-                                log.debug 'app beans injected into verticle bean context: verticle={}, beanCtx={}',
+                                injectMainBeansToVerticleBeanContext(it.beanContext, mainCtx)
+                                log.debug 'main app beans injected into verticle bean context: verticle={}, beanCtx={}',
                                         it.verticleName, it.beanContext
                             }
 
                     // and now deploy the verticle
                             .flatMapCompletable {
                                 def verticleName = it.verticleName as String
-                                def beanCtx = it.beanContext as BeanContext
+                                def beanCtx = it.beanContext as ApplicationContext
                                 log.debug 'deploying verticle: verticleName={}', verticleName
                                 vertx.rxDeployVerticle(beanCtx.getBean(verticleName as Class) as MindisVerticle)
                                         .doOnSuccess {
                                             log.debug 'deployed verticle: verticleName={}, depId={}, beanCtx={}',
                                                     verticleName, it, beanCtx
-                                            beanContexts[it] = new Tuple2<>(verticleName, beanCtx)
+                                            verticlesBeanContexts[it] = new Tuple2<>(verticleName, beanCtx)
                                         }
                                         .ignoreElement()
                             }
@@ -77,47 +82,47 @@ abstract class MindisVertxApplication {
     final Completable stop() {
         Single
                 .fromCallable {
-                    def appCtx = applicationContext
-                    def isRunning = appCtx as Boolean
+                    def mainCtx = applicationBeanContext
+                    def isRunning = mainCtx as Boolean
                     if (!isRunning) {
                         return Completable.error(new MindisException('application is already stopped'))
                     }
-                    appCtx
+                    mainCtx
                 }
 
         // stop vertx
-                .flatMap { appCtx ->
-                    appCtx.getBean(Vertx)
+                .flatMap { mainCtx ->
+                    mainCtx.getBean(Vertx)
                             .rxClose()
                             .doOnSubscribe { log.info 'stopping application' }
                             .doOnSubscribe { log.debug 'closing vertx' }
                             .doOnComplete { log.debug 'vertx closed' }
-                            .toSingleDefault(appCtx)
+                            .toSingleDefault(mainCtx)
                 }
 
         // stop bean context for each verticle
-                .flatMapObservable { appCtx ->
+                .flatMapObservable { mainCtx ->
                     Observable
-                            .fromIterable(beanContexts.collect {
+                            .fromIterable(verticlesBeanContexts.collect {
                                 [deploymentId: it.key, verticleName: it.value.v1, beanContext: it.value.v2]
                             })
-                            .doOnSubscribe { log.debug 'stopping all bean contexts' }
+                            .doOnSubscribe { log.debug 'stopping all verticle bean contexts' }
                             .doOnNext {
                                 log.debug 'closing bean context: verticleName={}, depId={}, beanCtx={}',
                                         it.verticleName, it.deploymentId, it.beanContext
                                 it.beanContext.stop()
-                                beanContexts.remove(it.deploymentId)
+                                verticlesBeanContexts.remove(it.deploymentId)
                                 log.debug 'bean context closed: verticleName={}, depId={}, beanCtx={}',
                                         it.verticleName, it.deploymentId, it.beanContext
                             }
-                            .doOnComplete { log.debug 'all bean contexts stopped' }
+                            .doOnComplete { log.debug 'all verticle bean contexts stopped' }
 
                     // stop main application bean context
                             .concatWith(Completable.fromAction {
-                                log.debug 'stopping application context: appCtx={}', appCtx
-                                appCtx.stop()
-                                applicationContext = null
-                                log.debug 'application context sopped: appCtx={}', appCtx
+                                log.debug 'stopping application main bean context: appCtx={}', mainCtx
+                                mainCtx.stop()
+                                applicationBeanContext = null
+                                log.debug 'application main bean context sopped: appCtx={}', mainCtx
                             })
                 }
                 .ignoreElements()
@@ -129,22 +134,26 @@ abstract class MindisVertxApplication {
 
     private Single<ApplicationContext> startAppContext() {
         Single.<ApplicationContext> fromCallable {
-            log.debug 'starting application bean context'
+            log.debug 'starting main bean context'
             def appCtx = ApplicationContext.build()
                     .properties((PROP_IS_APP_BEAN_CTX): true)
                     .start()
-            log.debug 'application bean context started'
+            log.debug 'main bean context started'
             appCtx
         }
     }
 
-    protected void injectAppBeansToVerticleBeanContext(BeanContext beanCtx, ApplicationContext appCtx) {
-        [[ApplicationContext, appCtx],
-         [Vertx, appCtx.getBean(Vertx)]
-        ].each { Class beanType, def bean ->
+    protected void injectMainBeansToVerticleBeanContext(BeanContext beanCtx, ApplicationContext appCtx) {
+        [[ApplicationContext, appCtx, Qualifiers.byStereotype(AppBean)],
+         [Vertx, appCtx.getBean(Vertx), null]
+        ].each { Class beanType, def bean, Qualifier qualifier ->
             log.debug 'inject app bean: type={}, bean={}, beanCtx={}',
                     beanType, bean, beanCtx
-            beanCtx.registerSingleton(beanType, bean)
+            if (qualifier) {
+                beanCtx.registerSingleton(beanType, bean, qualifier)
+            } else {
+                beanCtx.registerSingleton(beanType, bean)
+            }
         }
     }
 

@@ -3,10 +3,15 @@ package com.archiuse.mindis.config
 import com.archiuse.mindis.util.MapHelper
 import io.vertx.core.json.JsonObject
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
 class ConfigHelper {
     private static final DEFAULT_MAP_KEY_SEPARATOR = '.'
     private static final DEFAULT_LIST_JOIN_SEPARATOR = ','
 
+    @Inject
     MapHelper mapHelper
 
     static String getDefaultMapKeySeparator() {

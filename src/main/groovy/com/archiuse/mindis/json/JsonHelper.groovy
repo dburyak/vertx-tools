@@ -4,9 +4,11 @@ import com.archiuse.mindis.util.TemporalCategory
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
+import javax.inject.Singleton
 import java.time.Duration
 import java.time.temporal.Temporal
 
+@Singleton
 class JsonHelper {
     private static final String SPECIAL_TYPE_KEY = 'special_type'
     private static final String SPECIAL_VALUE_KEY = 'special_value'

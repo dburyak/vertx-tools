@@ -3,6 +3,7 @@ package com.archiuse.mindis.di
 import io.micronaut.context.annotation.Requires
 
 import javax.inject.Qualifier
+import java.lang.annotation.Documented
 import java.lang.annotation.Retention
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME
@@ -13,7 +14,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME
  */
 @Qualifier
 @Vertx
-@Requires(property = 'vertx.app.bean.ctx', value = 'true')
+@Requires(property = 'vertx.app.bean.ctx.main', value = 'true')
 @Retention(RUNTIME)
+@Documented
 @interface AppBean {
 }

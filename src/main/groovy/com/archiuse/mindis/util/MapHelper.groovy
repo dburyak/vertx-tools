@@ -1,5 +1,8 @@
 package com.archiuse.mindis.util
 
+import javax.inject.Singleton
+
+@Singleton
 class MapHelper {
     def <K, V> Map<K, V> mergeDeep(Map<K, V> map1, Map<K, V> map2, boolean concatCollections = false) {
         if (map1 == null || map2 == null) {
