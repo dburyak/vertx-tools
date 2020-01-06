@@ -22,8 +22,8 @@ ext {
 }
 
 group = 'com.archiuse.mindis'
-version = '0.0.3'
-ext { isRelease = true } // defines whether "snapshot" suffix should be added to artifacts
+version = '0.0.4'
+ext { isRelease = false } // defines whether "snapshot" suffix should be added to artifacts
 description = 'Mindis tools for vertx based projects'
 archivesBaseName = project.name
 
