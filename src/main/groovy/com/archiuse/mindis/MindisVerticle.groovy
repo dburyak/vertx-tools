@@ -1,5 +1,6 @@
 package com.archiuse.mindis
 
+import com.archiuse.mindis.call.CallReceiverDescription
 import com.archiuse.mindis.di.Vertx
 import groovy.util.logging.Slf4j
 import io.reactivex.Completable
@@ -10,7 +11,11 @@ import javax.inject.Singleton
 @Singleton
 @Vertx
 @Slf4j
-abstract class MindisVerticle extends AbstractVerticle {
+abstract class MindisVerticle extends AbstractVerticle implements CallReceiverDescription {
+
+    MindisVerticle() {
+        receiverAddress = this.class.canonicalName
+    }
 
     @Override
     final Completable rxStart() {
