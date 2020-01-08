@@ -1,6 +1,6 @@
 package com.archiuse.mindis.config
 
-import com.archiuse.mindis.di.VerticleBean
+import io.micronaut.context.annotation.Bean
 import io.micronaut.context.annotation.Factory
 import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.reactivex.config.ConfigRetriever
@@ -12,7 +12,6 @@ import javax.inject.Singleton
 class ConfigRetrieverFactory {
 
     @Singleton
-    @VerticleBean
     ConfigRetrieverOptions configRetrieverOptions() {
         new ConfigRetrieverOptions().tap {
             includeDefaultStores = true
@@ -20,7 +19,7 @@ class ConfigRetrieverFactory {
     }
 
     @Singleton
-    @VerticleBean
+    @Bean(preDestroy = 'close')
     ConfigRetriever configRetriever(Vertx vertx, ConfigRetrieverOptions configRetrieverOptions) {
         ConfigRetriever.create(vertx, configRetrieverOptions)
     }
