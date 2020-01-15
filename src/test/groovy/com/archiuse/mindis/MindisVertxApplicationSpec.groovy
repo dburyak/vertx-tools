@@ -75,7 +75,7 @@ class MindisVertxApplicationSpec extends Specification {
         1 * verticleBeanCtxBuilder2.properties([(PROP_IS_APP_BEAN_CTX): false]) >> verticleBeanCtxBuilder2
         1 * verticleBeanCtxBuilder2.start() >> verticleBeanCtx2
         1 * appCtx.getBean(Vertx) >> vertx
-        1 * mindisVertxApplication.getVerticleNames() >> verticleNames
+        1 * mindisVertxApplication.getVerticlesProducers() >> verticleNames
 
         and: 'app beans are injected into each bean context'
         2 * appCtx.getBean(Vertx) >> vertx

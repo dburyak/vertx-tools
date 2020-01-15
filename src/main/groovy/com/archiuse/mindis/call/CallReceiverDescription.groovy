@@ -1,6 +1,6 @@
 package com.archiuse.mindis.call
 
 trait CallReceiverDescription {
-    String receiverAddress
+    String receiverName
     Set<String> actions = new LinkedHashSet<>()
 }

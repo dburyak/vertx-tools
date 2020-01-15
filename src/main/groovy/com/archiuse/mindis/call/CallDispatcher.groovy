@@ -1,7 +1,7 @@
 package com.archiuse.mindis.call
 
 import io.reactivex.Completable
-import io.reactivex.Single
+import io.reactivex.Maybe
 import io.vertx.core.eventbus.DeliveryOptions
 
 /**
@@ -66,7 +66,7 @@ interface CallDispatcher {
      * @param action action id
      * @return async call result
      */
-    def <T> Single<T> request(String rcv, String action)
+    def <T> Maybe<T> request(String rcv, String action)
 
     /**
      * Request-response actor action call.
@@ -77,7 +77,7 @@ interface CallDispatcher {
      * @param opts call delivery options
      * @return async call result
      */
-    def <T> Single<T> request(String rcv, String action, DeliveryOptions opts)
+    def <T> Maybe<T> request(String rcv, String action, DeliveryOptions opts)
 
     /**
      * Request-response actor action call with arguments.
@@ -88,7 +88,7 @@ interface CallDispatcher {
      * @param args call arguments; either list of, map of, or single plain POGO data object is expected
      * @return async call result
      */
-    def <T> Single<T> request(String rcv, String action, def args)
+    def <T> Maybe<T> request(String rcv, String action, def args)
 
     /**
      * Request-response actor action call with arguments.
@@ -100,7 +100,7 @@ interface CallDispatcher {
      * @param opts delivery options
      * @return async call result
      */
-    def <T> Single<T> request(String rcv, String action, def args, DeliveryOptions opts)
+    def <T> Maybe<T> request(String rcv, String action, def args, DeliveryOptions opts)
 
     /**
      * Publish an event to all registered subscribers.

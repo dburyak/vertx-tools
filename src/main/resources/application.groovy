@@ -11,4 +11,14 @@ mindis {
             streamMinInterval = Duration.ofSeconds(35)
         }
     }
+    service {
+        discovery {
+            announceAddress = 'vertx.discovery.announce'
+            usageAddress = 'vertx .discovery.usage'
+        }
+        eb {
+            nameActionSeparator = '/'
+            addrSeparator = '-'
+        }
+    }
 }
