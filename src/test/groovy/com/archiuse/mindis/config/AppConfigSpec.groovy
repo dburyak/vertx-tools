@@ -61,7 +61,7 @@ class AppConfigSpec extends VertxRxJavaSpec {
         then:
         noExceptionThrown()
         1 * appConfig.vertxConfigRetriever.rxGetConfig() >> Single.just(cfgJson)
-        1 * appConfig.jsonHelper.fromJson(cfgJson, appConfig.decodeSpecial) >> cfgDecodedMap
+        1 * appConfig.jsonHelper.toMap(cfgJson, appConfig.decodeSpecial) >> cfgDecodedMap
         1 * appConfig.configHelper.unflatten(cfgDecodedMap, appConfig.mapKeySeparator,
                 appConfig.listJoinSeparator) >> cfgUnflattenMap
         cfg.assertValue(cfgUnflattenMap)
@@ -104,7 +104,7 @@ class AppConfigSpec extends VertxRxJavaSpec {
 
         and: 'each cfg change is converted and unflattened'
         cfgsJson.eachWithIndex { json, idx ->
-            1 * appConfig.jsonHelper.fromJson(json, appConfig.decodeSpecial) >> cfgsMap[idx]
+            1 * appConfig.jsonHelper.toMap(json, appConfig.decodeSpecial) >> cfgsMap[idx]
             1 * appConfig.configHelper.unflatten(cfgsMap[idx], appConfig.mapKeySeparator,
                     appConfig.listJoinSeparator) >> cfgsMap[idx]
         }

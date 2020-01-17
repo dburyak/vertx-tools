@@ -1,6 +1,6 @@
 package com.archiuse.mindis.json
 
-import com.archiuse.mindis.json.JsonHelper
+
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import spock.lang.Specification
@@ -230,13 +230,13 @@ class JsonHelperSpec extends Specification {
         [TestEnum.SECOND]        || '["SECOND"]'
     }
 
-    void 'fromJson from json object to map with special types decoded'() {
+    void 'toMap from json object to map with special types decoded'() {
         given: 'json'
         def decodeSpecial = true
         def jsonObj = new JsonObject(json)
 
         when: 'parse json to map and decode special objects'
-        def actualMap = jsonHelper.fromJson jsonObj, decodeSpecial
+        def actualMap = jsonHelper.toMap jsonObj, decodeSpecial
 
         then: 'map is parsed correctly, types are detected correctly'
         noExceptionThrown()
@@ -269,14 +269,15 @@ class JsonHelperSpec extends Specification {
                 '"special_value": "SECOND"}}'                          || [k20: TestEnum.SECOND]
     }
 
-    void 'fromJson from json object to map with NO special types decoding'() {
+
+    void 'toMap from json object to map with NO special types decoding'() {
         given: 'json'
         def decodeSpecial = false
         def jsonObj = new JsonObject(json)
 
         when: 'parse json to map and decode special objects'
 
-        def actualMap = jsonHelper.fromJson jsonObj, decodeSpecial
+        def actualMap = jsonHelper.toMap jsonObj, decodeSpecial
 
         then: 'map is parsed correctly, types are detected correctly'
         noExceptionThrown()

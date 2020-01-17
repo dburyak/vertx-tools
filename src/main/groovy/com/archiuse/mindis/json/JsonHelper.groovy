@@ -28,7 +28,7 @@ class JsonHelper {
      * @param decodeSpecial whether special data structures should be interpreted (default: true)
      * @return map
      */
-    Map<String, Object> fromJson(JsonObject json, boolean decodeSpecial = true) {
+    Map<String, Object> toMap(JsonObject json, boolean decodeSpecial = true) {
         fromJsonRecursively json, decodeSpecial
     }
 
@@ -42,9 +42,9 @@ class JsonHelper {
      * </ul>
      * @param json vertx json object
      * @param decodeSpecial whether special data structures should be interpreted (default: true)
-     * @return map
+     * @return list
      */
-    List fromJson(JsonArray jsonArray, boolean decodeSpecial = true) {
+    List toList(JsonArray jsonArray, boolean decodeSpecial = true) {
         fromJsonRecursively jsonArray, decodeSpecial
     }
 
@@ -78,6 +78,14 @@ class JsonHelper {
      */
     JsonArray toJson(Iterable iterable, boolean encodeSpecial = true) {
         toJsonRecursively iterable, encodeSpecial
+    }
+
+    JsonObject toJson(Object obj, boolean encodeSpecial = true) {
+        JsonObject.mapFrom(obj)
+    }
+
+    def <T> T toObject(JsonObject json, Class<T> type) {
+        json.mapTo(type)
     }
 
 

@@ -96,7 +96,7 @@ class AppConfig {
     }
 
     private Map<String, Object> toUnflattenConfigMap(JsonObject flatJsonCfg) {
-        def decodedFlatMap = jsonHelper.fromJson(flatJsonCfg, decodeSpecial)
+        def decodedFlatMap = jsonHelper.toMap(flatJsonCfg, decodeSpecial)
         configHelper.unflatten(decodedFlatMap, mapKeySeparator, listJoinSeparator)
     }
 }

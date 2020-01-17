@@ -50,6 +50,9 @@ class CallDispatcherEBImpl implements CallDispatcher {
     @Inject
     MapHelper mapHelper
 
+    @Inject
+    LocalEBAwareJsonMessageCodec ebMsgCodec
+
     @Property(name = 'mindis.service.discovery.announce-address')
     String discoveryAnnounceAddress
 
@@ -66,11 +69,11 @@ class CallDispatcherEBImpl implements CallDispatcher {
                         actualType: serviceTypes[service])
             }
 
-            if (opts) {
-                eventBus.send service, args as Object, opts
-            } else {
-                eventBus.send service, args
+            if (!opts) {
+                opts = new DeliveryOptions()
             }
+            opts.codecName = ebMsgCodec.name()
+            eventBus.send service, args as Object, opts
         }
     }
 
@@ -89,19 +92,24 @@ class CallDispatcherEBImpl implements CallDispatcher {
                         throw new ServiceNotFoundException(receiver: rcv, action: action)
                     }
                     if (serviceTypes[service] != REQUEST_RESPONSE) {
-                        throw new WrongServiceTypeException(receiver: rcv, action: action, expectedType: REQUEST_RESPONSE,
+                        throw new WrongServiceTypeException(receiver: rcv, action: action,
+                                expectedType: REQUEST_RESPONSE,
                                 actualType: serviceTypes[service])
                     }
                     addr
                 }
                 .flatMapMaybe { addr ->
-                    def rxRequest = opts ? eventBus.rxRequest(addr, args, opts) : eventBus.rxRequest(addr, args)
-                    rxRequest.map { replyMsg ->
-                        replyMsg.body() ?: NO_REPLY_BODY
+                    if (!opts) {
+                        opts = new DeliveryOptions()
                     }
-                    .toMaybe()
-                    .filter { it != NO_REPLY_BODY }
-                    .map { it as T }
+                    opts.codecName = ebMsgCodec.name()
+                    eventBus.rxRequest(addr, args, opts)
+                            .map { replyMsg ->
+                                replyMsg.body() ?: NO_REPLY_BODY
+                            }
+                            .toMaybe()
+                            .filter { it != NO_REPLY_BODY }
+                            .map { it as T }
                 }
     }
 
@@ -123,11 +131,11 @@ class CallDispatcherEBImpl implements CallDispatcher {
                         actualType: serviceTypes[service])
             }
 
-            if (opts) {
-                eventBus.publish addr, args
-            } else {
-                eventBus.publish addr, args, opts
+            if (!opts) {
+                opts = new DeliveryOptions()
             }
+            opts.codecName = ebMsgCodec.name()
+            eventBus.publish addr, args, opts
         }
     }
 
@@ -139,6 +147,14 @@ class CallDispatcherEBImpl implements CallDispatcher {
     @PostConstruct
     protected void init() {
         log.debug 'initialize call dispatcher: {}', this
+
+        try {
+            eventBus.registerCodec(ebMsgCodec)
+            log.debug 'register EB codec: {}', ebMsgCodec.name()
+        } catch (ignored) {
+            // codec is already registered by another instance of call dispatcher
+            log.debug 'avoid duplicate EB codec registration'
+        }
 
         // EB services dynamic announcements
         discoverySubscription = Observable
@@ -159,7 +175,7 @@ class CallDispatcherEBImpl implements CallDispatcher {
                 )
 
         // update local EB addr resolution map
-                .map { jsonHelper.fromJson it }
+                .map { jsonHelper.toMap it }
                 .subscribe({
                     updateLocalServiceRegistry(it)
                 }, {

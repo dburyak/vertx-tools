@@ -6,6 +6,7 @@ import groovy.util.logging.Slf4j
 import io.reactivex.Maybe
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
+import io.vertx.core.eventbus.DeliveryOptions
 import io.vertx.core.json.JsonObject
 import io.vertx.reactivex.core.eventbus.EventBus
 import io.vertx.reactivex.core.eventbus.MessageConsumer
@@ -36,6 +37,9 @@ class CallReceiverEBImpl implements CallReceiver {
 
     @Inject
     ServiceDiscoveryHelper serviceDiscoveryHelper
+
+    @Inject
+    LocalEBAwareJsonMessageCodec ebMsgCodec
 
     @Override
     Single<Disposable> onCall(String rcv, String action, @ClosureParams(value = SimpleType,
@@ -85,11 +89,11 @@ class CallReceiverEBImpl implements CallReceiver {
                     def ebConsumer = eventBus.consumer(ebAddr) { msg ->
                         doOnRequest(ebServiceImplHelper.toClosureArgs(msg))
                                 .subscribe({
-                                    msg.reply it
+                                    msg.reply it, new DeliveryOptions().setCodecName(ebMsgCodec.name())
                                 }, {
                                     msg.fail(0, "${it.class} : ${it.message}")
                                 }, {
-                                    msg.reply(null)
+                                    msg.reply null, new DeliveryOptions().setCodecName(ebMsgCodec.name())
                                 })
                     }
                     def serviceName = ebServiceImplHelper.buildEbServiceName rcv, action
