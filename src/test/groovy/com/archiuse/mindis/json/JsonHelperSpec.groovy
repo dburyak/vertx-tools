@@ -1,6 +1,6 @@
 package com.archiuse.mindis.json
 
-
+import groovy.transform.EqualsAndHashCode
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import spock.lang.Specification
@@ -59,7 +59,7 @@ class JsonHelperSpec extends Specification {
         [k21: 234G]                   || '{"k21": "234"}' // BigInteger
         [k6: null]                    || '{"k6": null}'
         [k7: false, k8: Boolean.TRUE] || '{"k7": false, "k8": true}'
-        [k9: new byte[]{3, 4, 5}]     || '{"k9": ' +
+        [k9: new byte[] {3, 4, 5}]    || '{"k9": ' +
                 '{"special_type": "byte_array", "special_value": "AwQF"}}'
         [k10: [1, 2, 3]]              || '{"k10": [1, 2, 3]}'
         [k11: ['a', 2, 3.55]]         || '{"k11": ["a", 2, "3.55"]}'
@@ -98,7 +98,7 @@ class JsonHelperSpec extends Specification {
         [k21: 234G]                   || '{"k21": "234"}'  // BigInteger
         [k6: null]                    || '{"k6": null}'
         [k7: false, k8: Boolean.TRUE] || '{"k7": false, "k8": true}'
-        [k9: new byte[]{3, 4, 5}]     || '{"k9": "AwQF"}'
+        [k9: new byte[] {3, 4, 5}]    || '{"k9": "AwQF"}'
         [k10: [1, 2, 3]]              || '{"k10": [1, 2, 3]}'
         [k11: ['a', 2, 3.55]]         || '{"k11": ["a", 2, "3.55"]}'
         [k12: instant]                || '{"k12": "2019-12-08T22:07:40.682937Z"}'
@@ -112,37 +112,16 @@ class JsonHelperSpec extends Specification {
         [k20: TestEnum.SECOND]        || '{"k20": "SECOND"}'
     }
 
-    void 'toJson from null map throws exception'() {
-        given:
-        Map nullMap = null
-
-        when:
-        jsonHelper.toJson nullMap
-
-        then:
-        thrown Exception
-    }
-
-    void 'toJson from null iterable throws exception'() {
-        given:
-        Iterable nullIterable = null
-
-        when:
-        jsonHelper.toJson nullIterable
-
-        then:
-        thrown Exception
-    }
-
-    void 'toJson from untyped null throws exception'() {
+    void 'toJson from null returns null'() {
         given:
         def nullObj = null
 
         when:
-        jsonHelper.toJson nullObj
+        def json = jsonHelper.toJson nullObj
 
         then:
-        thrown Exception
+        noExceptionThrown()
+        json == null
     }
 
     void 'toJson from unsupported type throws exception'() {
@@ -153,7 +132,7 @@ class JsonHelperSpec extends Specification {
         jsonHelper.toJson bigDecimal
 
         then:
-        thrown Exception
+        thrown IllegalArgumentException
     }
 
     void 'toJson from iterable with special types encoding'() {
@@ -178,7 +157,7 @@ class JsonHelperSpec extends Specification {
         [234G]                   || '["234"]'  // BigInteger
         [null]                   || '[null]'
         [false, Boolean.TRUE]    || '[false, true]'
-        [new byte[]{3, 4, 5}]    || '[{"special_type": "byte_array", "special_value": "AwQF"}]'
+        [new byte[] {3, 4, 5}]   || '[{"special_type": "byte_array", "special_value": "AwQF"}]'
         [[1, 2, 3]]              || '[[1, 2, 3]]'
         [15, ['a', 2, 3.55], 17] || '[15, ["a", 2, "3.55"], 17]'
         [instant]                || '["2019-12-08T22:07:40.682937Z"]'
@@ -216,7 +195,7 @@ class JsonHelperSpec extends Specification {
         [234G]                   || '["234"]'  // BigInteger
         [null]                   || '[null]'
         [false, Boolean.TRUE]    || '[false, true]'
-        [new byte[]{3, 4, 5}]    || '["AwQF"]'
+        [new byte[] {3, 4, 5}]   || '["AwQF"]'
         [[1, 2, 3]]              || '[[1, 2, 3]]'
         [15, ['a', 2, 3.55], 17] || '[15, ["a", 2, "3.55"], 17]'
         [instant]                || '["2019-12-08T22:07:40.682937Z"]'
@@ -253,7 +232,7 @@ class JsonHelperSpec extends Specification {
         '{"k6": null}'                                                 || [k6: null]
         '{"k7": false, "k8": true}'                                    || [k7: false, k8: true]
         '{"k9": {"special_type": "byte_array", ' +
-                '"special_value": "AwQF"}}'                            || [k9: new byte[]{3, 4, 5}]
+                '"special_value": "AwQF"}}'                            || [k9: new byte[] {3, 4, 5}]
         '{"k10": [1, 2, 3]}'                                           || [k10: [1, 2, 3]]
         '{"k11": ["a", 2, "3.55"]}'                                    || [k11: ['a', 2, 3.55]]
         '{"k12": "2019-12-08T22:07:40.682937Z"}'                       || [k12: instant]
@@ -268,7 +247,6 @@ class JsonHelperSpec extends Specification {
                 '"com.archiuse.mindis.json.JsonHelperSpec$TestEnum", ' +
                 '"special_value": "SECOND"}}'                          || [k20: TestEnum.SECOND]
     }
-
 
     void 'toMap from json object to map with NO special types decoding'() {
         given: 'json'
@@ -313,5 +291,91 @@ class JsonHelperSpec extends Specification {
                                                                                          '.JsonHelperSpec$TestEnum',
                                                                                  special_value     : 'SECOND']]
         '{"k21": "345"}'                                               || [k21: 345G]
+    }
+
+    void 'toList from json array with special types decoding'() {
+        given: 'json array'
+        def decodeSpecial = true
+        def jsonArray = new JsonArray(jsonStr)
+
+        when: 'parse json array and decode special objects'
+        def actualList = jsonHelper.toList jsonArray, decodeSpecial
+
+        then: 'list is parsed correctly, types are detected correctly'
+        noExceptionThrown()
+        actualList == expectedList
+
+        where:
+        jsonStr                                                     || expectedList
+        '[]'                                                        || []
+        '["v1"]'                                                    || ['v1']
+        '[200]'                                                     || [200]
+        '["20.3"]'                                                  || [20.3G]
+        '[21.4]'                                                    || [21.4]
+        '["345"]'                                                   || [345G]
+        '[null]'                                                    || [null]
+        '[false, true]'                                             || [false, true]
+        '[{"special_type": "byte_array", "special_value": "AwQF"}]' || [new byte[] {3, 4, 5}]
+        '[[1, 2], [2, 3, 4]]'                                       || [[1, 2], [2, 3, 4]]
+        '["a", 2, "3.55"]'                                          || ['a', 2, 3.55G]
+        '["2019-12-08T22:07:40.682937Z"]'                           || [instant]
+        '["PT3S"]'                                                  || [duration]
+        '["1989-07-27"]'                                            || [localDate]
+        '["1989-07-27T15:33:17.000000459"]'                         || [localDateTime]
+        '["03:53:28.234567890"]'                                    || [localTime]
+        '["1989-07-27T07:03:25.000000083+02:00[Europe/Paris]"]'     || [zonedDateTime]
+        '["1900-06-13T12:29:03.000000431-04:00"]'                   || [offsetDateTime]
+        '["19:37:00.000034576+07:00"]'                              || [offsetTime]
+        '[{"special_type": "enum", "special_enum_class": ' +
+                '"com.archiuse.mindis.json.JsonHelperSpec$TestEnum", ' +
+                '"special_value": "SECOND"}]'                       || [TestEnum.SECOND]
+    }
+
+    void 'toObject converts json to object correctly'() {
+        given: 'data object in json format'
+        def pogoSrc = new TestPogo(prop1: 'prop1', prop2: Instant.now(), prop3: 42, prop4: 22.57G,
+                prop5: [k1: 'v1', k2: 2], prop6: [1, 2, 3, 'a', 'b', 'c'])
+        def json = JsonObject.mapFrom(pogoSrc)
+
+        when: 'convert json to object'
+        def actualPogo = jsonHelper.toObject(json, TestPogo)
+
+        then: 'actual pogo is decoded correctly'
+        actualPogo == pogoSrc
+    }
+
+    void 'fromJson bad special object throws JsonException'() {
+        given: 'json with special object of unknown format'
+        def badJson = new JsonObject('{"k1": {"special_type": "bad_type", "special_value": "bad_value"}}')
+
+        when: 'decode json'
+        jsonHelper.toMap(badJson, true)
+
+        then:
+        thrown JsonException
+    }
+
+    void 'fromJson special enum object with no enum class throws JsonException'() {
+        given: 'json with special enum object that doesn\'t specify enum class'
+        def badEnumJson = new JsonObject('{"k1": {"special_type": "enum", "special_value": "SECOND"}}')
+
+        when: 'decode json to map'
+        jsonHelper.toMap(badEnumJson, true)
+
+        then:
+        def e = thrown JsonException
+        e.jsonObject
+        e.jsonObject.toString().contains 'special_type'
+        e.jsonObject.toString().contains 'enum'
+    }
+
+    @EqualsAndHashCode
+    private static class TestPogo {
+        String prop1
+        Instant prop2
+        Integer prop3
+        BigDecimal prop4
+        Map prop5
+        List prop6
     }
 }

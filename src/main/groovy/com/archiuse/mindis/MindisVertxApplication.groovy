@@ -29,7 +29,7 @@ abstract class MindisVertxApplication {
                 .fromAction {
                     def isRunning = applicationBeanContext as Boolean
                     if (isRunning) {
-                        return Completable.error(new MindisException('application is already running'))
+                        throw new MindisException('application is already running')
                     }
                 }
 
@@ -41,7 +41,7 @@ abstract class MindisVertxApplication {
                     def vertx = mainCtx.getBean Vertx
                     Observable
                             .fromIterable(verticlesProducers)
-                            .flatMapCompletable { MindisVerticleProducer verticleSupplier ->
+                            .flatMapCompletable { VerticleProducer verticleSupplier ->
                                 log.debug 'init bean context for verticle'
                                 def verticleCtx = ApplicationContext.build()
                                         .properties((PROP_IS_APP_BEAN_CTX): false)
@@ -53,7 +53,7 @@ abstract class MindisVertxApplication {
 
                                 log.debug 'deploying verticle: verticleCtx={}', verticleCtx
                                 verticleSupplier.verticleBeanCtx = verticleCtx
-                                vertx.rxDeployVerticle(verticleSupplier.verticleProducer,
+                                vertx.rxDeployVerticle(verticleSupplier.verticleSupplier,
                                         verticleSupplier.deploymentOptions)
                                         .doOnSuccess {
                                             log.debug 'verticle deployed: depId={}, verticleCtx={}',
@@ -73,7 +73,7 @@ abstract class MindisVertxApplication {
                     def mainCtx = applicationBeanContext
                     def isRunning = mainCtx as Boolean
                     if (!isRunning) {
-                        return Completable.error(new MindisException('application is already stopped'))
+                        throw new MindisException('application is already stopped')
                     }
                     mainCtx
                 }
@@ -118,7 +118,7 @@ abstract class MindisVertxApplication {
                 .doOnError { log.error 'failed to stop application', it }
     }
 
-    abstract List<MindisVerticleProducer> getVerticlesProducers()
+    abstract List<VerticleProducer> getVerticlesProducers()
 
     private Single<ApplicationContext> startAppContext() {
         Single

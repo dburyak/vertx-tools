@@ -194,7 +194,8 @@ class JsonHelper {
 
     private def fromJsonSpecialEnum(JsonObject jsonEnum) {
         if (!jsonEnum.containsKey(SPECIAL_ENUM_CLASS_KEY)) {
-            throw new JsonException()
+            throw new JsonException(jsonObject: jsonEnum, message:
+                    "special enum object must contain \"${SPECIAL_ENUM_CLASS_KEY}\" to specify enum class")
         }
         Enum.valueOf(jsonEnum.getString(SPECIAL_ENUM_CLASS_KEY) as Class, jsonEnum.getString(SPECIAL_VALUE_KEY))
     }

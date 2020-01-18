@@ -5,11 +5,11 @@ import io.vertx.core.DeploymentOptions
 
 import java.util.function.Supplier
 
-abstract class MindisVerticleProducer {
+abstract class VerticleProducer {
     ApplicationContext verticleBeanCtx
     DeploymentOptions deploymentOptions = new DeploymentOptions()
 
-    final Supplier<MindisVerticle> getVerticleProducer() {
+    final Supplier<MindisVerticle> getVerticleSupplier() {
         return {
             def verticle = doCreateVerticle()
             verticle.verticleBeanCtx = verticleBeanCtx

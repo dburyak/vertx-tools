@@ -6,13 +6,16 @@ import io.micronaut.context.ApplicationContextBuilder
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.reactivex.Completable
 import io.reactivex.Single
+import io.vertx.core.DeploymentOptions
+import io.vertx.core.Verticle
 import io.vertx.reactivex.core.Vertx
 import spock.lang.Specification
 import spock.lang.Timeout
 
+import java.util.function.Supplier
+
 import static com.archiuse.mindis.MindisVertxApplication.PROP_IS_APP_BEAN_CTX
 import static java.util.concurrent.TimeUnit.SECONDS
-import static java.util.regex.Matcher.quoteReplacement
 
 @Timeout(value = 2, unit = SECONDS)
 class MindisVertxApplicationSpec extends Specification {
@@ -20,13 +23,6 @@ class MindisVertxApplicationSpec extends Specification {
     MindisVertxApplication mindisVertxApplication = Spy(MindisVertxApplication)
 
     def depIds = ['depId1', 'depId2']
-    def verticleClasses = [TestMindisVerticle1, TestMindisVerticle2]
-    def verticleNames = [
-            TestMindisVerticle1.canonicalName.replaceFirst(
-                    "\\.${TestMindisVerticle1.simpleName}", quoteReplacement("\$${TestMindisVerticle1.simpleName}")),
-            TestMindisVerticle2.canonicalName.replaceFirst(
-                    "\\.${TestMindisVerticle2.simpleName}", quoteReplacement("\$${TestMindisVerticle2.simpleName}")),
-    ]
 
     // mocks
     def appCtxBuilder = Mock(ApplicationContextBuilder)
@@ -34,6 +30,10 @@ class MindisVertxApplicationSpec extends Specification {
     def vertx = Mock(Vertx)
     def verticle1 = Mock(TestMindisVerticle1)
     def verticle2 = Mock(TestMindisVerticle2)
+    def verticleProducers = [
+            { verticle1 } as VerticleProducer,
+            { verticle2 } as VerticleProducer
+    ]
     def verticleBeanCtxBuilder1 = Mock(ApplicationContextBuilder)
     def verticleBeanCtx1 = Mock(ApplicationContext)
     def verticleBeanCtxBuilder2 = Mock(ApplicationContextBuilder)
@@ -54,12 +54,38 @@ class MindisVertxApplicationSpec extends Specification {
         }
     }
 
+    def 'start app that is already running throws async exception'() {
+        given: 'running application with initialized bean context'
+        mindisVertxApplication.applicationBeanContext = appCtx
+
+        when:
+        def startResult = mindisVertxApplication.start().test().await()
+
+        then: 'exception is thrown in async chain'
+        noExceptionThrown()
+        startResult.assertError(MindisException)
+    }
+
+    def 'stop app that is already stopped throws async exception'() {
+        given: 'stopped application with no app ctx'
+        mindisVertxApplication.applicationBeanContext = null
+
+        when:
+        def stopResult = mindisVertxApplication.stop().test().await()
+
+        then: 'exception is thrown in async chain'
+        noExceptionThrown()
+        stopResult.assertError(MindisException)
+    }
+
     def 'start performs necessary actions'() {
         when:
         def startResult = mindisVertxApplication.start().test().await()
 
         then:
         noExceptionThrown()
+        startResult.assertNoErrors()
+        startResult.assertComplete()
 
         and: 'application context is built correctly'
         invocationsBuildBeanCtx == 3
@@ -70,12 +96,12 @@ class MindisVertxApplicationSpec extends Specification {
         mindisVertxApplication.applicationBeanContext == appCtx
 
         and: 'bean contexts are created for each verticle'
+        1 * appCtx.getBean(Vertx) >> vertx
+        1 * mindisVertxApplication.getVerticlesProducers() >> verticleProducers
         1 * verticleBeanCtxBuilder1.properties([(PROP_IS_APP_BEAN_CTX): false]) >> verticleBeanCtxBuilder1
         1 * verticleBeanCtxBuilder1.start() >> verticleBeanCtx1
         1 * verticleBeanCtxBuilder2.properties([(PROP_IS_APP_BEAN_CTX): false]) >> verticleBeanCtxBuilder2
         1 * verticleBeanCtxBuilder2.start() >> verticleBeanCtx2
-        1 * appCtx.getBean(Vertx) >> vertx
-        1 * mindisVertxApplication.getVerticlesProducers() >> verticleNames
 
         and: 'app beans are injected into each bean context'
         2 * appCtx.getBean(Vertx) >> vertx
@@ -84,33 +110,34 @@ class MindisVertxApplicationSpec extends Specification {
         1 * verticleBeanCtx2.registerSingleton(ApplicationContext, appCtx, Qualifiers.byStereotype(AppBean))
         1 * verticleBeanCtx2.registerSingleton(Vertx, vertx)
 
+        and: 'verticle bean contexts are assigned to verticle producers'
+        verticleProducers[0].verticleBeanCtx in [verticleBeanCtx1, verticleBeanCtx2]
+        verticleProducers[1].verticleBeanCtx in [verticleBeanCtx1, verticleBeanCtx2]
+
         and: 'verticles are deployed'
-        1 * verticleBeanCtx1.getBean(verticleClasses[0]) >> verticle1
-        1 * vertx.rxDeployVerticle(verticle1) >> Single.just(depIds[0])
-        1 * verticleBeanCtx2.getBean(verticleClasses[1]) >> verticle2
-        1 * vertx.rxDeployVerticle(verticle2) >> Single.just(depIds[1])
+        1 * vertx.rxDeployVerticle(_ as Supplier<Verticle>, _ as DeploymentOptions)
+                >> Single.just(depIds[0])
+        1 * vertx.rxDeployVerticle(_ as Supplier<Verticle>, _ as DeploymentOptions)
+                >> Single.just(depIds[1])
 
         and: 'bean contexts and deployment ids are stored'
-        mindisVertxApplication.verticlesBeanContexts[depIds[0]].v1 == verticleNames[0]
-        mindisVertxApplication.verticlesBeanContexts[depIds[0]].v2 == verticleBeanCtx1
-        mindisVertxApplication.verticlesBeanContexts[depIds[1]].v1 == verticleNames[1]
-        mindisVertxApplication.verticlesBeanContexts[depIds[1]].v2 == verticleBeanCtx2
-
-        and:
-        startResult.assertComplete()
+        mindisVertxApplication.verticlesBeanContexts[depIds[0]] == verticleBeanCtx1
+        mindisVertxApplication.verticlesBeanContexts[depIds[1]] == verticleBeanCtx2
     }
 
     def 'stop performs necessary actions'() {
         given:
         mindisVertxApplication.applicationBeanContext = appCtx
-        mindisVertxApplication.verticlesBeanContexts[depIds[0]] = new Tuple2<>(verticleNames[0], verticleBeanCtx1)
-        mindisVertxApplication.verticlesBeanContexts[depIds[1]] = new Tuple2<>(verticleNames[1], verticleBeanCtx2)
+        mindisVertxApplication.verticlesBeanContexts[depIds[0]] = verticleBeanCtx1
+        mindisVertxApplication.verticlesBeanContexts[depIds[1]] = verticleBeanCtx2
 
         when:
         def stopResult = mindisVertxApplication.stop().test().await()
 
         then:
         noExceptionThrown()
+        stopResult.assertNoErrors()
+        stopResult.assertComplete()
 
         and: 'vertx is closed'
         1 * appCtx.getBean(Vertx) >> vertx
