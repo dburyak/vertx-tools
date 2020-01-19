@@ -4,6 +4,7 @@ import com.archiuse.mindis.call.ServiceHelper
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.BeanRegistration
 import io.micronaut.inject.BeanIdentifier
+import io.reactivex.Completable
 import spock.lang.Timeout
 
 import static java.util.concurrent.TimeUnit.SECONDS
@@ -81,5 +82,41 @@ class MindisVerticleSpec extends VertxRxJavaSpec {
         1 * serviceHelper.getProperty('readinessAction') >> readinessActionName
         healthActionName in mindisVerticle.actions
         readinessActionName in mindisVerticle.actions
+    }
+
+    def 'doStart failure results in async exception of all the start chain'() {
+        when:
+        def res = mindisVerticle.rxStart().test().await()
+
+        then:
+        noExceptionThrown()
+        res.assertError(Exception)
+
+        and:
+        1 * mindisVerticle.doStart() >> Completable.error(new Exception())
+
+        and:
+        1 * verticleBeanCtx.registerSingleton(ApplicationContext, verticleBeanCtx, _) >> verticleBeanCtx
+        1 * verticleBeanCtx.registerSingleton(mindisVerticle)
+
+        1 * verticleBeanCtx.findBeanRegistration(verticleBeanCtx) >> Optional.of(beanCtxBeanReg)
+        1 * beanCtxBeanReg.identifier >> beanCtxBeanId
+        1 * verticleBeanCtx.refreshBean(beanCtxBeanId)
+
+        1 * verticleBeanCtx.findBeanRegistration(mindisVerticle) >> Optional.of(verticleBeanReg)
+        1 * verticleBeanReg.identifier >> verticleBeanId
+        1 * verticleBeanCtx.refreshBean(verticleBeanId)
+    }
+
+    def 'doStop failure results in async exception of all the stop chain'() {
+        when:
+        def res = mindisVerticle.rxStop().test().await()
+
+        then:
+        noExceptionThrown()
+        res.assertError(Exception)
+
+        and:
+        1 * mindisVerticle.doStop() >> Completable.error(new Exception())
     }
 }

@@ -71,7 +71,7 @@ class LocalEBAwareJsonMessageCodec implements MessageCodec {
         def jsonSize = buffer.getInt(p)
         p += Integer.BYTES
 
-        def jsonStr = buffer.getString(p, jsonSize)
+        def jsonStr = buffer.getString(p, p + jsonSize)
 
         [className as Class, jsonStr]
     }

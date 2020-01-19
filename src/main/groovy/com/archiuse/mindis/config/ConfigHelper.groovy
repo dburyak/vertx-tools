@@ -90,7 +90,7 @@ class ConfigHelper {
     }
 
     private def flattenRecursively(JsonObject value, String prefix, String mapSep, String listSep) {
-
+        flatten(value, mapSep, listSep)
     }
 
     private def flattenRecursively(Iterable value, String prefix, String mapSep, String listSep) {

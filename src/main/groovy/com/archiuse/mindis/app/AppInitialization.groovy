@@ -57,6 +57,9 @@ class AppInitialization {
         Buffer.metaClass.leftShift = { String str ->
             delegate.appendString(str)
         }
+        Buffer.metaClass.leftShift = { Integer intVal ->
+            delegate.appendInt(intVal)
+        }
     }
 
     private void initStringMetaClass() {
