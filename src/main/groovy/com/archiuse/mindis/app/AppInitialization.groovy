@@ -34,6 +34,7 @@ class AppInitialization {
         log.info 'initializing application'
         registerRxJavaVertxSchedulers()
         initStringMetaClass()
+        initMapMetaClass()
         initBufferMetaClass()
         initCompositeDisposableMetaClass()
         log.info 'application initialized'
@@ -85,6 +86,18 @@ class AppInitialization {
         CompositeDisposable.metaClass.leftShift = { Iterable<Disposable> disposables ->
             delegate.addAll(disposables)
             delegate
+        }
+    }
+
+    private void initMapMetaClass() {
+        log.debug 'init MetaClass: {}', Map
+        def defaultAsType = Map.metaClass.getMetaMethod('asType', [Class] as Class[])
+        Map.metaClass.asType = { Class type ->
+            if (JsonObject.isAssignableFrom(type)) {
+                new JsonObject(delegate)
+            } else {
+                defaultAsType.invoke(delegate, type)
+            }
         }
     }
 }

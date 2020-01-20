@@ -14,11 +14,11 @@ mindis {
     service {
         discovery {
             announceAddress = 'vertx.discovery.announce'
-            usageAddress = 'vertx .discovery.usage'
+            usageAddress = 'vertx.discovery.usage'
         }
         eb {
             nameActionSeparator = '/'
-            addrSeparator = '-'
+            addrSeparator = ':'
         }
     }
 }

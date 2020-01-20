@@ -7,7 +7,6 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Unroll
 
 import java.time.Instant
 
@@ -77,7 +76,6 @@ class LocalEBAwareJsonMessageCodecSpec extends Specification {
         1 * buf.appendString(jsonStr)
     }
 
-    @Unroll
     def 'decodeFromWire decodes correctly'() {
         given: 'test object to encode'
         def buf = Mock(Buffer)

@@ -31,21 +31,63 @@ class EBServiceImplHelper {
     }
 
     String buildEbServiceName(String rcv, String action) {
+        if (rcv == null) {
+            throw new NullPointerException('rcv')
+        }
+        if (action == null) {
+            throw new NullPointerException('action')
+        }
+        if (ebServiceNameActionSeparator == null) {
+            throw new NullPointerException('ebServiceNameActionSeparator')
+        }
+        if (action.contains(ebServiceNameActionSeparator)) {
+            throw new CallSetupException(receiver: rcv, action: action)
+        }
         [rcv, action].join ebServiceNameActionSeparator
     }
 
     String buildEbServiceAddr(String rcv, String action, ServiceType type) {
+        if (rcv == null) {
+            throw new NullPointerException('rcv')
+        }
+        if (action == null) {
+            throw new NullPointerException('action')
+        }
+        if (ebAddrSeparator == null) {
+            throw new NullPointerException('ebAddrSeparator')
+        }
+        if (type == null) {
+            throw new NullPointerException('type')
+        }
+        if (action.contains(ebAddrSeparator)) {
+            throw new CallSetupException(receiver: rcv, action: action, serviceType: type)
+        }
         [type.typeName, rcv, action].join ebAddrSeparator
     }
 
     /**
-     * Split full EB service name into "receiver" and "action" parts.
-     * @param ebServiceName full EB service name
-     * @return [rcv, action]
+     * Split full EB service addr into "type", "receiver" and "action" parts.
+     * @param ebServiceAddr full EB service addr
+     * @return [rcv, action, type]
      */
-    List parseEbServiceName(String ebServiceName) {
-        def i = ebServiceName.lastIndexOf(ebServiceNameActionSeparator)
-        [ebServiceName[0..<i], ebServiceName[i + 1..-1]]
+    List parseEbServiceAddr(String ebServiceAddr) {
+        def idxLast = ebServiceAddr.lastIndexOf(ebAddrSeparator)
+        def idxFirst = ebServiceAddr.indexOf(ebAddrSeparator)
+        if (idxFirst < 0 || idxLast < 0 || !(idxFirst < idxLast)) {
+            throw new MalformedEbAddressNameException(addr: ebServiceAddr)
+        }
+        def sepLen = ebAddrSeparator.size()
+        try {
+            def type = ServiceType.byTypeName(ebServiceAddr[0..<idxFirst])
+            if (!type) {
+                throw new MalformedEbAddressNameException(addr: ebServiceAddr)
+            }
+            [ebServiceAddr[idxFirst + sepLen..<idxLast],
+             ebServiceAddr[idxLast + sepLen..-1],
+             type]
+        } catch (ignored) {
+            throw new MalformedEbAddressNameException(addr: ebServiceAddr)
+        }
     }
 
     Disposable toDisposable(MessageConsumer ebConsumer, String serviceRegistrationId) {
