@@ -26,7 +26,7 @@ import static com.archiuse.mindis.call.ServiceType.REQUEST_RESPONSE
 @Singleton
 @Slf4j
 class CallDispatcherEBImpl implements CallDispatcher {
-    private static final NO_REPLY_BODY = new Object()
+    private static final NO_RESPONSE_BODY = new Object()
 
     private Map<String, String> ebAddr = [:]
     private Map<String, ServiceType> serviceTypes = [:]
@@ -73,7 +73,7 @@ class CallDispatcherEBImpl implements CallDispatcher {
                 opts = new DeliveryOptions()
             }
             opts.codecName = ebMsgCodec.name()
-            eventBus.send service, args as Object, opts
+            eventBus.send addr, args as Object, opts
         }
     }
 
@@ -83,7 +83,7 @@ class CallDispatcherEBImpl implements CallDispatcher {
     }
 
     @Override
-    <T> Maybe<T> request(String rcv, String action, def args = null, DeliveryOptions opts = null) {
+    <R> Maybe<R> request(String rcv, String action, def args = null, DeliveryOptions opts = null) {
         Single
                 .fromCallable {
                     def service = ebServiceImplHelper.buildEbServiceName rcv, action
@@ -104,17 +104,17 @@ class CallDispatcherEBImpl implements CallDispatcher {
                     }
                     opts.codecName = ebMsgCodec.name()
                     eventBus.rxRequest(addr, args, opts)
-                            .map { replyMsg ->
-                                replyMsg.body() ?: NO_REPLY_BODY
+                            .map { responseMsg ->
+                                responseMsg.body() ?: NO_RESPONSE_BODY
                             }
                             .toMaybe()
-                            .filter { it != NO_REPLY_BODY }
-                            .map { it as T }
+                            .filter { it != NO_RESPONSE_BODY }
+                            .map { it as R }
                 }
     }
 
     @Override
-    <T> Maybe<T> request(String rcv, String action, DeliveryOptions opts) {
+    <R> Maybe<R> request(String rcv, String action, DeliveryOptions opts) {
         request rcv, action, null, opts
     }
 

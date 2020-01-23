@@ -10,6 +10,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.plugins.RxJavaPlugins
 import io.vertx.core.buffer.Buffer
+import io.vertx.core.eventbus.DeliveryOptions
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
@@ -95,6 +96,8 @@ class AppInitialization {
         Map.metaClass.asType = { Class type ->
             if (JsonObject.isAssignableFrom(type)) {
                 new JsonObject(delegate)
+            } else if (DeliveryOptions.isAssignableFrom(type)) {
+                new DeliveryOptions(new JsonObject(delegate))
             } else {
                 defaultAsType.invoke(delegate, type)
             }
