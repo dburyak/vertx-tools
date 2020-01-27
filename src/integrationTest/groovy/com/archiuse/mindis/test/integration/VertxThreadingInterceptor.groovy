@@ -7,12 +7,12 @@ import org.spockframework.runtime.extension.IMethodInvocation
 import java.lang.reflect.Parameter
 
 import static com.archiuse.mindis.test.integration.TestExecutionThread.SPOCK_JUNIT_THREAD
-import static com.archiuse.mindis.test.integration.TestExecutionThread.VERTX_EL
-import static com.archiuse.mindis.test.integration.TestExecutionThread.VERTX_WORKER
+import static com.archiuse.mindis.test.integration.TestExecutionThread.VERTX_EL_THREAD
+import static com.archiuse.mindis.test.integration.TestExecutionThread.VERTX_WORKER_THREAD
 
 class VertxThreadingInterceptor extends AbstractMethodInterceptor {
     int numAsyncActions = 1
-    TestExecutionThread testExecutionThread = VERTX_EL
+    TestExecutionThread testExecutionThread = VERTX_EL_THREAD
 
     @Override
     void interceptFeatureMethod(IMethodInvocation invocation) throws Throwable {
@@ -35,10 +35,10 @@ class VertxThreadingInterceptor extends AbstractMethodInterceptor {
 
     private void invokeFeatureMethod(IMethodInvocation invocation, Async mainAsync) {
         switch (testExecutionThread) {
-            case VERTX_EL:
+            case VERTX_EL_THREAD:
                 invokeFeatureMethodOnVertxElThread invocation, mainAsync
                 break
-            case VERTX_WORKER:
+            case VERTX_WORKER_THREAD:
                 invokeFeatureMethodOnVertxWorkerThread invocation, mainAsync
                 break
             case SPOCK_JUNIT_THREAD:

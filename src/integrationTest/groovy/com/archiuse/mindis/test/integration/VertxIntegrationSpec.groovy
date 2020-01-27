@@ -5,6 +5,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Timeout
 
+import static com.archiuse.mindis.test.integration.TestExecutionThread.VERTX_EL_THREAD
 import static java.util.concurrent.TimeUnit.SECONDS
 
 /**
@@ -34,6 +35,20 @@ abstract class VertxIntegrationSpec extends Specification {
         integrationVerticleDeploymentId = app
                 .deployVerticle({ integrationTestVerticle })
                 .blockingGet()
+
+        def injection = new Async()
+        integrationTestVerticle.vertxContext.runOnContext {
+            def verticleCtx = integrationTestVerticle.verticleBeanCtx
+            verticleCtx.registerSingleton(this)
+            verticleCtx.refreshBean(verticleCtx.findBeanRegistration(this).get().identifier)
+            injection.complete()
+        }
+        injection.await()
+    }
+
+    @Timeout(value = 5, unit = SECONDS)
+    @RunOn(VERTX_EL_THREAD)
+    void setup() {
         def verticleCtx = integrationTestVerticle.verticleBeanCtx
         verticleCtx.registerSingleton(this)
         verticleCtx.refreshBean(verticleCtx.findBeanRegistration(this).get().identifier)

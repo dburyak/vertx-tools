@@ -4,7 +4,7 @@ package com.archiuse.mindis.test.integration
 import org.spockframework.runtime.extension.AbstractAnnotationDrivenExtension
 import org.spockframework.runtime.model.SpecInfo
 
-import static com.archiuse.mindis.test.integration.TestExecutionThread.VERTX_EL
+import static com.archiuse.mindis.test.integration.TestExecutionThread.VERTX_EL_THREAD
 
 class VertxIntegrationExtension extends AbstractAnnotationDrivenExtension<VertxIntegrationTest> {
 
@@ -16,7 +16,7 @@ class VertxIntegrationExtension extends AbstractAnnotationDrivenExtension<VertxI
     void visitSpec(SpecInfo spec) {
         spec.addSharedInitializerInterceptor(new IntegrationAppStartingInterceptor())
 
-        def specRunOn = spec.getAnnotation(RunOn)?.value() ?: VERTX_EL
+        def specRunOn = spec.getAnnotation(RunOn)?.value() ?: VERTX_EL_THREAD
         def specAsyncActions = spec.getAnnotation(AsyncCompletion)?.numActions() ?: 1
         spec.allFeatures*.featureMethod.each {
             def runOn = it.getAnnotation(RunOn)?.value() ?: specRunOn
