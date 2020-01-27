@@ -96,7 +96,6 @@ class MindisVertxApplicationSpec extends Specification {
         mindisVertxApplication.applicationBeanContext == appCtx
 
         and: 'bean contexts are created for each verticle'
-        1 * appCtx.getBean(Vertx) >> vertx
         1 * mindisVertxApplication.getVerticlesProducers() >> verticleProducers
         1 * verticleBeanCtxBuilder1.properties([(PROP_IS_APP_BEAN_CTX): false]) >> verticleBeanCtxBuilder1
         1 * verticleBeanCtxBuilder1.start() >> verticleBeanCtx1
@@ -106,15 +105,16 @@ class MindisVertxApplicationSpec extends Specification {
         and: 'app beans are injected into each bean context'
         2 * appCtx.getBean(Vertx) >> vertx
         1 * verticleBeanCtx1.registerSingleton(ApplicationContext, appCtx, Qualifiers.byStereotype(AppBean))
-        1 * verticleBeanCtx1.registerSingleton(Vertx, vertx)
+        1 * verticleBeanCtx1.registerSingleton(Vertx, vertx, Qualifiers.byStereotype(AppBean))
         1 * verticleBeanCtx2.registerSingleton(ApplicationContext, appCtx, Qualifiers.byStereotype(AppBean))
-        1 * verticleBeanCtx2.registerSingleton(Vertx, vertx)
+        1 * verticleBeanCtx2.registerSingleton(Vertx, vertx, Qualifiers.byStereotype(AppBean))
 
         and: 'verticle bean contexts are assigned to verticle producers'
         verticleProducers[0].verticleBeanCtx in [verticleBeanCtx1, verticleBeanCtx2]
         verticleProducers[1].verticleBeanCtx in [verticleBeanCtx1, verticleBeanCtx2]
 
         and: 'verticles are deployed'
+        2 * appCtx.getBean(Vertx) >> vertx
         1 * vertx.rxDeployVerticle(_ as Supplier<Verticle>, _ as DeploymentOptions)
                 >> Single.just(depIds[0])
         1 * vertx.rxDeployVerticle(_ as Supplier<Verticle>, _ as DeploymentOptions)

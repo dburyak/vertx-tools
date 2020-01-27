@@ -10,6 +10,7 @@ import io.micronaut.context.annotation.Primary
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.reactivex.Completable
 import io.vertx.reactivex.core.AbstractVerticle
+import io.vertx.reactivex.core.Context
 
 import javax.annotation.PostConstruct
 import javax.inject.Singleton
@@ -18,10 +19,12 @@ import javax.inject.Singleton
 @Vertx
 @Slf4j
 abstract class MindisVerticle extends AbstractVerticle implements CallReceiverDescription {
+    private volatile Context vertxContext
     protected volatile ApplicationContext verticleBeanCtx
 
     @Override
     final Completable rxStart() {
+        vertxContext = new Context(super.@context)
         Completable
                 .fromAction {
                     log.info 'starting verticle: {}', this
@@ -44,6 +47,10 @@ abstract class MindisVerticle extends AbstractVerticle implements CallReceiverDe
                 .andThen(doStop())
                 .doOnComplete { log.info 'verticle stopped: {}', this }
                 .doOnError { log.error 'failed to stop verticle: {}', this, it }
+    }
+
+    Context getVertxContext() {
+        vertxContext
     }
 
     @PostConstruct

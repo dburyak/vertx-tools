@@ -6,6 +6,7 @@ import io.vertx.core.DeploymentOptions
 import java.util.function.Supplier
 
 abstract class VerticleProducer {
+    String name = getClass().canonicalName
     ApplicationContext verticleBeanCtx
     DeploymentOptions deploymentOptions = new DeploymentOptions()
 

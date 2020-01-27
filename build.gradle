@@ -77,16 +77,17 @@ repositories {
 
 sourceSets {
     integrationTest {
-        compileClasspath += main.output + test.output
-        runtimeClasspath += main.output + test.output
+        compileClasspath += main.output
+        runtimeClasspath += main.output
     }
 }
 
 configurations {
-    integrationTestApi.extendsFrom testApi
-    integrationTestImplementation.extendsFrom testImplementation
-    integrationTestCompileOnly.extendsFrom testCompileOnly
-    integrationTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+    integrationTestApi.extendsFrom api, testApi
+    integrationTestImplementation.extendsFrom implementation, testImplementation
+    integrationTestCompileOnly.extendsFrom compileOnly, testCompileOnly
+    integrationTestRuntimeOnly.extendsFrom runtimeOnly, testRuntimeOnly
+    integrationTestAnnotationProcessor.extendsFrom annotationProcessor, testAnnotationProcessor
 }
 
 dependencies {
