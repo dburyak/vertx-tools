@@ -82,6 +82,14 @@ class CallDispatcherEBImpl implements CallDispatcher {
         call rcv, action, null, opts
     }
 
+    Completable call(String rcv, String action, def args = null, Map<String, String> headers) {
+        def opts = new DeliveryOptions().tap {
+            it.he
+        }
+
+        call rcv, action, args, opts
+    }
+
     @Override
     <R> Maybe<R> request(String rcv, String action, def args = null, DeliveryOptions opts = null) {
         Single

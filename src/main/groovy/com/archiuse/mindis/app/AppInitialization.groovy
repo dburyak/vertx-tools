@@ -5,7 +5,12 @@ import com.archiuse.mindis.di.EventLoop
 import com.archiuse.mindis.di.Worker
 import groovy.util.logging.Slf4j
 import io.micronaut.context.annotation.Context
+import io.reactivex.Completable
+import io.reactivex.Flowable
+import io.reactivex.Maybe
+import io.reactivex.Observable
 import io.reactivex.Scheduler
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.plugins.RxJavaPlugins
@@ -16,6 +21,14 @@ import io.vertx.core.json.JsonObject
 
 import javax.annotation.PostConstruct
 import javax.inject.Inject
+import java.time.Duration
+
+import static java.util.concurrent.TimeUnit.DAYS
+import static java.util.concurrent.TimeUnit.HOURS
+import static java.util.concurrent.TimeUnit.MILLISECONDS
+import static java.util.concurrent.TimeUnit.MINUTES
+import static java.util.concurrent.TimeUnit.NANOSECONDS
+import static java.util.concurrent.TimeUnit.SECONDS
 
 @Context
 @AppBean
@@ -38,6 +51,7 @@ class AppInitialization {
         initMapMetaClass()
         initBufferMetaClass()
         initCompositeDisposableMetaClass()
+        initRxMetaClasses()
         log.info 'application initialized'
     }
 
@@ -100,6 +114,44 @@ class AppInitialization {
                 new DeliveryOptions(new JsonObject(delegate))
             } else {
                 defaultAsType.invoke(delegate, type)
+            }
+        }
+    }
+
+    private void initRxMetaClasses() {
+        log.debug 'init MetaClass: RxClasses'
+        Single.metaClass.delay = rxDelayWithDuration
+        Completable.metaClass.delay = rxDelayWithDuration
+        Observable.metaClass.delay = rxDelayWithDuration
+        Flowable.metaClass.delay = rxDelayWithDuration
+        Maybe.metaClass.delay = rxDelayWithDuration
+    }
+
+    private Closure getRxDelayWithDuration() {
+        return { Duration d ->
+            if (d.zero) {
+                return delegate
+            }
+            if (d.negative) {
+                throw new IllegalArgumentException('can\'t have a delay with negative duration')
+            }
+            def nPart = d.toNanosPart()
+            def toMillis = d.toMillis()
+            def nanosDiv = nPart.intdiv 1000000
+            def nanosMod = nPart % 1000000
+            def isNanosOnly = nanosMod && (nanosDiv as Long == toMillis)
+            if (isNanosOnly) {
+                delegate.delay(d.toNanos(), NANOSECONDS)
+            } else if (d.toMillisPart()) {
+                delegate.delay(d.toMillis(), MILLISECONDS)
+            } else if (d.toSecondsPart()) {
+                delegate.delay(d.toSeconds(), SECONDS)
+            } else if (d.toMinutesPart()) {
+                delegate.delay(d.toMinutes(), MINUTES)
+            } else if (d.toHoursPart()) {
+                delegate.delay(d.toHours(), HOURS)
+            } else if (d.toDays()) {
+                delegate.delay(d.toDays(), DAYS)
             }
         }
     }

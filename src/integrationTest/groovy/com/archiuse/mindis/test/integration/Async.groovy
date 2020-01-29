@@ -105,5 +105,31 @@ class Async {
         }
         !timeout ? result : result.timeout(timeout.toMillis(), MILLISECONDS)
     }
+
+    void doAssert(Closure<Void> assertions) {
+        try {
+            assertions()
+        } catch (e) {
+            fail e
+        }
+    }
+
+    void doAssertAndMarkStepDone(Closure<Void> assertions) {
+        try {
+            assertions()
+            stepDone()
+        } catch (e) {
+            fail e
+        }
+    }
+
+    void doAssertAndComplete(Closure<Void> assertions) {
+        try {
+            assertions()
+            complete()
+        } catch (e) {
+            fail e
+        }
+    }
 }
 
