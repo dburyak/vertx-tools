@@ -82,11 +82,15 @@ class CallDispatcherEBImpl implements CallDispatcher {
         call rcv, action, null, opts
     }
 
-    Completable call(String rcv, String action, def args = null, Map<String, String> headers) {
-        def opts = new DeliveryOptions().tap {
-            it.he
+    Completable call(String rcv, String action, def args = null, Map<String, ?> headers) {
+        def opts = new DeliveryOptions()
+        headers.each { k, v ->
+            if (v instanceof List) {
+                v.each { opts.addHeader k, it as String }
+            } else {
+                opts.addHeader k, v as String
+            }
         }
-
         call rcv, action, args, opts
     }
 
@@ -113,7 +117,7 @@ class CallDispatcherEBImpl implements CallDispatcher {
                     opts.codecName = ebMsgCodec.name()
                     eventBus.rxRequest(addr, args, opts)
                             .map { responseMsg ->
-                                responseMsg.body() ?: NO_RESPONSE_BODY
+                                responseMsg.body() != null ? responseMsg.body() : NO_RESPONSE_BODY
                             }
                             .toMaybe()
                             .filter { it != NO_RESPONSE_BODY }
@@ -205,13 +209,13 @@ class CallDispatcherEBImpl implements CallDispatcher {
                 ebAddr[name] = addr
                 def type = ServiceType.byTypeName(recordMap.type)
                 serviceTypes[name] = type
-                log.debug 'register EB service: name={}, type={}, ebAddr={}', name, type, addr
+                log.debug 'register discovered EB service: name={}, type={}, ebAddr={}', name, type, addr
                 break
             case ['DOWN', 'OUT_OF_SERVICE']:
                 def name = recordMap.name
                 def addr = ebAddr.remove name
                 def type = serviceTypes.remove name
-                log.debug 'unregister EB service: name={}, type={}, ebAddr={}', name, type, addr
+                log.debug 'unregister discovered EB service: name={}, type={}, ebAddr={}', name, type, addr
                 break
             default:
                 throw new IllegalArgumentException('unexpected service update status : ' + recordMap.status)

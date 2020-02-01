@@ -43,7 +43,7 @@ class CallReceiverEBImpl implements CallReceiver {
 
     @Override
     Single<Disposable> onCall(String rcv, String action, @ClosureParams(value = SimpleType,
-            options = ['java.lang.Object', 'java.util.Map<java.lang.String, java.util.List>'])
+            options = ['java.lang.Object', 'java.util.Map<java.lang.String, java.util.List<String>>'])
             Closure<Void> doOnCall) {
 
         Single

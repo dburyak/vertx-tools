@@ -35,7 +35,7 @@ abstract class MindisVerticle extends AbstractVerticle implements CallReceiverDe
                     verticleBeanCtx.refreshBean(verticleBeanCtx.findBeanRegistration(verticleBeanCtx).get().identifier)
                     verticleBeanCtx.refreshBean(verticleBeanCtx.findBeanRegistration(this).get().identifier)
                 }
-                .andThen(doStart())
+                .andThen(Completable.defer { doStart() })
                 .doOnComplete { log.info 'verticle started: {}', this }
                 .doOnError { log.error 'failed to start verticle: {}', this, it }
     }
@@ -55,7 +55,9 @@ abstract class MindisVerticle extends AbstractVerticle implements CallReceiverDe
 
     @PostConstruct
     protected void init(ServiceHelper serviceHelper) {
-        receiverName = this.class.canonicalName
+        if (!receiverName) {
+            receiverName = this.class.canonicalName
+        }
         actions << serviceHelper.healthAction
         actions << serviceHelper.readinessAction
     }

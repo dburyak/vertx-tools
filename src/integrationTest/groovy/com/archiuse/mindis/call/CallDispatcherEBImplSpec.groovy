@@ -1,14 +1,20 @@
 package com.archiuse.mindis.call
 
+import com.archiuse.mindis.VerticleProducer
 import com.archiuse.mindis.test.integration.Async
 import com.archiuse.mindis.test.integration.AsyncCompletion
+import com.archiuse.mindis.test.integration.StackVerticle
 import com.archiuse.mindis.test.integration.VertxIntegrationSpec
 import groovy.util.logging.Slf4j
+import io.reactivex.Maybe
 import spock.lang.Timeout
 
 import javax.inject.Inject
 import java.time.Duration
 
+import static com.archiuse.mindis.test.integration.StackVerticle.ACTION_POP
+import static com.archiuse.mindis.test.integration.StackVerticle.ACTION_PUSH
+import static com.archiuse.mindis.test.integration.StackVerticle.ACTION_SIZE
 import static java.util.concurrent.TimeUnit.SECONDS
 
 /**
@@ -20,7 +26,8 @@ import static java.util.concurrent.TimeUnit.SECONDS
 @Slf4j
 @Timeout(value = 3, unit = SECONDS)
 class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
-    private static Duration SERVICE_DISCOVERY_DELAY = Duration.ofMillis 10
+    private static Duration SERVICE_DISCOVERY_DELAY = Duration.ofMillis 20
+    private static Duration CALL_ASYNC_COMPLETION_DELAY = Duration.ofMillis 20
 
     @Inject
     CallDispatcherEBImpl callDispatcher
@@ -29,7 +36,7 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
     CallReceiverEBImpl callReceiver
 
     @AsyncCompletion(numActions = 2)
-    def 'call the same verticle service works correctly'(Async async) {
+    def 'call with no headers to the same verticle service passes data correctly'(Async async) {
         given: 'CALL service registered on this test verticle'
         def rcv = integrationTestVerticle.receiverName
         def action = 'action'
@@ -54,5 +61,95 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
                 }, {
                     async.fail it
                 })
+    }
+
+    @AsyncCompletion(numActions = 2)
+    def 'call with headers to the same verticle service passes data and headers correctly'(Async async) {
+        given: 'CALL service registered on this test verticle'
+        def rcv = integrationTestVerticle.receiverName
+        def action = 'action'
+        def sentValue = 'value'
+        def sentHeaders = [one: '1', two: ['hello', 'world'], three: Duration.ofSeconds(7) as String]
+        callReceiver
+                .onCall(rcv, action) { receivedValue, receivedHeaders ->
+                    async.doAssertAndMarkStepDone {
+                        // then: call handler received correct value
+                        assert receivedValue == sentValue
+                        assert receivedHeaders == sentHeaders
+                    }
+                }
+                .delay(SERVICE_DISCOVERY_DELAY)
+                .flatMapCompletable { reg ->
+                    // when: do CALL service from this verticle and send value and headers
+                    callDispatcher.call(rcv, action, sentValue, sentHeaders)
+                            .delay(SERVICE_DISCOVERY_DELAY)
+                            .doOnTerminate { reg.dispose() }
+                }
+                .subscribe({
+                    async.stepDone()
+                }, {
+                    async.fail it
+                })
+    }
+
+    @AsyncCompletion(numActions = 6)
+    def 'call with no headers to the other verticle service passes data correctly'(Async async) {
+        given: 'stack verticle deployed'
+        def stack = 'StackVerticle'
+        def stackProducer = { new StackVerticle().tap { receiverName = stack } } as VerticleProducer
+        stackProducer.name = 'StackVerticleProducer'
+        def value = 'value'
+        app
+                .deployVerticle(stackProducer)
+                .delay(SERVICE_DISCOVERY_DELAY)
+                .flatMapCompletable { stackDeploymentId ->
+                    def doTests = callDispatcher
+                            .request(stack, ACTION_SIZE)
+                            .flatMap { initialStackSize ->
+                                async.stepDone()
+
+                                // when: 'CALL push value to stack'
+                                callDispatcher
+                                        .call(stack, ACTION_PUSH, value)
+                                        .delay(CALL_ASYNC_COMPLETION_DELAY)
+                                        .doOnComplete { async.stepDone() }
+
+                                // then: 'stack size was incremented'
+                                        .andThen(callDispatcher.request(stack, ACTION_SIZE))
+                                        .doOnSuccess {
+                                            assert it == initialStackSize + 1
+                                            async.stepDone()
+                                        }
+
+                                // when: 'pop value via REQUEST from stack verticle'
+                                        .flatMap { callDispatcher.request(stack, ACTION_POP) }
+
+                                // then: 'popped value is correct'
+                                        .doOnSuccess {
+                                            assert it == value
+                                            async.stepDone()
+                                        }
+
+                                // and: 'stack size was decremented'
+                                        .flatMap { callDispatcher.request(stack, ACTION_SIZE) }
+                                        .doOnSuccess {
+                                            assert it == initialStackSize
+                                            async.stepDone()
+                                        }
+                            }
+
+                    def undeployStask = app.undeployVerticle(stackDeploymentId).toMaybe()
+
+                    Maybe.concatDelayError([doTests, undeployStask]).ignoreElements()
+                }
+                .subscribe({
+                    async.stepDone()
+                }, {
+                    async.fail it
+                })
+    }
+
+    def 'publish to the same verticle service topic works correctly'() {
+        given: 'te'
     }
 }

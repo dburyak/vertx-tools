@@ -34,14 +34,20 @@ class MapHelper {
         multiMap
     }
 
-    Map<String, List<String>> toMap(MultiMap multiMap) {
-        multiMap.entries().inject(new LinkedHashMap<String, List<String>>()) { resMap, e ->
-            resMap.computeIfAbsent(e.key) { [] } << e.value
+    Map<String, ?> toMap(MultiMap multiMap) {
+        multiMap.entries().inject(new LinkedHashMap<String, Object>()) { resMap, e ->
+            resMap.merge e.key, e.value, { vOld, vNew ->
+                if (vOld instanceof List) {
+                    vOld << vNew
+                } else {
+                    [vOld, vNew]
+                }
+            }
             resMap
         }
     }
 
-    Map<String, List<String>> toMap(io.vertx.reactivex.core.MultiMap multiMap) {
+    Map<String, ?> toMap(io.vertx.reactivex.core.MultiMap multiMap) {
         toMap multiMap.delegate
     }
 

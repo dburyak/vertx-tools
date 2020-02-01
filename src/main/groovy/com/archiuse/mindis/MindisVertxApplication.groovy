@@ -128,7 +128,7 @@ abstract class MindisVertxApplication {
     final Single<String> deployVerticle(VerticleProducer verticleProducer) {
         Single
                 .fromCallable {
-                    log.info 'deploying mindis verticle: verticleName={}', verticleProducer.name
+                    log.info 'deploying mindis verticle: verticleProducerName={}', verticleProducer.name
                     def mainCtx = applicationBeanContext
                     if (!mainCtx) {
                         log.error 'can not deploy verticle, application is not running: appState={}', appState
@@ -147,7 +147,7 @@ abstract class MindisVertxApplication {
                 .flatMap { ApplicationContext verticleCtx ->
                     def mainCtx = applicationBeanContext
                     def vertx = mainCtx.getBean(Vertx)
-                    log.debug 'deploying vertx verticle: verticleName={}, verticleCtx={}',
+                    log.debug 'deploying vertx verticle: verticleProducerName={}, verticleCtx={}',
                             verticleProducer.name, verticleCtx
                     verticleProducer.verticleBeanCtx = verticleCtx
                     vertx.rxDeployVerticle(verticleProducer.verticleSupplier,
