@@ -96,7 +96,7 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
     def 'call with no headers to the other verticle service passes data correctly'(Async async) {
         given: 'stack verticle deployed'
         def stack = 'StackVerticle'
-        def stackProducer = { new StackVerticle().tap { receiverName = stack } } as VerticleProducer
+        def stackProducer = { new StackVerticle(receiverName: stack) } as VerticleProducer
         stackProducer.name = 'StackVerticleProducer'
         def value = 'value'
         app
@@ -138,9 +138,67 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
                                         }
                             }
 
-                    def undeployStask = app.undeployVerticle(stackDeploymentId).toMaybe()
+                    def undeployStack = app.undeployVerticle(stackDeploymentId).toMaybe()
 
-                    Maybe.concatDelayError([doTests, undeployStask]).ignoreElements()
+                    Maybe.concatDelayError([doTests, undeployStack]).ignoreElements()
+                }
+                .subscribe({
+                    async.stepDone()
+                }, {
+                    async.fail it
+                })
+    }
+
+    @AsyncCompletion(numActions = 6)
+    def 'call with headers to the other verticle passes data correctly'(Async async) {
+        given: ''
+        def stack = 'StackVerticle'
+        def stackProducer = { new StackVerticle(receiverName: stack) } as VerticleProducer
+        stackProducer.name = 'StackVerticleProducer'
+        def value = 'value'
+        def suffix = '_suffix'
+        app
+                .deployVerticle(stackProducer)
+                .delay(SERVICE_DISCOVERY_DELAY)
+                .flatMapCompletable { stackDeploymentId ->
+                    def doTests = callDispatcher
+                            .request(stack, ACTION_SIZE)
+                            .flatMap { initialStackSize ->
+                                async.stepDone()
+
+                                // when: 'CALL push value to stack'
+                                callDispatcher
+                                        .call(stack, ACTION_PUSH, value, [suffix: suffix])
+                                        .delay(CALL_ASYNC_COMPLETION_DELAY)
+                                        .doOnComplete { async.stepDone() }
+
+                                // then: 'stack size was incremented'
+                                        .andThen(callDispatcher.request(stack, ACTION_SIZE))
+                                        .doOnSuccess {
+                                            assert it == initialStackSize + 1
+                                            async.stepDone()
+                                        }
+
+                                // when: 'pop value via REQUEST from stack verticle'
+                                        .flatMap { callDispatcher.request(stack, ACTION_POP) }
+
+                                // then: 'popped value is correct'
+                                        .doOnSuccess {
+                                            assert it == value + suffix
+                                            async.stepDone()
+                                        }
+
+                                // and: 'stack size was decremented'
+                                        .flatMap { callDispatcher.request(stack, ACTION_SIZE) }
+                                        .doOnSuccess {
+                                            assert it == initialStackSize
+                                            async.stepDone()
+                                        }
+                            }
+
+                    def undeployStack = app.undeployVerticle(stackDeploymentId).toMaybe()
+
+                    Maybe.concatDelayError([doTests, undeployStack]).ignoreElements()
                 }
                 .subscribe({
                     async.stepDone()

@@ -39,8 +39,12 @@ class StackVerticle extends MindisVerticle {
     private Completable registerActionPush() {
         callReceiver
                 .onCall(receiverName, ACTION_PUSH) { args, headers ->
-                    log.debug 'pushing value to stack: val={}', args
-                    stack.push args
+                    log.debug 'pushing value to stack: val={}, suffix={}', args, headers?.suffix
+                    if (headers?.suffix) {
+                        stack.push args + headers.suffix
+                    } else {
+                        stack.push args
+                    }
                 }
                 .doOnSuccess { actionRegistrations << it }
                 .ignoreElement()

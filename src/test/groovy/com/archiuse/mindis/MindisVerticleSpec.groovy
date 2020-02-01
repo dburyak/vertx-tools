@@ -25,17 +25,7 @@ class MindisVerticleSpec extends VertxRxJavaSpec {
         mindisVerticle.@verticleBeanCtx = verticleBeanCtx
     }
 
-    def 'rxStart calls doStart'() {
-        when: 'call rxStart'
-        mindisVerticle.rxStart().test().await()
-
-        then: 'doStart is called'
-        noExceptionThrown()
-        1 * mindisVerticle.doStart()
-
-    }
-
-    def 'rxStart inits bean context'() {
+    def 'rxStart inits bean context and calls doStart'() {
         when: 'call rxStart'
         def res = mindisVerticle.rxStart().test().await()
 
@@ -54,6 +44,8 @@ class MindisVerticleSpec extends VertxRxJavaSpec {
         1 * verticleBeanCtx.findBeanRegistration(mindisVerticle) >> Optional.of(verticleBeanReg)
         1 * verticleBeanReg.identifier >> verticleBeanId
         1 * verticleBeanCtx.refreshBean(verticleBeanId)
+
+        1 * mindisVerticle.doStart() >> Completable.complete()
 
         0 * mindisVerticle.doStop()
     }

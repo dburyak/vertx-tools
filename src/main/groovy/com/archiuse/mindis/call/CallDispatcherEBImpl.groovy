@@ -117,7 +117,8 @@ class CallDispatcherEBImpl implements CallDispatcher {
                     opts.codecName = ebMsgCodec.name()
                     eventBus.rxRequest(addr, args, opts)
                             .map { responseMsg ->
-                                responseMsg.body() != null ? responseMsg.body() : NO_RESPONSE_BODY
+                                def msgBody = responseMsg.body()
+                                msgBody != null ? msgBody : NO_RESPONSE_BODY
                             }
                             .toMaybe()
                             .filter { it != NO_RESPONSE_BODY }
