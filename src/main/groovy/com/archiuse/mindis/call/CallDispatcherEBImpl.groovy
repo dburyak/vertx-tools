@@ -82,15 +82,9 @@ class CallDispatcherEBImpl implements CallDispatcher {
         call rcv, action, null, opts
     }
 
-    Completable call(String rcv, String action, def args = null, Map<String, ?> headers) {
-        def opts = new DeliveryOptions()
-        headers.each { k, v ->
-            if (v instanceof List) {
-                v.each { opts.addHeader k, it as String }
-            } else {
-                opts.addHeader k, v as String
-            }
-        }
+    @Override
+    Completable call(String rcv, String action, def args, Map<String, ?> headers) {
+        def opts = buildDeliveryOptions headers
         call rcv, action, args, opts
     }
 
@@ -132,6 +126,12 @@ class CallDispatcherEBImpl implements CallDispatcher {
     }
 
     @Override
+    <T> Maybe<T> request(String rcv, String action, def args, Map<String, ?> headers) {
+        def opts = buildDeliveryOptions headers
+        call rcv, action, args, opts
+    }
+
+    @Override
     Completable publish(String rcv, String action, def args = null, DeliveryOptions opts = null) {
         Completable.fromAction {
             def service = ebServiceImplHelper.buildEbServiceName rcv, action
@@ -155,6 +155,12 @@ class CallDispatcherEBImpl implements CallDispatcher {
     @Override
     Completable publish(String rcv, String action, DeliveryOptions opts) {
         publish rcv, action, null, opts
+    }
+
+    @Override
+    Completable publish(String rcv, String action, def args, Map<String, ?> headers) {
+        def opts = buildDeliveryOptions headers
+        publish rcv, action, args, opts
     }
 
     @PostConstruct
@@ -220,6 +226,18 @@ class CallDispatcherEBImpl implements CallDispatcher {
                 break
             default:
                 throw new IllegalArgumentException('unexpected service update status : ' + recordMap.status)
+        }
+    }
+
+    private DeliveryOptions buildDeliveryOptions(Map<String, ?> headers) {
+        new DeliveryOptions().tap {
+            headers.each { k, v ->
+                if (v instanceof List) {
+                    v.each { addHeader k, it as String }
+                } else {
+                    addHeader k, v as String
+                }
+            }
         }
     }
 }

@@ -45,6 +45,8 @@ interface CallDispatcher {
      */
     Completable call(String rcv, String action, def args)
 
+    Completable call(String rcv, String action, def args, Map<String, ?> headers)
+
     /**
      * Point-to-point actor action call with arguments.
      * <p>Action is called asynchronously and is completed as soon as it is delivered successfully to the receiver.
@@ -102,6 +104,8 @@ interface CallDispatcher {
      */
     def <T> Maybe<T> request(String rcv, String action, def args, DeliveryOptions opts)
 
+    def <T> Maybe<T> request(String rcv, String action, def args, Map<String, ?> headers)
+
     /**
      * Publish an event to all registered subscribers.
      * <p>This is one-to-many event communication. This type of call
@@ -145,4 +149,6 @@ interface CallDispatcher {
      * @return call status
      */
     Completable publish(String rcv, String action, def args, DeliveryOptions opts)
+
+    Completable publish(String rcv, String action, def args, Map<String, ?> headers)
 }

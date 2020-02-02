@@ -23,7 +23,7 @@ class StackVerticle extends MindisVerticle {
     CallReceiverEBImpl callReceiver
 
     @PostConstruct
-    void init() {
+    protected void init() {
         actions.addAll ACTION_PUSH, ACTION_POP
     }
 

@@ -7,6 +7,8 @@ import com.archiuse.mindis.test.integration.StackVerticle
 import com.archiuse.mindis.test.integration.VertxIntegrationSpec
 import groovy.util.logging.Slf4j
 import io.reactivex.Maybe
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
 import spock.lang.Timeout
 
 import javax.inject.Inject
@@ -151,7 +153,7 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
 
     @AsyncCompletion(numActions = 6)
     def 'call with headers to the other verticle passes data correctly'(Async async) {
-        given: ''
+        given: 'stack verticle deployed'
         def stack = 'StackVerticle'
         def stackProducer = { new StackVerticle(receiverName: stack) } as VerticleProducer
         stackProducer.name = 'StackVerticleProducer'
@@ -207,7 +209,129 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
                 })
     }
 
-    def 'publish to the same verticle service topic works correctly'() {
-        given: 'te'
+    @AsyncCompletion(numActions = 2)
+    def 'publish to the same verticle service topic publishes data correctly'(Async async) {
+        given: 'PUBLISH service registered on this verticle'
+        def rcv = integrationTestVerticle.receiverName
+        def action = 'action'
+        def sentValue = 'value'
+        callReceiver
+                .subscribe(rcv, action) { receivedValue, headers ->
+                    async.doAssertAndMarkStepDone {
+                        // then: subscription handler received correct value
+                        assert receivedValue == sentValue
+                        assert !headers
+                    }
+                }
+                .delay(SERVICE_DISCOVERY_DELAY)
+                .flatMapCompletable { reg ->
+                    // when: do PUBLISH value from this verticle
+                    callDispatcher.publish(rcv, action, sentValue)
+                            .delay(SERVICE_DISCOVERY_DELAY)
+                            .doOnTerminate { reg.dispose() }
+                }
+                .subscribe({
+                    async.stepDone()
+                }, {
+                    async.fail it
+                })
+    }
+
+    @AsyncCompletion(numActions = 4)
+    def 'publish to the same verticle service topic publishes data correctly for three subscribers'(Async async) {
+        given: 'PUBLISH service registered on this verticle'
+        def rcv = integrationTestVerticle.receiverName
+        def action = 'action'
+        def sentValue = 'value'
+
+        Observable
+                .range(0, 3)
+                .flatMapSingle {
+                    callReceiver.subscribe(rcv, action) { receivedValue, headers ->
+                        async.doAssertAndMarkStepDone {
+                            // then: subscription handler received correct value
+                            assert receivedValue == sentValue
+                            assert !headers
+                        }
+                    }
+                }
+                .toList()
+                .map { new CompositeDisposable(it) }
+                .delay(SERVICE_DISCOVERY_DELAY)
+                .flatMapCompletable { reg ->
+                    // when: do PUBLISH value from this verticle
+                    callDispatcher.publish(rcv, action, sentValue)
+                            .delay(SERVICE_DISCOVERY_DELAY)
+                            .doOnTerminate { reg.dispose() }
+                }
+                .subscribe({
+                    async.stepDone()
+                }, {
+                    async.fail it
+                })
+    }
+
+    @AsyncCompletion(numActions = 2)
+    def 'publish with headers to the same verticle service topic publishes data correctly'(Async async) {
+        given: 'PUBLISH service registered on this verticle'
+        def rcv = integrationTestVerticle.receiverName
+        def action = 'action'
+        def sentValue = 'value'
+        def sentHeaders = [one: '1', two: ['hello', 'world'], three: Duration.ofSeconds(7) as String]
+        callReceiver
+                .subscribe(rcv, action) { receivedValue, receivedHeaders ->
+                    async.doAssertAndMarkStepDone {
+                        // then: subscription handler received correct value
+                        assert receivedValue == sentValue
+                        assert receivedHeaders == sentHeaders
+                    }
+                }
+                .delay(SERVICE_DISCOVERY_DELAY)
+                .flatMapCompletable { reg ->
+                    // when: do PUBLISH value from this verticle
+                    callDispatcher.publish(rcv, action, sentValue, sentHeaders)
+                            .delay(SERVICE_DISCOVERY_DELAY)
+                            .doOnTerminate { reg.dispose() }
+                }
+                .subscribe({
+                    async.stepDone()
+                }, {
+                    async.fail it
+                })
+    }
+
+    @AsyncCompletion(numActions = 4)
+    def 'publish with headers to the same verticle service topic publishes data correctly for three subscribers'(
+            Async async) {
+        given: 'PUBLISH service registered on this verticle'
+        def rcv = integrationTestVerticle.receiverName
+        def action = 'action'
+        def sentValue = 'value'
+        def sentHeaders = [one: '1', two: ['hello', 'world'], three: Duration.ofSeconds(7) as String]
+        Observable
+                .range(0, 3)
+                .flatMapSingle {
+                    callReceiver.subscribe(rcv, action) { receivedValue, receivedHeaders ->
+                        async.doAssertAndMarkStepDone {
+                            // then: subscription handler received correct value
+                            assert receivedValue == sentValue
+                            assert receivedHeaders == sentHeaders
+                        }
+                    }
+                }
+                .toList()
+                .map { new CompositeDisposable(it) }
+                .delay(SERVICE_DISCOVERY_DELAY)
+                .flatMapCompletable { reg ->
+                    // when: do PUBLISH value from this verticle
+                    callDispatcher.publish(rcv, action, sentValue, sentHeaders)
+                            .delay(SERVICE_DISCOVERY_DELAY)
+                            .doOnTerminate { reg.dispose() }
+                }
+                .subscribe({
+                    async.stepDone()
+                }, {
+                    async.fail it
+                })
     }
 }
