@@ -1,11 +1,15 @@
-package com.archiuse.mindis.call
+package com.archiuse.mindis.test.integration.call
 
 import com.archiuse.mindis.VerticleProducer
+import com.archiuse.mindis.call.CallDispatcherEBImpl
+import com.archiuse.mindis.call.CallReceiverEBImpl
 import com.archiuse.mindis.test.integration.Async
 import com.archiuse.mindis.test.integration.AsyncCompletion
 import com.archiuse.mindis.test.integration.StackVerticle
+import com.archiuse.mindis.test.integration.SystemInfoVerticle
 import com.archiuse.mindis.test.integration.VertxIntegrationSpec
 import groovy.util.logging.Slf4j
+import io.reactivex.Completable
 import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
@@ -14,9 +18,8 @@ import spock.lang.Timeout
 import javax.inject.Inject
 import java.time.Duration
 
-import static com.archiuse.mindis.test.integration.StackVerticle.ACTION_POP
-import static com.archiuse.mindis.test.integration.StackVerticle.ACTION_PUSH
-import static com.archiuse.mindis.test.integration.StackVerticle.ACTION_SIZE
+import static com.archiuse.mindis.test.integration.SystemInfoVerticle.ACTION_CRITICAL_ERROR
+import static com.archiuse.mindis.test.integration.SystemInfoVerticle.TOPIC_CRITICAL_ERROR
 import static java.util.concurrent.TimeUnit.SECONDS
 
 /**
@@ -106,37 +109,40 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
                 .delay(SERVICE_DISCOVERY_DELAY)
                 .flatMapCompletable { stackDeploymentId ->
                     def doTests = callDispatcher
-                            .request(stack, ACTION_SIZE)
+                            .request(stack, StackVerticle.ACTION_SIZE)
                             .flatMap { initialStackSize ->
                                 async.stepDone()
 
                                 // when: 'CALL push value to stack'
                                 callDispatcher
-                                        .call(stack, ACTION_PUSH, value)
+                                        .call(stack, StackVerticle.ACTION_PUSH, value)
                                         .delay(CALL_ASYNC_COMPLETION_DELAY)
                                         .doOnComplete { async.stepDone() }
 
                                 // then: 'stack size was incremented'
-                                        .andThen(callDispatcher.request(stack, ACTION_SIZE))
-                                        .doOnSuccess {
-                                            assert it == initialStackSize + 1
-                                            async.stepDone()
+                                        .andThen(callDispatcher.request(stack, StackVerticle.ACTION_SIZE))
+                                        .doOnSuccess { stackSize ->
+                                            async.doAssertAndMarkStepDone {
+                                                assert stackSize == initialStackSize + 1
+                                            }
                                         }
 
                                 // when: 'pop value via REQUEST from stack verticle'
-                                        .flatMap { callDispatcher.request(stack, ACTION_POP) }
+                                        .flatMap { callDispatcher.request(stack, StackVerticle.ACTION_POP) }
 
                                 // then: 'popped value is correct'
-                                        .doOnSuccess {
-                                            assert it == value
-                                            async.stepDone()
+                                        .doOnSuccess { poppedValue ->
+                                            async.doAssertAndMarkStepDone {
+                                                assert poppedValue == value
+                                            }
                                         }
 
                                 // and: 'stack size was decremented'
-                                        .flatMap { callDispatcher.request(stack, ACTION_SIZE) }
-                                        .doOnSuccess {
-                                            assert it == initialStackSize
-                                            async.stepDone()
+                                        .flatMap { callDispatcher.request(stack, StackVerticle.ACTION_SIZE) }
+                                        .doOnSuccess { stackSize ->
+                                            async.doAssertAndMarkStepDone {
+                                                assert stackSize == initialStackSize
+                                            }
                                         }
                             }
 
@@ -164,37 +170,40 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
                 .delay(SERVICE_DISCOVERY_DELAY)
                 .flatMapCompletable { stackDeploymentId ->
                     def doTests = callDispatcher
-                            .request(stack, ACTION_SIZE)
+                            .request(stack, StackVerticle.ACTION_SIZE)
                             .flatMap { initialStackSize ->
                                 async.stepDone()
 
                                 // when: 'CALL push value to stack'
                                 callDispatcher
-                                        .call(stack, ACTION_PUSH, value, [suffix: suffix])
+                                        .call(stack, StackVerticle.ACTION_PUSH, value, [suffix: suffix])
                                         .delay(CALL_ASYNC_COMPLETION_DELAY)
                                         .doOnComplete { async.stepDone() }
 
                                 // then: 'stack size was incremented'
-                                        .andThen(callDispatcher.request(stack, ACTION_SIZE))
-                                        .doOnSuccess {
-                                            assert it == initialStackSize + 1
-                                            async.stepDone()
+                                        .andThen(callDispatcher.request(stack, StackVerticle.ACTION_SIZE))
+                                        .doOnSuccess { stackSize ->
+                                            async.doAssertAndMarkStepDone {
+                                                assert stackSize == initialStackSize + 1
+                                            }
                                         }
 
                                 // when: 'pop value via REQUEST from stack verticle'
-                                        .flatMap { callDispatcher.request(stack, ACTION_POP) }
+                                        .flatMap { callDispatcher.request(stack, StackVerticle.ACTION_POP) }
 
                                 // then: 'popped value is correct'
-                                        .doOnSuccess {
-                                            assert it == value + suffix
-                                            async.stepDone()
+                                        .doOnSuccess { poppedValue ->
+                                            async.doAssertAndMarkStepDone {
+                                                assert poppedValue == value + suffix
+                                            }
                                         }
 
                                 // and: 'stack size was decremented'
-                                        .flatMap { callDispatcher.request(stack, ACTION_SIZE) }
-                                        .doOnSuccess {
-                                            assert it == initialStackSize
-                                            async.stepDone()
+                                        .flatMap { callDispatcher.request(stack, StackVerticle.ACTION_SIZE) }
+                                        .doOnSuccess { stackSize ->
+                                            async.doAssertAndMarkStepDone {
+                                                assert stackSize == initialStackSize
+                                            }
                                         }
                             }
 
@@ -327,6 +336,57 @@ class CallDispatcherEBImplSpec extends VertxIntegrationSpec {
                     callDispatcher.publish(rcv, action, sentValue, sentHeaders)
                             .delay(SERVICE_DISCOVERY_DELAY)
                             .doOnTerminate { reg.dispose() }
+                }
+                .subscribe({
+                    async.stepDone()
+                }, {
+                    async.fail it
+                })
+    }
+
+    @AsyncCompletion(numActions = 5)
+    def 'publish from other verticle to subscriber on this verticle publishes data correctly'(Async async) {
+        given: 'PUBLISH service registered on this verticle'
+        def sysInfo = 'sys_info'
+        def sysInfoVerticleProducer = { new SystemInfoVerticle(receiverName: sysInfo) } as VerticleProducer
+        sysInfoVerticleProducer.name = 'SystemInfoVerticleProducer'
+        def sentValue = 'value'
+        def suffix = '_suffix'
+        app
+                .deployVerticle(sysInfoVerticleProducer)
+                .delay(SERVICE_DISCOVERY_DELAY)
+
+                .flatMap { sysInfoDeploymentId ->
+                    Observable
+                            .range(0, 3)
+                            .flatMap {
+                                callReceiver
+                                        .subscribe(sysInfo, TOPIC_CRITICAL_ERROR) { msg, headers ->
+
+                                            // then: received value matches to published event
+                                            async.doAssertAndMarkStepDone {
+                                                assert msg == sentValue + suffix
+                                                assert headers == [suffix: suffix]
+                                            }
+                                        }
+                                        .toObservable()
+                            }
+                            .toList() // list of regs
+                            .map { new CompositeDisposable(it) }
+                            .map { [sysInfoDeploymentId, it] }
+                }
+                .flatMap { l ->
+
+                    // when: publish crit error event
+                    callDispatcher.call(sysInfo, ACTION_CRITICAL_ERROR, sentValue, [suffix: suffix])
+                            .doOnComplete { async.stepDone() }
+                            .toSingle { l }
+                }
+                .delay(CALL_ASYNC_COMPLETION_DELAY)
+                .flatMapCompletable { sysInfoDeploymentId, reg ->
+                    Completable
+                            .fromAction { reg.dispose() }
+                            .andThen(Completable.defer { app.undeployVerticle(sysInfoDeploymentId) })
                 }
                 .subscribe({
                     async.stepDone()

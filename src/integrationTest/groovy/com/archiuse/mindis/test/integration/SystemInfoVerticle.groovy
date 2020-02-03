@@ -2,10 +2,12 @@ package com.archiuse.mindis.test.integration
 
 import com.archiuse.mindis.MindisVerticle
 import com.archiuse.mindis.VerticleProducer
+import com.archiuse.mindis.call.CallDispatcher
 import com.archiuse.mindis.call.CallReceiver
+import groovy.util.logging.Slf4j
 import io.reactivex.Completable
 import io.reactivex.Maybe
-import io.reactivex.disposables.Disposable
+import io.reactivex.disposables.CompositeDisposable
 
 import javax.annotation.PostConstruct
 import javax.inject.Inject
@@ -15,23 +17,22 @@ import java.time.Instant
 import static java.lang.Runtime.runtime
 import static java.time.Instant.now
 
+@Slf4j
 class SystemInfoVerticle extends MindisVerticle {
     static final String ACTION_MEMORY = 'memory'
     static final String ACTION_TIME = 'system_time'
     static final String ACTION_UPTIME = 'uptime'
-    static final String ACTION_ECHO = 'echo'
-    static final String ACTION_STATIC_DATA = 'request'
-    static final String STATIC_DATA_RESPONSE = 'response'
+    static final String ACTION_CRITICAL_ERROR = 'publish_critical_error'
+    static final String TOPIC_CRITICAL_ERROR = 'critical_error'
 
-    private Disposable memoryHandlerReg
-    private Disposable systimeHandlerReg
-    private Disposable uptimeHandlerReg
-    private Disposable echoHandlerReg
-    private Disposable staticDataHandlerReg
+    private final CompositeDisposable reg = new CompositeDisposable()
     private Instant startedAt
 
     @Inject
     CallReceiver callReceiver
+
+    @Inject
+    CallDispatcher callDispatcher
 
     static VerticleProducer getProducer() {
         new Producer()
@@ -39,7 +40,7 @@ class SystemInfoVerticle extends MindisVerticle {
 
     @PostConstruct
     void init() {
-        actions.addAll ACTION_MEMORY, ACTION_TIME, ACTION_MEMORY
+        actions.addAll ACTION_MEMORY, ACTION_TIME, ACTION_MEMORY, ACTION_CRITICAL_ERROR
     }
 
     @Override
@@ -49,7 +50,7 @@ class SystemInfoVerticle extends MindisVerticle {
                 registerMemoryReqHandler(),
                 registerSystimeReqHandler(),
                 registerUptimeReqHandler(),
-                registerEchoReqHandler()
+                registerCriticalErrorCallHandler()
         ])
     }
 
@@ -58,7 +59,7 @@ class SystemInfoVerticle extends MindisVerticle {
                 .onRequest(receiverName, ACTION_MEMORY) {
                     Maybe.fromCallable { memStats }
                 }
-                .doOnSuccess { memoryHandlerReg = it }
+                .doOnSuccess { reg << it }
                 .ignoreElement()
     }
 
@@ -67,7 +68,7 @@ class SystemInfoVerticle extends MindisVerticle {
                 .onRequest(receiverName, ACTION_TIME) {
                     Maybe.fromCallable { systemTime }
                 }
-                .doOnSuccess { systimeHandlerReg = it }
+                .doOnSuccess { reg << it }
                 .ignoreElement()
     }
 
@@ -76,25 +77,17 @@ class SystemInfoVerticle extends MindisVerticle {
                 .onRequest(receiverName, ACTION_UPTIME) {
                     Maybe.fromCallable { uptime }
                 }
-                .doOnSuccess { uptimeHandlerReg = it }
+                .doOnSuccess { reg << it }
                 .ignoreElement()
     }
 
-    private Completable registerEchoReqHandler() {
+    private Completable registerCriticalErrorCallHandler() {
         callReceiver
-                .onRequest(receiverName, ACTION_ECHO) { args, headers ->
-                    Maybe.fromCallable { args }
+                .onCall(receiverName, ACTION_CRITICAL_ERROR) { msg, headers ->
+                    def pubMsg = headers?.suffix ? msg + headers.suffix : msg
+                    callDispatcher.publish(receiverName, TOPIC_CRITICAL_ERROR, pubMsg, headers).subscribe()
                 }
-                .doOnSuccess { echoHandlerReg = it }
-                .ignoreElement()
-    }
-
-    private Completable registerStaticDataHandler() {
-        callReceiver
-                .onRequest(receiverName, ACTION_STATIC_DATA) {
-                    Maybe.fromCallable { STATIC_DATA_RESPONSE }
-                }
-                .doOnSuccess { staticDataHandlerReg = it }
+                .doOnSuccess { reg << it }
                 .ignoreElement()
     }
 
