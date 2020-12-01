@@ -1,72 +1,29 @@
-buildscript {
-    repositories {
-        jcenter()
-        mavenCentral()
-    }
-}
-
 plugins {
     id 'java-library'
     id 'groovy'
     id 'maven-publish'
-
-    // annotation processing plugin (required for micronaut DI)
-    id 'net.ltgt.apt' version '0.18'
+    id 'com.palantir.git-version' version '0.12.3'
+    id 'com.dburyak.gradle.integ-test' version '0.0.3'
+    id 'io.micronaut.library' version '1.2.0'
 }
 
 ext {
-    wrapperGradleVersion = ext.gradleVersion
+    gradleWrapperVersion = ext.gradleVersion
     githubArtifactRepoOwner = 'dburyak'
     githubArtifactRepoName = project.name
-    integrationTestDirName = 'integration-test'
 }
 
-group = 'com.archiuse.mindis'
-version = '0.0.5'
-ext { isRelease = false } // defines whether "snapshot" suffix should be added to artifacts
-description = 'Mindis tools for vertx based projects'
-archivesBaseName = project.name
-
+group = 'com.dburyak.vertx.tools.core'
+version gitVersion()
+description = 'Basic tools for vertx based projects'
+ext { isRelease = versionDetails().isCleanTag }
 if (!isRelease) {
     project.version += '-SNAPSHOT'
 }
+archivesBaseName = project.name
 
-sourceCompatibility = 13
-
-// using java12 compatibility only for compatibility with spock
-// when spock for groovy3 and java13 is released, move this to java13
-targetCompatibility = 12
-
-publishing {
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/${githubArtifactRepoOwner}/${githubArtifactRepoName}")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
-                password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
-            }
-        }
-    }
-    afterEvaluate {
-        publications {
-            githubPackagesRepository(MavenPublication) {
-                groupId = project.group
-                artifactId = githubArtifactRepoName
-                version = project.version
-
-                from components.java
-                artifact tasks['sourcesJar']
-                artifact tasks['javadocJar']
-
-                pom {
-                    url.set "https://github.com/${githubArtifactRepoOwner}/${githubArtifactRepoName}"
-                    description project.description
-                }
-            }
-        }
-    }
-}
+sourceCompatibility = 15
+targetCompatibility = 15
 
 repositories {
     mavenLocal()
@@ -75,19 +32,8 @@ repositories {
     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
-sourceSets {
-    integrationTest {
-        compileClasspath += main.output
-        runtimeClasspath += main.output
-    }
-}
-
-configurations {
-    integrationTestApi.extendsFrom api, testApi
-    integrationTestImplementation.extendsFrom implementation, testImplementation
-    integrationTestCompileOnly.extendsFrom compileOnly, testCompileOnly
-    integrationTestRuntimeOnly.extendsFrom runtimeOnly, testRuntimeOnly
-    integrationTestAnnotationProcessor.extendsFrom annotationProcessor, testAnnotationProcessor
+micronaut {
+    version = micronautDiVersion
 }
 
 dependencies {
@@ -115,7 +61,7 @@ dependencies {
     implementation "io.vertx:vertx-mongo-client:${vertxVersion}"
 
     // logging
-    implementation "org.slf4j:slf4j-api:${slf4ApiVersion}"
+    implementation "org.slf4j:slf4j-api:${slf4jApiVersion}"
 
     // micronaut DI
     def excludeMicronautHttp = {
@@ -130,48 +76,50 @@ dependencies {
     testAnnotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
 
     // spock
-    testImplementation "org.spockframework:spock-core:${spockVersion}"
-    testImplementation("com.athaydes:spock-reports:${spockReportsVersion}") {
-        transitive = false
-    }
-    testImplementation "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
-    testImplementation "org.objenesis:objenesis:${objenesisVersion}"
+    testCompile "org.spockframework:spock-core:${spockVersion}"
+    testCompile "org.spockframework:spock-junit4:${spockVersion}"
+//    testImplementation("com.athaydes:spock-reports:${spockReportsVersion}") {
+//        transitive = false
+//    }
+    testRuntime "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
+    testRuntime "org.objenesis:objenesis:${objenesisVersion}"
 
     // vertx testing
     testImplementation "io.vertx:vertx-unit:${vertxVersion}"
 
     // logback impl used only for tests
-//    testImplementation "ch.qos.logback:logback-classic:${logbackVersion}"
-    implementation "ch.qos.logback:logback-classic:${logbackVersion}"
+    testImplementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}"
 }
 
-defaultTasks 'build'
-
-wrapper {
-    gradleVersion = wrapperGradleVersion
-    distributionType Wrapper.DistributionType.ALL
-}
-
-private def readGprCreds() {
-    def gprUser = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
-    def gprKey = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY')
-    [user: gprUser?.strip() as boolean, key: gprKey?.strip() as boolean]
-}
-
-tasks.findAll { it.name =~ /publish\w*Git[Hh]ub/ }
-        .each { pubTask ->
-            pubTask.with {
-                doFirst {
-                    def creds = readGprCreds()
-                    if (!creds.values().every()) {
-                        System.err.println 'github package registry creds must be set via env variables : ' +
-                                'GPR_USER, GPR_API_KEY'
-                        throw new GradleException("no github package registry creds are set : " +
-                                "user=${creds.user}, key=${creds.key}")
-                    }
+publishing {
+    repositories {
+        mavenLocal()
+        maven {
+            name = 'GitHubPackages'
+            url = uri('https://maven.pkg.github.com/dburyak/tools-vertx-core')
+            credentials {
+                username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
+                password = project.findProperty('gpr.key') ?: System.getenv('GPR_KEY')
+            }
+        }
+    }
+    afterEvaluate {
+        publications {
+            githubPackagesRepository(MavenPublication) {
+                from(components.java)
+                groupId = project.group
+                artifactId = githubArtifactRepoName
+                version = project.version
+                artifact tasks['sourcesJar']
+                artifact tasks['javadocJar']
+                pom {
+                    url.set "https://github.com/dburyak/tools-vertx-core"
+                    description project.description
                 }
             }
         }
+    }
+}
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     group 'build'
@@ -196,20 +144,38 @@ artifacts {
 
 tasks.findAll { it.name.startsWith 'publish' }
         .each { pubTask ->
-            pubTask.dependsOn build, test, groovydoc
+            pubTask.dependsOn build, check, groovydoc
         }
+
+private def readGprCreds() {
+    def gprUser = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
+    def gprKey = project.findProperty('gpr.key') ?: System.getenv('GPR_KEY')
+    [user: gprUser?.strip() as boolean, key: gprKey?.strip() as boolean]
+}
+
+tasks.findAll { it.name =~ /publish\w*Git[Hh]ub/ }
+        .each { pubTask ->
+            pubTask.with {
+                doFirst {
+                    def creds = readGprCreds()
+                    if (!creds.values().every()) {
+                        System.err.println 'github package registry creds must be set via env variables : ' +
+                                'GPR_USER, GPR_KEY'
+                        throw new GradleException("no github package registry creds are set : " +
+                                "user=${creds.user}, key=${creds.key}")
+                    }
+                }
+            }
+        }
+
+defaultTasks 'build'
+
+wrapper {
+    gradleVersion = gradleWrapperVersion
+    distributionType = 'ALL'
+}
 
 test {
     systemProperty 'vertx.logger-delegate-factory-class-name', 'io.vertx.core.logging.SLF4JLogDelegateFactory'
 }
 
-task integrationTest(type: Test) {
-    description 'Run integration tests'
-    group 'verification'
-    testClassesDirs = sourceSets.integrationTest.output.classesDirs
-    classpath = sourceSets.integrationTest.runtimeClasspath
-    outputs.upToDateWhen { false }
-    mustRunAfter test
-}
-
-check.dependsOn integrationTest

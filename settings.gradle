@@ -1,1 +1,10 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+        jcenter()
+        mavenCentral()
+    }
+}
+
 rootProject.name = 'tools-vertx-core'
