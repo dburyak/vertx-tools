@@ -121,6 +121,8 @@ publishing {
     }
 }
 
+defaultTasks 'build'
+
 task sourcesJar(type: Jar, dependsOn: classes) {
     group 'build'
     archiveClassifier.set 'sources'
@@ -165,10 +167,9 @@ tasks.findAll { it.name =~ /publish\w*Git[Hh]ub/ }
                                 "user=${creds.user}, key=${creds.key}")
                     }
                 }
+                dependsOn sourcesJar, javadocJar
             }
         }
-
-defaultTasks 'build'
 
 wrapper {
     gradleVersion = gradleWrapperVersion
