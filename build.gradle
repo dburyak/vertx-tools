@@ -37,6 +37,14 @@ micronaut {
 }
 
 dependencies {
+    // lombok
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    integrationTestCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    integrationTestAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
     implementation "org.codehaus.groovy:groovy-all:${groovyVersion}"
     implementation "io.vertx:vertx-core:${vertxVersion}"
     implementation "io.vertx:vertx-lang-groovy:${vertxVersion}"
@@ -47,6 +55,7 @@ dependencies {
     implementation "io.vertx:vertx-service-discovery:${vertxVersion}"
     implementation "io.vertx:vertx-circuit-breaker:${vertxVersion}"
     implementation "io.vertx:vertx-web-client:${vertxVersion}"
+    implementation "io.vertx:vertx-hazelcast:${vertxVersion}"
 
     // service proxy
     implementation "io.vertx:vertx-service-proxy:${vertxVersion}"
@@ -78,9 +87,6 @@ dependencies {
     // spock
     testCompile "org.spockframework:spock-core:${spockVersion}"
     testCompile "org.spockframework:spock-junit4:${spockVersion}"
-//    testImplementation("com.athaydes:spock-reports:${spockReportsVersion}") {
-//        transitive = false
-//    }
     testRuntime "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
     testRuntime "org.objenesis:objenesis:${objenesisVersion}"
 
@@ -179,4 +185,3 @@ wrapper {
 test {
     systemProperty 'vertx.logger-delegate-factory-class-name', 'io.vertx.core.logging.SLF4JLogDelegateFactory'
 }
-
