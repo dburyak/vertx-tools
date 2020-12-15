@@ -86,6 +86,9 @@ dependencies {
 
     api "com.esotericsoftware:kryo:${kryoVersion}"
 
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitEngineVersion}"
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${junitEngineVersion}"
+
     // spock
     testCompile "org.spockframework:spock-core:${spockVersion}"
     testCompile "org.spockframework:spock-junit4:${spockVersion}"
@@ -184,6 +187,7 @@ wrapper {
     distributionType = 'ALL'
 }
 
-test {
+tasks.withType(Test) {
+    useJUnitPlatform()
     systemProperty 'vertx.logger-delegate-factory-class-name', 'io.vertx.core.logging.SLF4JLogDelegateFactory'
 }

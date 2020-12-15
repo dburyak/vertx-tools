@@ -18,7 +18,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 // TODO: replace EB messages with calls to CallDispatcher/CommunicationsBuilder
 @Singleton
 @Slf4j
-public abstract class ServiceTokenVerticle extends MicronautVerticle {
+public abstract class ServiceTokenVerticle extends Verticle {
     private static final int REFRESH_IN_SECONDS_BEFORE_EXPIRATION = 3;
     protected static final String ADDR_GET_SERVICE_TOKEN_SUFFIX = ".getServiceToken";
 

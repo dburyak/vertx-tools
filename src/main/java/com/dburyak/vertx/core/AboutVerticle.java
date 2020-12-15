@@ -18,7 +18,7 @@ import java.util.Map;
 
 // TODO: review it; CallDispatcher/CommunicationsBuilder
 @Singleton
-public abstract class AboutVerticle extends MicronautVerticle {
+public abstract class AboutVerticle extends Verticle {
     private String version;
     private String revision;
     private String builtAt;

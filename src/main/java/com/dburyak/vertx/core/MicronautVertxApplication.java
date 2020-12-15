@@ -1,7 +1,6 @@
 package com.dburyak.vertx.core;
 
-import com.archiuse.mindis.app.AppState;
-import com.archiuse.mindis.di.AppBean;
+import com.dburyak.vertx.core.di.AppBean;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.Qualifier;
 import io.micronaut.inject.qualifiers.Qualifiers;
@@ -17,11 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.archiuse.mindis.app.AppState.FAILED;
-import static com.archiuse.mindis.app.AppState.RUNNING;
-import static com.archiuse.mindis.app.AppState.STARTING;
-import static com.archiuse.mindis.app.AppState.STOPPED;
-import static com.archiuse.mindis.app.AppState.STOPPING;
+import static com.dburyak.vertx.core.AppState.FAILED;
+import static com.dburyak.vertx.core.AppState.RUNNING;
+import static com.dburyak.vertx.core.AppState.STARTING;
+import static com.dburyak.vertx.core.AppState.STOPPED;
+import static com.dburyak.vertx.core.AppState.STOPPING;
 
 public abstract class MicronautVertxApplication {
     private static final Logger log = LoggerFactory.getLogger(MicronautVertxApplication.class);

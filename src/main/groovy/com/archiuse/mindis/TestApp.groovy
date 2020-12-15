@@ -11,7 +11,6 @@ class TestApp extends MindisVertxApplication {
     }
 
     static void main(String[] args) {
-        [[], [], []].colle
 
 
         def app = new TestApp()

@@ -25,10 +25,15 @@ public class AppInitialization {
     private Scheduler vertxRxBlockingScheduler;
 
     @PostConstruct
-    void init() {
+    final void init() {
         log.info("initializing application");
         registerRxJavaVertxSchedulers();
+        doInit();
         log.info("application initialized");
+    }
+
+    protected void doInit() {
+        // may be overridden by subclasses to introduce custom initialization logic
     }
 
     private void registerRxJavaVertxSchedulers() {

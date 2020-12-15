@@ -1,7 +1,7 @@
 package com.dburyak.vertx.core;
 
-import com.archiuse.mindis.di.EventLoop;
-import com.archiuse.mindis.di.Worker;
+import com.dburyak.vertx.core.di.EventLoop;
+import com.dburyak.vertx.core.di.Worker;
 import com.dburyak.vertx.core.di.AppBean;
 import io.micronaut.context.annotation.Factory;
 import io.reactivex.Scheduler;

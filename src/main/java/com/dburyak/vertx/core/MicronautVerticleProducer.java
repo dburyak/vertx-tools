@@ -2,7 +2,6 @@ package com.dburyak.vertx.core;
 
 import io.micronaut.context.ApplicationContext;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Verticle;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,13 +10,13 @@ import java.util.function.Supplier;
 
 @Getter
 @Setter
-public abstract class MicronautVerticleProducer<I extends MicronautVerticleProducer<I>> implements Supplier<Verticle> {
+public abstract class MicronautVerticleProducer<I extends MicronautVerticleProducer<I>> implements Supplier<io.vertx.core.Verticle> {
     private String name = getClass().getCanonicalName();
     private ApplicationContext verticleBeanCtx;
     private DeploymentOptions deploymentOptions = new DeploymentOptions();
 
     @Override
-    public final MicronautVerticle get() {
+    public final Verticle get() {
         var verticle = doCreateVerticle();
         if (verticleBeanCtx == null) {
             throw new IllegalStateException("target verticle bean ctx must be specified for micronaut verticle");
@@ -26,7 +25,7 @@ public abstract class MicronautVerticleProducer<I extends MicronautVerticleProdu
         return verticle;
     }
 
-    protected abstract MicronautVerticle doCreateVerticle();
+    protected abstract Verticle doCreateVerticle();
 
     public I withName(String name) {
         setName(name);

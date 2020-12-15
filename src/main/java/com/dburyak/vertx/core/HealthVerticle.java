@@ -13,7 +13,7 @@ import javax.inject.Singleton;
 // TODO: review eb addresses manipulation; this should be updated to work with CallDispatcher/CommunicationsBuilder
 @Singleton
 @Setter(onMethod_ = {@Inject})
-public abstract class HealthVerticle extends MicronautVerticle {
+public abstract class HealthVerticle extends Verticle {
     private HealthChecks healthChecks;
     private HealthChecks readyChecks;
     private EventBus eventBus;
