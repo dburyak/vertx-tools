@@ -7,7 +7,7 @@ import io.vertx.reactivex.core.Vertx
 import spock.lang.Shared
 import spock.lang.Specification
 
-abstract class VertxRxJavaSpec extends Specification {
+abstract class BaseVertxRxJavaSpec extends Specification {
 
     @Shared
     Vertx vertx = Vertx.vertx()

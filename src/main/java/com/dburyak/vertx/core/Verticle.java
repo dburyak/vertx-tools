@@ -8,6 +8,7 @@ import io.reactivex.Single;
 import io.vertx.ext.healthchecks.CheckResult;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.core.Context;
+import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
 import io.vertx.reactivex.ext.healthchecks.HealthChecks;
 import lombok.Getter;
@@ -16,7 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Collections;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static io.micronaut.inject.qualifiers.Qualifiers.byQualifiers;
@@ -28,7 +31,7 @@ import static io.micronaut.inject.qualifiers.Qualifiers.byStereotype;
  * AbstractVerticle}. Implementations should be used through {@link MicronautVertxApplication} instead of default Vertx
  * mechanisms otherwise DI won't work.
  *
- * <p>Implementations of this abstract class should also go with dedicated {@link MicronautVerticleProducer}
+ * <p>Implementations of this abstract class should also go with dedicated {@link VerticleProducer}
  * implementation.
  */
 @Singleton
@@ -40,6 +43,8 @@ public abstract class Verticle extends AbstractVerticle {
 
     @Getter
     protected volatile ApplicationContext verticleBeanCtx;
+
+    private boolean isBuildInfoCached = false;
 
     @Getter
     private String version;
@@ -64,7 +69,7 @@ public abstract class Verticle extends AbstractVerticle {
      *
      * <p>Is not designed to be called directly, rather is called by the {@link MicronautVertxApplication}
      * on startup. Also may be called indirectly via
-     * {@link MicronautVertxApplication#deployVerticle(MicronautVerticleProducer)}.
+     * {@link MicronautVertxApplication#deployVerticle(VerticleProducer)}.
      *
      * @return start operation status
      */
@@ -116,11 +121,35 @@ public abstract class Verticle extends AbstractVerticle {
      *
      * <p>Designed for inheritance, implementations may override default behavior.
      *
-     * @return map with human readable description of this verticle, which by default includes version, revision and
-     * build time
+     * @return map with human readable description of this verticle, which by default includes useful information like
+     * version, revision, build time, current server time, system timezone, verticle thread info, deployment config,
+     * etc.
      */
     public Single<Map<String, Object>> about() {
-        return Single.just(Collections.emptyMap());
+        return !isDeployed()
+                ? Single.error(() -> new IllegalStateException("can not build about info of a not deployed verticle"))
+                : (isBuildInfoCached ? Completable.complete() : readAndCacheBuildInfoFromFs())
+                .andThen(Single.fromCallable(() -> {
+                    var info = new LinkedHashMap<String, Object>();
+                    info.put("version", version);
+                    info.put("revision", revision);
+                    info.put("built_at", builtAt);
+                    info.put("server_time", Instant.now());
+                    info.put("timezone", ZoneId.systemDefault());
+                    var verticleInfo = new LinkedHashMap<String, Object>();
+                    info.put("verticle", verticleInfo);
+                    verticleInfo.put("deployment_id", deploymentID());
+                    verticleInfo.put("type", context.isEventLoopContext() ? "EventLoop" : "Worker");
+                    var threadInfo = new LinkedHashMap<String, Object>();
+                    verticleInfo.put("thread", threadInfo);
+                    threadInfo.put("name", Thread.currentThread().getName());
+                    threadInfo.put("id", Thread.currentThread().getId());
+                    threadInfo.put("vertx_thread", Context.isOnVertxThread());
+                    threadInfo.put("event_loop_thread", Context.isOnEventLoopThread());
+                    threadInfo.put("worker_thread", Context.isOnWorkerThread());
+                    verticleInfo.put("config", config());
+                    return info;
+                }));
     }
 
     /**
@@ -202,5 +231,37 @@ public abstract class Verticle extends AbstractVerticle {
 
     protected final boolean isDeployed() {
         return context != null && context.deploymentID() != null;
+    }
+
+    private Completable readAndCacheBuildInfoFromFs() {
+        return Single
+                .zip(readVersionFromFs(), readRevisionFromFs(), readBuiltAtFromFs(), (v, r, b) -> {
+                    version = v;
+                    revision = r;
+                    builtAt = b;
+                    isBuildInfoCached = true;
+                    return "ignored";
+                })
+                .ignoreElement();
+    }
+
+    private Single<String> readAllTextFromFsFile(String path) {
+        return fs.rxReadFile(path)
+                .map(Buffer::toString);
+    }
+
+    private Single<String> readVersionFromFs() {
+        return readAllTextFromFsFile("version.txt")
+                .map(String::strip);
+    }
+
+    private Single<String> readRevisionFromFs() {
+        return readAllTextFromFsFile("revision.txt")
+                .map(String::strip);
+    }
+
+    private Single<String> readBuiltAtFromFs() {
+        return readAllTextFromFsFile("built_at.txt")
+                .map(String::strip);
     }
 }

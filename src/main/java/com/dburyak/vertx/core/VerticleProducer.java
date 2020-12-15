@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 @Getter
 @Setter
-public abstract class MicronautVerticleProducer<I extends MicronautVerticleProducer<I>> implements Supplier<io.vertx.core.Verticle> {
+public abstract class VerticleProducer<I extends VerticleProducer<I>> implements Supplier<io.vertx.core.Verticle> {
     private String name = getClass().getCanonicalName();
     private ApplicationContext verticleBeanCtx;
     private DeploymentOptions deploymentOptions = new DeploymentOptions();

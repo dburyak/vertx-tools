@@ -56,7 +56,7 @@ class MindisVerticleSpec extends VertxRxJavaSpec {
 
         then: 'doStop is called'
         noExceptionThrown()
-        1 * mindisVerticle.doStop()
+        1 * mindisVerticle.doStop() >> Completable.complete()
     }
 
     def 'init sets up default values for call receiver description'() {
