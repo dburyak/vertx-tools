@@ -1,6 +1,8 @@
 package com.dburyak.vertx.core
 
 import io.reactivex.Scheduler
+import io.reactivex.functions.Predicate
+import io.reactivex.observers.BaseTestConsumer
 import io.reactivex.plugins.RxJavaPlugins
 import io.vertx.reactivex.core.RxHelper
 import io.vertx.reactivex.core.Vertx
@@ -8,6 +10,12 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 abstract class BaseVertxRxJavaSpec extends Specification {
+
+    static {
+        BaseTestConsumer.metaClass.assertValue = { Closure<BaseTestConsumer> predicate ->
+            delegate.assertValue(predicate as Predicate)
+        }
+    }
 
     @Shared
     Vertx vertx = Vertx.vertx()

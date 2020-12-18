@@ -53,7 +53,7 @@ public abstract class Verticle extends AbstractVerticle {
     private String revision;
 
     @Getter
-    private String builtAt;
+    private Instant builtAt;
 
     @Setter(onMethod_ = {@Inject})
     private FileSystem fs;
@@ -135,7 +135,7 @@ public abstract class Verticle extends AbstractVerticle {
                     info.put("revision", revision);
                     info.put("built_at", builtAt);
                     info.put("server_time", Instant.now());
-                    info.put("timezone", ZoneId.systemDefault());
+                    info.put("timezone", ZoneId.systemDefault().getId());
                     var verticleInfo = new LinkedHashMap<String, Object>();
                     info.put("verticle", verticleInfo);
                     verticleInfo.put("deployment_id", deploymentID());
@@ -260,8 +260,9 @@ public abstract class Verticle extends AbstractVerticle {
                 .map(String::strip);
     }
 
-    private Single<String> readBuiltAtFromFs() {
+    private Single<Instant> readBuiltAtFromFs() {
         return readAllTextFromFsFile("built_at.txt")
-                .map(String::strip);
+                .map(String::strip)
+                .map(Instant::parse);
     }
 }

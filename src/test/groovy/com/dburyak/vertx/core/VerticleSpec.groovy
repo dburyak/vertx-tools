@@ -4,14 +4,19 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.context.BeanRegistration
 import io.micronaut.inject.BeanIdentifier
 import io.reactivex.Completable
-import spock.lang.Timeout
+import io.reactivex.Single
+import io.vertx.core.Context
+import io.vertx.reactivex.core.buffer.Buffer
+import io.vertx.reactivex.core.file.FileSystem
 
-import static java.util.concurrent.TimeUnit.SECONDS
-
-@Timeout(value = 2, unit = SECONDS)
+import java.time.Instant
+import java.time.ZoneId
+//@Timeout(value = 2, unit = SECONDS)
 class VerticleSpec extends BaseVertxRxJavaSpec {
     Verticle verticle = Spy(Verticle)
 
+    FileSystem fs = Mock(FileSystem)
+    Context verticleVertxCtx = Mock(Context)
     ApplicationContext verticleBeanCtx = Mock(ApplicationContext)
     BeanRegistration beanCtxBeanReg = Mock(BeanRegistration)
     BeanRegistration verticleBeanReg = Mock(BeanRegistration)
@@ -20,6 +25,8 @@ class VerticleSpec extends BaseVertxRxJavaSpec {
 
     void setup() {
         verticle.@verticleBeanCtx = verticleBeanCtx
+        verticle.@context = verticleVertxCtx
+        verticle.fs = fs
     }
 
     def 'rxStart inits bean context and calls doOnStart hook'() {
@@ -98,12 +105,43 @@ class VerticleSpec extends BaseVertxRxJavaSpec {
 
         then:
         noExceptionThrown()
-        res.assertError { err ->
-            err instanceof IllegalArgumentException
-                    && err.message == 'thrown from hook'
-        }
+        res.assertError { it instanceof IllegalArgumentException }
+        res.assertError { it.message == 'thrown from hook' }
 
         and:
         1 * verticle.doOnStop() >> Completable.error(new IllegalArgumentException('thrown from hook'))
+    }
+
+    def 'about returns correct information'() {
+        when: 'start verticle and get its about information'
+        def res = verticle.about().test().await()
+
+        then:
+        noExceptionThrown()
+
+        and:
+        res.assertNoErrors()
+        res.assertValue { it.version == '1.0' }
+        res.assertValue { it.revision == 'abcdef0123456789' }
+        res.assertValue { it.built_at < Instant.now() }
+        res.assertValue {
+            Instant.now().minusSeconds(10) < it.server_time && it.server_time < Instant.now()
+        }
+        res.assertValue {it.timezone == ZoneId.systemDefault().id }
+        res.assertValue { it.verticle.deployment_id == 'deploymentId-uuid' }
+        res.assertValue { it.verticle.type == 'EventLoop' }
+        res.assertValue { it.verticle.thread.name != null }
+        res.assertValue { it.verticle.thread.id != null }
+        res.assertValue { it.verticle.thread.vertx_thread != null }
+        res.assertValue { it.verticle.thread.event_loop_thread != null }
+        res.assertValue { it.verticle.thread.worker_thread != null }
+        res.assertValue { it.verticle.containsKey('config') }
+
+        and:
+        2 * verticleVertxCtx.deploymentID() >> 'deploymentId-uuid'
+        1 * fs.rxReadFile('version.txt') >> Single.just(Buffer.buffer('1.0'))
+        1 * fs.rxReadFile('revision.txt') >> Single.just(Buffer.buffer('abcdef0123456789'))
+        1 * fs.rxReadFile('built_at.txt') >> Single.just(Buffer.buffer('2020-12-18T22:28:05.165893419Z'))
+        1 * verticleVertxCtx.isEventLoopContext() >> true
     }
 }
