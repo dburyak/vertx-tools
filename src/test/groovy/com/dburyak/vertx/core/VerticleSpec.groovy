@@ -374,4 +374,26 @@ class VerticleSpec extends BaseVertxRxJavaSpec {
             checks.register('three') { it.complete(Status.OK()) }
         }
     }
+
+    def 'verticle deployment status: isCtxNull=#isCtxNull, deploymentId=#depId'() {
+        setup:
+        verticle.@context = isCtxNull ? null : verticleVertxCtx
+
+        when: 'check if verticle is deployed'
+        def actualRes = verticle.isDeployed()
+
+        then:
+        noExceptionThrown()
+        actualRes == expectedIsDeployed
+
+        and:
+        (0..1) * verticleVertxCtx.deploymentID() >> depId
+
+        where:
+        isCtxNull | depId       || expectedIsDeployed
+        true      | 'some-uuid' || false
+        true      | null        || false
+        false     | null        || false
+        false     | 'some-uuid' || true
+    }
 }
