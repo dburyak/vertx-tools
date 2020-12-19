@@ -13,7 +13,7 @@ abstract class BaseVertxRxJavaSpec extends Specification {
 
     static {
         BaseTestConsumer.metaClass.assertValue = { Closure<BaseTestConsumer> predicate ->
-            delegate.assertValue(predicate as Predicate)
+            delegate.assertValue((predicate >> { it as Boolean }) as Predicate)
         }
     }
 

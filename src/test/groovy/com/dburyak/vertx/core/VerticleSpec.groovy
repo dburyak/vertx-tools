@@ -6,12 +6,19 @@ import io.micronaut.inject.BeanIdentifier
 import io.reactivex.Completable
 import io.reactivex.Single
 import io.vertx.core.Context
+import io.vertx.ext.healthchecks.CheckResult
+import io.vertx.ext.healthchecks.Status
 import io.vertx.reactivex.core.buffer.Buffer
 import io.vertx.reactivex.core.file.FileSystem
+import io.vertx.reactivex.ext.healthchecks.HealthChecks
+import spock.lang.Timeout
 
 import java.time.Instant
 import java.time.ZoneId
-//@Timeout(value = 2, unit = SECONDS)
+
+import static java.util.concurrent.TimeUnit.SECONDS
+
+@Timeout(value = 20, unit = SECONDS)
 class VerticleSpec extends BaseVertxRxJavaSpec {
     Verticle verticle = Spy(Verticle)
 
@@ -22,11 +29,16 @@ class VerticleSpec extends BaseVertxRxJavaSpec {
     BeanRegistration verticleBeanReg = Mock(BeanRegistration)
     BeanIdentifier verticleBeanId = Mock(BeanIdentifier)
     BeanIdentifier beanCtxBeanId = Mock(BeanIdentifier)
+    HealthChecks healthChecks = Mock(HealthChecks)
+    HealthChecks readyChecks = Mock(HealthChecks)
 
     void setup() {
-        verticle.@verticleBeanCtx = verticleBeanCtx
+        verticle.@vertx = vertx
         verticle.@context = verticleVertxCtx
+        verticle.@verticleBeanCtx = verticleBeanCtx
         verticle.fs = fs
+        verticle.healthChecks = healthChecks
+        verticle.readyChecks = readyChecks
     }
 
     def 'rxStart inits bean context and calls doOnStart hook'() {
@@ -127,14 +139,14 @@ class VerticleSpec extends BaseVertxRxJavaSpec {
         res.assertValue {
             Instant.now().minusSeconds(10) < it.server_time && it.server_time < Instant.now()
         }
-        res.assertValue {it.timezone == ZoneId.systemDefault().id }
+        res.assertValue { it.timezone == ZoneId.systemDefault().id }
         res.assertValue { it.verticle.deployment_id == 'deploymentId-uuid' }
         res.assertValue { it.verticle.type == 'EventLoop' }
-        res.assertValue { it.verticle.thread.name != null }
-        res.assertValue { it.verticle.thread.id != null }
-        res.assertValue { it.verticle.thread.vertx_thread != null }
-        res.assertValue { it.verticle.thread.event_loop_thread != null }
-        res.assertValue { it.verticle.thread.worker_thread != null }
+        res.assertValue { it.verticle.thread.name }
+        res.assertValue { it.verticle.thread.id }
+        res.assertValue { it.verticle.thread.containsKey('vertx_thread') }
+        res.assertValue { it.verticle.thread.containsKey('event_loop_thread') }
+        res.assertValue { it.verticle.thread.containsKey('worker_thread') }
         res.assertValue { it.verticle.containsKey('config') }
 
         and:
@@ -144,4 +156,116 @@ class VerticleSpec extends BaseVertxRxJavaSpec {
         1 * fs.rxReadFile('built_at.txt') >> Single.just(Buffer.buffer('2020-12-18T22:28:05.165893419Z'))
         1 * verticleVertxCtx.isEventLoopContext() >> true
     }
+
+    def 'health calls hook method'() {
+        given: 'no custom health checks defined'
+
+        when: 'assess health of the verticle'
+        def res = verticle
+                .rxStart()
+                .andThen(verticle.health())
+                .test().await()
+
+        then: 'hook method for subclasses is called'
+        noExceptionThrown()
+        res.assertNoErrors()
+        res.assertValue { it.up }
+        1 * verticle.registerHealthProcedures(healthChecks)
+
+        and:
+        1 * verticleVertxCtx.deploymentID() >> 'deploymentId-uuid'
+        1 * healthChecks.rxCheckStatus() >> Single.just(CheckResult.from(null, Status.OK()))
+
+        and:
+        1 * verticleBeanCtx.registerSingleton(ApplicationContext, verticleBeanCtx, _) >> verticleBeanCtx
+        1 * verticleBeanCtx.registerSingleton(verticle)
+        1 * verticleBeanCtx.findBeanRegistration(verticleBeanCtx) >> Optional.of(beanCtxBeanReg)
+        1 * beanCtxBeanReg.identifier >> beanCtxBeanId
+        1 * verticleBeanCtx.refreshBean(beanCtxBeanId)
+        1 * verticleBeanCtx.findBeanRegistration(verticle) >> Optional.of(verticleBeanReg)
+        1 * verticleBeanReg.identifier >> verticleBeanId
+        1 * verticleBeanCtx.refreshBean(verticleBeanId)
+        1 * verticle.doOnStart() >> Completable.complete()
+    }
+
+    def 'health check fails for not deployed verticle'() {
+        given: 'not deployed verticle'
+
+        when: 'assess health of not deployed verticle'
+        def res = verticle.health().test().await()
+
+        then: 'IllegalStateException is thrown'
+        noExceptionThrown()
+        res.assertError { it instanceof IllegalStateException }
+        res.assertError { it.message == 'can not assess health of a not deployed verticle' }
+
+        and:
+        1 * verticleVertxCtx.deploymentID() >> null
+        0 * healthChecks.rxCheckStatus()
+    }
+
+    def 'health is OK by default'() {
+        given: 'no custom health checks defined'
+        verticle.healthChecks = HealthChecks.create(vertx)
+
+        when: 'assess health of the verticle'
+        def res = verticle.health().test().await()
+
+        then: 'health of the verticle is OK'
+        noExceptionThrown()
+        res.assertNoErrors()
+        res.assertValue { it.up }
+
+        and:
+        1 * verticleVertxCtx.deploymentID() >> 'deploymentId-uuid'
+    }
+
+    def 'health is OK when custom checks are OK'() {
+        given: 'several health checks defined that all return OK'
+        def realHealthChecks = HealthChecks.create(vertx)
+        verticle.healthChecks = realHealthChecks
+
+        when: 'access health of the verticle'
+        verticle.registerHealthProcedures(realHealthChecks)
+        def res = verticle.health().test().await()
+
+        then: 'health of the verticle is OK'
+        noExceptionThrown()
+        res.assertNoErrors()
+        res.assertValue { it.up }
+
+        and:
+        1 * verticleVertxCtx.deploymentID() >> 'deploymentId-uuid'
+        1 * verticle.registerHealthProcedures(realHealthChecks) >> { args ->
+            def checks = args[0] as HealthChecks
+            checks.register('one') { it.complete(Status.OK()) }
+            checks.register('two') { it.complete(Status.OK()) }
+            checks.register('three') { it.complete(Status.OK()) }
+        }
+    }
+
+    def 'health fails when custom check fails'() {
+        given: 'one of several health checks is failing'
+        def realHealthChecks = HealthChecks.create(vertx)
+        verticle.healthChecks = realHealthChecks
+
+        when: 'assess health of the verticle'
+        verticle.registerHealthProcedures(realHealthChecks)
+        def res = verticle.health().test().await()
+
+        then: 'health of the verticle is failing'
+        noExceptionThrown()
+        res.assertNoErrors()
+        res.assertValue { !it.up }
+
+        and:
+        1 * verticleVertxCtx.deploymentID() >> 'deploymentId-uuid'
+        1 * verticle.registerHealthProcedures(realHealthChecks) >> { HealthChecks checks ->
+            checks.register('one') { it.complete(Status.OK()) }
+            checks.register('failing') { it.complete(Status.KO()) }
+            checks.register('three') { it.complete(Status.OK()) }
+        }
+    }
+
+
 }
