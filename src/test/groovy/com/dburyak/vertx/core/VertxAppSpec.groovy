@@ -161,6 +161,39 @@ class VertxAppSpec extends Specification {
         app.getVerticleApplicationContext(initVerticleDepId) == initVerticleCtx
     }
 
+    def 'undeployVerticle - undeploys verticle successfully'() {
+        given: 'running app with deployed initVerticle'
+        def initVerticleOpts = new DeploymentOptions()
+        def initVerticleDepId = 'init-verticle-dep-id-uuid'
+
+        when: 'undeploy init verticle'
+        def res = app.start()
+                .andThen(app.undeployVerticle(initVerticleDepId))
+                .test().await()
+
+        then:
+        noExceptionThrown()
+        res.assertNoErrors()
+        res.assertComplete()
+
+        and:
+        interaction appIsStartedAndInitVerticleDeployed(initVerticleOpts, initVerticleDepId)
+
+        and:
+        interaction initVerticleUndeployed(initVerticleDepId)
+
+        and:
+        !app.getVerticleApplicationContext(initVerticleDepId)
+    }
+
+    private def initVerticleUndeployed(String initVerticleDepId) {
+        return {
+            1 * mainAppCtx.getBean(Vertx.class) >> vertx
+            1 * vertx.rxUndeploy(initVerticleDepId) >> Completable.complete()
+            1 * initVerticleCtx.stop()
+        }
+    }
+
     private def initVerticleDeployed(DeploymentOptions initVerticleOpts, String initVerticleDepId) {
         return {
             2 * initVerticleProducer.getDeploymentOptions() >> initVerticleOpts
