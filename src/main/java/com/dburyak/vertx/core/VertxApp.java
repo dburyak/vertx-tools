@@ -33,12 +33,13 @@ public abstract class VertxApp {
     public final Completable start() {
         return Completable
                 .fromAction(() -> {
-                    appState = STARTING;
                     var isRunning = applicationBeanContext != null;
                     if (isRunning) {
+                        var oldState = appState;
                         appState = FAILED;
-                        throw new IllegalStateException("application is already running: appState=" + appState);
+                        throw new IllegalStateException("application is already running: appState=" + oldState);
                     }
+                    appState = STARTING;
                 })
 
                 .andThen(startAppContext())
@@ -63,13 +64,14 @@ public abstract class VertxApp {
     public final Completable stop() {
         return Single
                 .fromCallable(() -> {
-                    appState = STOPPING;
                     var mainCtx = applicationBeanContext;
                     var isRunning = (mainCtx != null);
                     if (!isRunning) {
+                        var oldState = appState;
                         appState = FAILED;
-                        throw new IllegalStateException("application is not running: appState=" + appState);
+                        throw new IllegalStateException("application is not running: appState=" + oldState);
                     }
+                    appState = STOPPING;
                     return mainCtx;
                 })
 
