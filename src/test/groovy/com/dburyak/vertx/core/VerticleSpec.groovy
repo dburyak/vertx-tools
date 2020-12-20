@@ -18,7 +18,7 @@ import java.time.ZoneId
 
 import static java.util.concurrent.TimeUnit.SECONDS
 
-@Timeout(value = 20, unit = SECONDS)
+@Timeout(value = 5, unit = SECONDS)
 class VerticleSpec extends BaseVertxRxJavaSpec {
     Verticle verticle = Spy(Verticle)
 

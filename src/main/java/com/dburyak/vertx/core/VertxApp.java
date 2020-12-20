@@ -2,16 +2,16 @@ package com.dburyak.vertx.core;
 
 import com.dburyak.vertx.core.di.AppBean;
 import io.micronaut.context.ApplicationContext;
-import io.micronaut.context.Qualifier;
+import io.micronaut.context.ApplicationContextBuilder;
 import io.micronaut.inject.qualifiers.Qualifiers;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.reactivex.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,9 +22,8 @@ import static com.dburyak.vertx.core.AppState.STARTING;
 import static com.dburyak.vertx.core.AppState.STOPPED;
 import static com.dburyak.vertx.core.AppState.STOPPING;
 
-public abstract class MicronautVertxApplication {
-    private static final Logger log = LoggerFactory.getLogger(MicronautVertxApplication.class);
-
+@Slf4j
+public abstract class VertxApp {
     public static final String PROP_IS_APP_BEAN_CTX = "vertx.app.bean.ctx.main";
 
     private volatile ApplicationContext applicationBeanContext;
@@ -132,12 +131,12 @@ public abstract class MicronautVertxApplication {
                                 throw new IllegalStateException("can not deploy verticle, bad app state: " + appState);
                             }
                             log.debug("init bean context for verticle");
-                            var verticleCtx = ApplicationContext.build()
+                            var verticleCtx = newApplicationContextBuilder()
                                     .properties(Map.of(PROP_IS_APP_BEAN_CTX, false))
                                     .start();
                             log.debug("inject main app beans into verticle bean context: mainCtx={}, verticleCtx={}",
                                     mainCtx, verticleCtx);
-                            injectMainBeansToVerticleBeanContext(verticleCtx, mainCtx);
+                            injectMainBeansIntoVerticleBeanContext(verticleCtx, mainCtx);
                             return verticleCtx;
                         })
                         .flatMap(verticleCtx -> {
@@ -176,13 +175,47 @@ public abstract class MicronautVertxApplication {
                 }));
     }
 
-    public abstract List<VerticleProducer<?>> getVerticlesProducers();
+    public final AppState getAppState() {
+        return appState;
+    }
+
+    /**
+     * Initial verticle producers for this app that must be deployed during the startup.
+     * Rest of the verticles ca be simply deployed/undeployed with {@link #deployVerticle(VerticleProducer)} and
+     * {@link #undeployVerticle(String)} methods.
+     *
+     * <p>Designed for inheritance. Subclasses may override this method to provide list of the verticles to be deployed
+     * on startup.
+     *
+     * @return list of verticle producers to be used on app startup, empty list by default
+     */
+    public List<VerticleProducer<?>> getVerticlesProducers() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Extracted {@link ApplicationContext#builder()} into a factory method for unit tests support.
+     * Unit tests may return mock from this method.
+     *
+     * @return new application context
+     */
+    protected ApplicationContextBuilder newApplicationContextBuilder() {
+        return ApplicationContext.builder();
+    }
+
+    protected final ApplicationContext getMainApplicationContext() {
+        return applicationBeanContext;
+    }
+
+    protected final ApplicationContext getVerticleApplicationContext(String verticleDeploymentId) {
+        return verticlesBeanContexts.get(verticleDeploymentId);
+    }
 
     private Single<ApplicationContext> startAppContext() {
         return Single
                 .fromCallable(() -> {
                     log.debug("starting main bean context");
-                    var appCtx = ApplicationContext.build()
+                    var appCtx = newApplicationContextBuilder()
                             .properties(Map.of(PROP_IS_APP_BEAN_CTX, true))
                             .start();
                     log.debug("main bean context started");
@@ -190,20 +223,9 @@ public abstract class MicronautVertxApplication {
                 });
     }
 
-    private void injectMainBeansToVerticleBeanContext(ApplicationContext verticleCtx, ApplicationContext mainCtx) {
-        // TODO: refactor this - it's unreadable, overcomplicated and clumsy
-        List.of(
-                List.of(ApplicationContext.class, mainCtx, Qualifiers.byStereotype(AppBean.class)),
-                List.of(Vertx.class, mainCtx.getBean(Vertx.class), Qualifiers.byStereotype(AppBean.class))
-        ).forEach(t -> {
-            Class beanType = (Class) t.get(0);
-            var bean = t.get(1);
-            Qualifier qualifier = (Qualifier) t.get(2);
-            if (qualifier != null) {
-                verticleCtx.registerSingleton(beanType, bean, qualifier);
-            } else {
-                verticleCtx.registerSingleton(beanType, bean);
-            }
-        });
+    private void injectMainBeansIntoVerticleBeanContext(ApplicationContext verticleCtx, ApplicationContext mainCtx) {
+        verticleCtx.registerSingleton(ApplicationContext.class, mainCtx, Qualifiers.byStereotype(AppBean.class));
+        var vertx = mainCtx.getBean(Vertx.class);
+        verticleCtx.registerSingleton(Vertx.class, vertx, Qualifiers.byStereotype(AppBean.class));
     }
 }

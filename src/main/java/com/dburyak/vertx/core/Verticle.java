@@ -28,7 +28,7 @@ import static io.micronaut.inject.qualifiers.Qualifiers.byStereotype;
 /**
  * Verticle base class with DI support and monitoring.
  * This is a base building block for actor-based system that adds important features on top of Vertx {@link
- * AbstractVerticle}. Implementations should be used through {@link MicronautVertxApplication} instead of default Vertx
+ * AbstractVerticle}. Implementations should be used through {@link VertxApp} instead of default Vertx
  * mechanisms otherwise DI won't work.
  *
  * <p>Implementations of this abstract class should also go with dedicated {@link VerticleProducer}
@@ -67,9 +67,9 @@ public abstract class Verticle extends AbstractVerticle {
     /**
      * Start this verticle.
      *
-     * <p>Is not designed to be called directly, rather is called by the {@link MicronautVertxApplication}
+     * <p>Is not designed to be called directly, rather is called by the {@link VertxApp}
      * on startup. Also may be called indirectly via
-     * {@link MicronautVertxApplication#deployVerticle(VerticleProducer)}.
+     * {@link VertxApp#deployVerticle(VerticleProducer)}.
      *
      * @return start operation status
      */
@@ -102,8 +102,8 @@ public abstract class Verticle extends AbstractVerticle {
     /**
      * Stop this verticle.
      *
-     * <p>Is not designed to be called directly, rather is called by the {@link MicronautVertxApplication} on shutdown.
-     * Also may be called indirectly via {@link MicronautVertxApplication#undeployVerticle(String)}.
+     * <p>Is not designed to be called directly, rather is called by the {@link VertxApp} on shutdown.
+     * Also may be called indirectly via {@link VertxApp#undeployVerticle(String)}.
      *
      * @return stop operation status
      */
