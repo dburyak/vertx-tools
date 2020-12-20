@@ -27,7 +27,7 @@ class VertxAppSpec extends Specification {
     ApplicationContextBuilder initVerticleCtxBuilder = Mock(ApplicationContextBuilder)
     ApplicationContext initVerticleCtx = Mock(ApplicationContext)
 
-    def 'start app - main flow'() {
+    def 'start - starts successfully'() {
         given: 'not started vertx application'
         def initVerticleOpts = new DeploymentOptions()
         def initVerticleDepId = 'init-verticle-dep-id-uuid'
@@ -53,7 +53,7 @@ class VertxAppSpec extends Specification {
         app.appState == RUNNING
     }
 
-    def 'start app - throws exception if app is already running'() {
+    def 'start - throws exception if app is already running'() {
         given: 'running application with initialized bean context'
 
         when: 'start already running application again'
@@ -73,7 +73,7 @@ class VertxAppSpec extends Specification {
         0 * app.newApplicationContextBuilder()
     }
 
-    def 'stop app - main flow'() {
+    def 'stop - stops successfully'() {
         given: 'running app'
         def initVerticleOpts = new DeploymentOptions()
         def initVerticleDepId = 'init-verticle-dep-id-uuid'
@@ -98,7 +98,7 @@ class VertxAppSpec extends Specification {
         app.appState == STOPPED
     }
 
-    def 'stop app - throws exception if app is not running'() {
+    def 'stop - throws exception if app is not running'() {
         given: 'not running app'
 
         when: 'stop not running app'
@@ -113,7 +113,7 @@ class VertxAppSpec extends Specification {
         app.appState == FAILED
     }
 
-    def 'stop app - throws exception if app was stopped'() {
+    def 'stop - throws exception if app was stopped'() {
         given: 'app that was started and stopped'
 
         when: 'stop app one more time'
@@ -134,6 +134,46 @@ class VertxAppSpec extends Specification {
 
         and:
         app.appState == FAILED
+    }
+
+    def 'deployVerticle - deploys verticle successfully'() {
+        given: 'running app'
+        def initVerticleOpts = new DeploymentOptions()
+        def initVerticleDepId = 'init-verticle-dep-id-uuid'
+
+        when: 'deploy verticle'
+        def res = app.start()
+                .andThen(app.deployVerticle(initVerticleProducer))
+                .test().await()
+
+        then:
+        noExceptionThrown()
+        res.assertNoErrors()
+        res.assertComplete()
+
+        and:
+        interaction appIsStarted()
+
+        and:
+        interaction initVerticleDeployed(initVerticleOpts, initVerticleDepId)
+
+        and:
+        app.getVerticleApplicationContext(initVerticleDepId) == initVerticleCtx
+    }
+
+    private def initVerticleDeployed(DeploymentOptions initVerticleOpts, String initVerticleDepId) {
+        return {
+            2 * initVerticleProducer.getDeploymentOptions() >> initVerticleOpts
+            1 * app.newApplicationContextBuilder() >> initVerticleCtxBuilder
+            1 * initVerticleCtxBuilder.properties(Map.of(PROP_IS_APP_BEAN_CTX, false)) >> initVerticleCtxBuilder
+            1 * initVerticleCtxBuilder.start() >> initVerticleCtx
+            1 * initVerticleCtx.registerSingleton(ApplicationContext.class, mainAppCtx, _)
+            1 * mainAppCtx.getBean(Vertx.class) >> vertx
+            1 * initVerticleCtx.registerSingleton(Vertx.class, vertx, _)
+            1 * mainAppCtx.getBean(Vertx.class) >> vertx
+            1 * initVerticleProducer.setVerticleBeanCtx(initVerticleCtx)
+            1 * vertx.rxDeployVerticle(initVerticleProducer, initVerticleOpts) >> Single.just(initVerticleDepId)
+        }
     }
 
     private def appIsStarted() {
