@@ -1,6 +1,7 @@
 package com.dburyak.vertx.core.eventbus;
 
 import io.micronaut.context.annotation.Factory;
+import io.micronaut.context.annotation.Secondary;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.EventBus;
@@ -11,12 +12,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Factory
+@Secondary
 @Setter(onMethod_ = {@Inject})
 @Slf4j
 public class EventBusFactory {
     private MessageCodec<Object, Object> ebMsgCodec;
 
     @Singleton
+    @Secondary
     public EventBus eventBus(Vertx vertx) {
         // rx.EventBus is not thread safe, but the wrapped core.EventBus is thread safe,
         // so per-verticle singleton thin wrapper should be used that wraps single-in-app thread safe instance
