@@ -8,6 +8,9 @@ import io.reactivex.functions.Function;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.DeliveryOptions;
 
+import javax.inject.Inject;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.Map;
 
 /**
@@ -26,7 +29,7 @@ public interface CallDispatcher {
      * @param request request data
      * @return request status
      */
-    Completable notify(Request request);
+    Completable notify(@NotNull Request request);
 
     /**
      * Point-to-point actor action call. Groovy friendly version.
@@ -38,7 +41,7 @@ public interface CallDispatcher {
      * @param requestParams map of request data (keys same as {@link Request} properties names)
      * @return request status
      */
-    Completable notify(Map<String, Object> requestParams);
+    Completable notify(@NotNull Map<String, Object> requestParams);
 
     /**
      * Point-to-point actor action call.
@@ -54,7 +57,7 @@ public interface CallDispatcher {
      * @param opts delivery options, includes headers, call timeout and some EB-specific config
      * @return request status
      */
-    Completable notify(String action, Object args, Object msg, DeliveryOptions opts);
+    Completable notify(@NotBlank String action, Object args, Object msg, DeliveryOptions opts);
 
     /**
      * Point-to-point actor action call with arguments.
@@ -70,7 +73,7 @@ public interface CallDispatcher {
      * @param headers headers
      * @return request status
      */
-    Completable notify(String action, Object args, Object msg, Map<String, Object> headers);
+    Completable notify(@NotBlank String action, Object args, Object msg, Map<String, Object> headers);
 
     /**
      * Point-to-point request-response actor action call.
@@ -81,7 +84,7 @@ public interface CallDispatcher {
      * @param request request data
      * @return response
      */
-    Single<Response> request(Request request);
+    Single<Response> request(@NotNull Request request);
 
     /**
      * Point-to-point request-response actor action call. Groovy friendly version.
@@ -92,7 +95,7 @@ public interface CallDispatcher {
      * @param requestParams map of request data (keys same as {@link Request} properties names)
      * @return response
      */
-    Single<Response> request(Map<String, Object> requestParams);
+    Single<Response> request(@NotNull Map<String, Object> requestParams);
 
     /**
      * Point-to-point request-response actor action call.
@@ -107,7 +110,7 @@ public interface CallDispatcher {
      * @param opts delivery options, includes headers, call timeout and some EB-specific config
      * @return response
      */
-    Single<Response> request(String action, Object args, Object msg, DeliveryOptions opts);
+    Single<Response> request(@NotBlank String action, Object args, Object msg, DeliveryOptions opts);
 
     /**
      * Point-to-point request-response actor action call.
@@ -122,7 +125,7 @@ public interface CallDispatcher {
      * @param headers headers
      * @return response
      */
-    Single<Response> request(String action, Object args, Object msg, Map<String, Object> headers);
+    Single<Response> request(@NotBlank String action, Object args, Object msg, Map<String, Object> headers);
 
     /**
      * Publish an event to all registered subscribers.
@@ -133,7 +136,7 @@ public interface CallDispatcher {
      * @param request request
      * @return request status
      */
-    Completable publish(Request request);
+    Completable publish(@NotNull Request request);
 
     /**
      * Publish an event to all registered subscribers. Groovy friendly version.
@@ -144,7 +147,7 @@ public interface CallDispatcher {
      * @param requestParams map of request data (keys same as {@link Request} properties names)
      * @return request status
      */
-    Completable publish(Map<String, Object> requestParams);
+    Completable publish(@NotNull Map<String, Object> requestParams);
 
     /**
      * Publish an event to all registered subscribers.
@@ -159,7 +162,7 @@ public interface CallDispatcher {
      * @param opts delivery options, includes headers, call timeout and some EB-specific config
      * @return response
      */
-    Completable publish(String action, Object args, Object msg, DeliveryOptions opts);
+    Completable publish(@NotBlank String action, Object args, Object msg, DeliveryOptions opts);
 
     /**
      * Publish an event to all registered subscribers.
@@ -173,7 +176,7 @@ public interface CallDispatcher {
      * @param headers headers
      * @return response
      */
-    Completable publish(String action, Object args, Object msg, Map<String, Object> headers);
+    Completable publish(@NotBlank String action, Object args, Object msg, Map<String, Object> headers);
 
     /**
      * Register verticle call handler for {@link CallType#NOTIFICATION} calls.
@@ -182,7 +185,7 @@ public interface CallDispatcher {
      * @param doOnNotification notification handler
      * @return disposable that allows to unregister call handler
      */
-    Single<Disposable> onNotification(String action, Handler<Request> doOnNotification);
+    Single<Disposable> onNotification(@NotBlank String action, @NotNull Handler<Request> doOnNotification);
 
     /**
      * Register verticle call handler for {@link ServiceType#REQUEST_RESPONSE} calls.
@@ -191,7 +194,7 @@ public interface CallDispatcher {
      * @param doOnRequest request handler that should return response
      * @return disposable that allows to unregister call handler
      */
-    Single<Disposable> onRequest(String action, Function<Request, Single<Response>> doOnRequest);
+    Single<Disposable> onRequest(@NotBlank String action, @NotNull Function<Request, Single<Response>> doOnRequest);
 
     /**
      * Register verticle subscriber to {@link ServiceType#PUB_SUB_TOPIC} topic with provided event handler.
@@ -200,13 +203,13 @@ public interface CallDispatcher {
      * @param doOnEvent event handler
      * @return disposable that allows to unsubscribe this subscription to topic
      */
-    Single<Disposable> subscribe(String action, Handler<Request> doOnEvent);
+    Single<Disposable> subscribe(@NotBlank String action, @NotNull Handler<Request> doOnEvent);
 
     /**
-     * Configure routing.
+     * Set routing configuration.
      *
      * @param routing routing config
-     * @return configuration status
      */
-    Completable configure(RoutingConfig routing);
+    @Inject
+    void setRouting(@NotNull RoutingConfig routing);
 }
