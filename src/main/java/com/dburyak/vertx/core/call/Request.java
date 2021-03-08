@@ -1,36 +1,44 @@
 package com.dburyak.vertx.core.call;
 
+import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.reactivex.core.MultiMap;
+import io.vertx.reactivex.core.eventbus.Message;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Data
 @Builder(toBuilder = true)
-public class Request {
+public class Request<T> {
 
     /**
      * Action id.
      */
-    String action;
+    private String action;
 
     /**
      * Request data.
      */
-    Object msg;
+    private T msg;
 
     /**
      * Request arguments. Correspond to http uri query parameters.
      */
-    Object args;
+    private Object args;
 
     /**
      * Request delivery options. Headers (if present) in delivery options take precedence over {@link #headers}.
      */
-    DeliveryOptions deliveryOptions;
+    private DeliveryOptions deliveryOptions;
 
     /**
      * Request headers. Headers in {@link #deliveryOptions} if specified take precedence over this property.
      */
-    MultiMap headers;
+    private MultiMap headers;
+
+    @Setter(AccessLevel.PACKAGE)
+    @Getter(AccessLevel.PACKAGE)
+    private Message<T> ebMsg;
 }

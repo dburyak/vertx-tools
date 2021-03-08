@@ -10,8 +10,8 @@ public class RoutingConfigFactory {
 
     @Bean
     @Secondary
-    public RoutingConfig routingConfig() {
+    public Routing routingConfig() {
         // TODO: implement parsing of routing config
-        return new RoutingConfig();
+        return new Routing();
     }
 }

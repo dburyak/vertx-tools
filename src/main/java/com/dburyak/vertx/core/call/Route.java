@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @Builder(toBuilder = true)
-public class RouteConfig {
+public class Route {
     private String actionId;
-    private CommunicationType communicationType;
+    private CommunicationProtocol communicationProtocol;
     private CallType callType;
     private String ebAddress;
 }

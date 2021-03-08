@@ -9,10 +9,10 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @Builder(toBuilder = true)
-public class RoutingConfig {
+public class Routing {
 
     /**
      * Key - action id, value - route config.
      */
-    private Map<String, RouteConfig> routes;
+    private Map<String, Route> routes;
 }
