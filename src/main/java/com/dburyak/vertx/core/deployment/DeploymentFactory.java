@@ -1,4 +1,4 @@
-package com.dburyak.vertx.core.call;
+package com.dburyak.vertx.core.deployment;
 
 import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
@@ -6,12 +6,12 @@ import io.micronaut.context.annotation.Secondary;
 
 @Factory
 @Secondary
-public class RoutingConfigFactory {
+public class DeploymentFactory {
 
     @Bean
     @Secondary
-    public Routing routingConfig() {
+    public Deployment deployment() {
         // TODO: implement parsing of routing config
-        return new Routing();
+        return new Deployment();
     }
 }

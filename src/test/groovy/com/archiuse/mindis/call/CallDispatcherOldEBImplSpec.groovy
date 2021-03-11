@@ -20,7 +20,7 @@ import static com.archiuse.mindis.call.ServiceType.REQUEST_RESPONSE
 import static java.util.concurrent.TimeUnit.SECONDS
 
 @Timeout(value = 2, unit = SECONDS)
-class CallDispatcherEBImplSpec extends VertxRxJavaSpec {
+class CallDispatcherOldEBImplSpec extends VertxRxJavaSpec {
 
     CallDispatcherEBImpl callDispatcher = new CallDispatcherEBImpl()
 

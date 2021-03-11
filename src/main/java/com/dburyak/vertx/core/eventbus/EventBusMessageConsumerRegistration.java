@@ -1,4 +1,4 @@
-package com.dburyak.vertx.core.call;
+package com.dburyak.vertx.core.eventbus;
 
 import io.reactivex.disposables.Disposable;
 import io.vertx.reactivex.core.eventbus.MessageConsumer;
@@ -10,7 +10,7 @@ import lombok.ToString;
 
 @ToString
 @Builder(toBuilder = true)
-public class EbActionRegistration<T> implements Disposable {
+public class EventBusMessageConsumerRegistration<T> implements Disposable {
     private final MessageConsumer<T> ebMsgConsumer;
     private final Record discoveryRecord;
     private final ServiceDiscovery serviceDiscovery;

@@ -1,4 +1,4 @@
-package com.dburyak.vertx.core.call;
+package com.dburyak.vertx.core.deployment;
 
 public enum CommunicationProtocol {
     VERTX_EVENT_BUS,

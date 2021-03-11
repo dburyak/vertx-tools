@@ -1,4 +1,4 @@
-package com.dburyak.vertx.core.di.call;
+package com.dburyak.vertx.core.di.eventbus;
 
 import javax.inject.Qualifier;
 

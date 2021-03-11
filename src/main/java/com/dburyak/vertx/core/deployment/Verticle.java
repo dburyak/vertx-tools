@@ -1,4 +1,4 @@
-package com.dburyak.vertx.core.call;
+package com.dburyak.vertx.core.deployment;
 
 import lombok.Builder;
 import lombok.Data;
@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @Builder(toBuilder = true)
-public class Route {
-    private String actionId;
+public class Verticle {
+    private String action;
+    private CommunicationType communicationType;
     private CommunicationProtocol communicationProtocol;
-    private CallType callType;
-    private String ebAddress;
+    private String addr;
 }
