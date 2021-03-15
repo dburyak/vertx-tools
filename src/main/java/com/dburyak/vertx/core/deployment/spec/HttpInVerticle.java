@@ -82,13 +82,13 @@ public class HttpInVerticle extends Verticle {
                             + method + ", path=" + path);
                 }
                 var effectiveName = name.strip();
-                var effectivePath = (path != null) ? path : name;
+                var effectivePath = (path != null) ? path.strip() : effectiveName;
                 var effectiveBasePath = (basePath != null) ? basePath.strip() : null;
                 if (method == null) {
                     throw new IllegalStateException("http_in verticle method must be specified: path=" + path);
                 }
                 var effectiveAction = (action != null && !action.isBlank()) ? action.strip() : effectiveName;
-                return new Path(effectiveName, effectivePath.strip(), effectiveBasePath, method, effectiveAction, auth,
+                return new Path(effectiveName, effectivePath, effectiveBasePath, method, effectiveAction, auth,
                         headers);
             }
         }
