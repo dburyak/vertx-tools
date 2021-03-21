@@ -24,14 +24,21 @@ deployment {
       type VERTX_EVENT_BUS              (default: VERTX_EVENT_BUS)
       instances 2 * NUM_CPU             (default: 1)
       producer "com.blah.blah.Verticle1.Producer"
-      baseAddr "/actor1"                (default: "")
-      "/action1" {
-        addr "/actor1/action1"          (default: same as action name)
+      in { // actions this verticle can perform, addresses it listens to
+        baseAddr "/actor1"                (default: "")
+        "/action1" {
+          addr "/actor1/action1"          (default: same as action name)
+        }
+        "/actor1/action2" {
+          addr "/actor1/action2_overridden"
+        }
+        "/verticle1/action3"              (same as action)
       }
-      "/actor1/action2" {
-        addr "/actor1/action2_overridden"
+      out { // configuration for messages sent out by this verticle (should be optional)
+        "/actor2/action" {
+          localOnly true
+        }
       }
-      "/verticle1/action3"              (same as action)
     }
     actor2(type: HTTP_OUT) {
       type HTTP_OUT
@@ -67,18 +74,20 @@ deployment {
         enabled env.ACTOR_3_AUTH_ENABLED
         roles ["manager", "admin"]
       }
-      "/books"(method: GET, action: "/actor1/action1")      (default: action with same name)
-      "/books/{bookId}"(method: GET)
-      "/books/create" {
-        method POST
-        path "/books"
+      out {
+        "/books"(method: GET, action: "/actor1/action1")      (default: action with same name)
+        "/books/{bookId}"(method: GET)
+        "/books/create" {
+          method POST
+          path "/books"
+        }
       }
     }
     actor4(type: GRPC_OUT) {
     }
   }
 }
- */
+*/
 
 @Data
 @Builder(toBuilder = true)

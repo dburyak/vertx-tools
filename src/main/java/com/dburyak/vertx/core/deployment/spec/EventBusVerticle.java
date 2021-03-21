@@ -1,12 +1,10 @@
 package com.dburyak.vertx.core.deployment.spec;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,18 +12,13 @@ import java.util.stream.Collectors;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @SuperBuilder(toBuilder = true)
-public class EventBusVerticle extends Verticle {
-    private static final String BASE_ADDR_DEFAULT = "";
-    private static final List<Action> ACTIONS_DEFAULT = Collections.emptyList();
-
+public class EventBusVerticle extends Verticle<EventBusVerticle.InAction, EventBusVerticle.OutAction> {
     private final String producer;
-    private final String baseAddr;
-    private final List<Action> actions;
 
     @Override
     public List<String> getAllAddresses() {
-        return actions.stream()
-                .map(a -> a.getFullAddr(this))
+        return getInActions().getList().stream()
+                .map(a -> a.getFullAddr(getInActions()))
                 .collect(Collectors.toList());
     }
 
@@ -35,31 +28,25 @@ public class EventBusVerticle extends Verticle {
             throw new IllegalStateException("producer must be specified: name=" + getName());
         }
         producer = builder.producer.strip();
-        baseAddr = (builder.baseAddr != null) ? builder.baseAddr.strip() : BASE_ADDR_DEFAULT;
-        actions = (builder.actions != null) ? builder.actions : ACTIONS_DEFAULT;
     }
 
     @Data
-    @Builder(toBuilder = true)
-    public static class Action {
-        private final String name;
-        private final String addr;
-        private final String baseAddr;
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder(toBuilder = true)
+    public static class InAction extends com.dburyak.vertx.core.deployment.spec.InAction {
 
-        public String getFullAddr(EventBusVerticle parentVerticle) {
-            return ((baseAddr != null) ? baseAddr : parentVerticle.baseAddr) + addr;
+        protected InAction(InActionBuilder<?, ?> builder) {
+            super(builder);
         }
+    }
 
-        public static class ActionBuilder {
-            public Action build() {
-                if (name == null || name.isBlank()) {
-                    throw new IllegalStateException("event bus verticle action name must be specified: baseAddr="
-                            + baseAddr + ", addr=" + addr);
-                }
-                var effectiveAddr = (addr != null && !addr.isBlank()) ? addr : name;
-                var effectiveBaseAddr = (baseAddr != null) ? baseAddr.strip() : null;
-                return new Action(name.strip(), effectiveAddr.strip(), effectiveBaseAddr);
-            }
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder(toBuilder = true)
+    public static class OutAction extends com.dburyak.vertx.core.deployment.spec.OutAction {
+
+        protected OutAction(OutActionBuilder<?, ?> builder) {
+            super(builder);
         }
     }
 }

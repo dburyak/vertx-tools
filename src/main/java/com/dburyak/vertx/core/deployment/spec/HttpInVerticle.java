@@ -15,23 +15,27 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @SuperBuilder(toBuilder = true)
-public class HttpInVerticle extends Verticle {
+public class HttpInVerticle extends Verticle<HttpInVerticle.InAction, HttpInVerticle.OutAction> {
     private static final String BASE_PATH_DEFAULT = "";
     private static final Headers HEADERS_DEFAULT = Headers.all();
     private static final Auth AUTH_DEFAULT = Auth.disabled();
-    private static final List<Path> PATHS_DEFAULT = Collections.emptyList();
 
     private final String basePath;
     private final Headers headers;
     private final Auth auth;
-    private final List<Path> paths;
 
     protected HttpInVerticle(HttpInVerticleBuilder<?, ?> builder) {
         super(builder);
+        if (!getInActions().getList().isEmpty()) {
+            // double check to be sure
+            throw new IllegalStateException("http_in verticle can not have input actions");
+        }
+        if (getOutActions().getList().isEmpty()) {
+            throw new IllegalStateException("http_in verticle must have out actions (path specs)");
+        }
         basePath = (builder.basePath != null) ? builder.basePath.strip() : BASE_PATH_DEFAULT;
         headers = (builder.headers != null) ? builder.headers : HEADERS_DEFAULT;
         auth = (builder.auth != null) ? builder.auth : AUTH_DEFAULT;
-        paths = (builder.paths != null) ? builder.paths : PATHS_DEFAULT;
     }
 
     @Override
@@ -61,13 +65,23 @@ public class HttpInVerticle extends Verticle {
     }
 
     @Data
-    @Builder(toBuilder = true)
-    public static class Path {
-        private final String name;
-        private final String path;
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder(toBuilder = true)
+    public static class InAction extends com.dburyak.vertx.core.deployment.spec.InAction {
+
+        protected InAction(InActionBuilder<?, ?> builder) {
+            super(builder);
+            throw new UnsupportedOperationException("http_in verticle can not have input actions");
+        }
+    }
+
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder(toBuilder = true)
+    public static class OutAction extends com.dburyak.vertx.core.deployment.spec.OutAction {
         private final String basePath;
+        private final String path;
         private final HttpMethod method;
-        private final String action;
         private final Auth auth;
         private final Headers headers;
 
@@ -75,22 +89,16 @@ public class HttpInVerticle extends Verticle {
             return ((basePath != null) ? basePath : verticle.basePath) + path;
         }
 
-        public static class PathBuilder {
-            public Path build() {
-                if (name == null || name.isBlank()) {
-                    throw new IllegalStateException("http_in verticle path name must be specified: method="
-                            + method + ", path=" + path);
-                }
-                var effectiveName = name.strip();
-                var effectivePath = (path != null) ? path.strip() : effectiveName;
-                var effectiveBasePath = (basePath != null) ? basePath.strip() : null;
-                if (method == null) {
-                    throw new IllegalStateException("http_in verticle method must be specified: path=" + path);
-                }
-                var effectiveAction = (action != null && !action.isBlank()) ? action.strip() : effectiveName;
-                return new Path(effectiveName, effectivePath, effectiveBasePath, method, effectiveAction, auth,
-                        headers);
+        protected OutAction(OutActionBuilder<?, ?> builder) {
+            super(builder);
+            basePath = (builder.basePath != null) ? builder.basePath.strip() : null;
+            path = (builder.path != null) ? builder.path.strip() : getName();
+            if (builder.method == null) {
+                throw new IllegalStateException("http_in verticle method must be specified: path=" + path);
             }
+            method = builder.method;
+            auth = builder.auth;
+            headers = builder.headers;
         }
     }
 }
