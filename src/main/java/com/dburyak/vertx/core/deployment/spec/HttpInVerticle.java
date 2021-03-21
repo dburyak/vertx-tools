@@ -11,6 +11,8 @@ import lombok.experimental.SuperBuilder;
 import java.util.Collections;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -67,17 +69,6 @@ public class HttpInVerticle extends Verticle<HttpInVerticle.InAction, HttpInVert
     @Data
     @EqualsAndHashCode(callSuper = true)
     @SuperBuilder(toBuilder = true)
-    public static class InAction extends com.dburyak.vertx.core.deployment.spec.InAction {
-
-        protected InAction(InActionBuilder<?, ?> builder) {
-            super(builder);
-            throw new UnsupportedOperationException("http_in verticle can not have input actions");
-        }
-    }
-
-    @Data
-    @EqualsAndHashCode(callSuper = true)
-    @SuperBuilder(toBuilder = true)
     public static class OutAction extends com.dburyak.vertx.core.deployment.spec.OutAction {
         private final String basePath;
         private final String path;
@@ -93,12 +84,20 @@ public class HttpInVerticle extends Verticle<HttpInVerticle.InAction, HttpInVert
             super(builder);
             basePath = (builder.basePath != null) ? builder.basePath.strip() : null;
             path = (builder.path != null) ? builder.path.strip() : getName();
-            if (builder.method == null) {
-                throw new IllegalStateException("http_in verticle method must be specified: path=" + path);
-            }
-            method = builder.method;
+            method = requireNonNull(builder.method);
             auth = builder.auth;
             headers = builder.headers;
+        }
+    }
+
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder(toBuilder = true)
+    public static class InAction extends com.dburyak.vertx.core.deployment.spec.InAction {
+
+        protected InAction(InActionBuilder<?, ?> builder) {
+            super(builder);
+            throw new UnsupportedOperationException("http_in verticle can not have input actions");
         }
     }
 }

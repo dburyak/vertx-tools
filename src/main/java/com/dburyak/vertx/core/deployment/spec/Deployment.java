@@ -49,20 +49,22 @@ deployment {
         enabled true
         header env.AUTH_HEADER
       }
-      "/users" {
-        method GET
-        headers ["X-One", "X-Two", env.AUTH_HEADER]
-      }
-      "/users/{userId}" {
-        url "https://overridden.com/api/v2"
-        method GET
-      }
-      "/users/post" {
-        method POST
-        path "/users"
-        headers NONE
-        auth {
-          enabled false
+      in {
+        "/users" {
+          method GET
+          headers ["X-One", "X-Two", env.AUTH_HEADER]
+        }
+        "/users/{userId}" {
+          url "https://overridden.com/api/v2"
+          method GET
+        }
+        "/users/post" {
+          method POST
+          path "/users"
+          headers NONE
+          auth {
+            enabled false
+          }
         }
       }
     }
