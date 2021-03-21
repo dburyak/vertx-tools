@@ -1,10 +1,13 @@
 package com.dburyak.vertx.core.deployment.spec;
 
+import com.dburyak.vertx.core.VerticleProducer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,6 +23,15 @@ public class EventBusVerticle extends Verticle<EventBusVerticle.InAction, EventB
         return getInActions().getList().stream()
                 .map(a -> a.getFullAddr(getInActions()))
                 .collect(Collectors.toList());
+    }
+
+    @SneakyThrows({ClassNotFoundException.class, NoSuchMethodException.class, InstantiationException.class,
+            IllegalAccessException.class, InvocationTargetException.class})
+    @Override
+    public <T extends VerticleProducer<T>> List<VerticleProducer<T>> createBySpec(Verticles verticles) {
+        var verticleProducer = (VerticleProducer<T>) Class.forName(producer).getDeclaredConstructor().newInstance();
+        verticleProducer.getDeploymentOptions().setInstances(getInstances());
+        return List.of(verticleProducer);
     }
 
     protected EventBusVerticle(EventBusVerticleBuilder<?, ?> builder) {

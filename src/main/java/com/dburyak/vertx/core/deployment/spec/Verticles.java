@@ -19,7 +19,7 @@ import static java.util.stream.Collectors.toList;
 public class Verticles {
 
     @Builder.Default
-    private final List<Verticle> verticles = Collections.emptyList();
+    private final List<Verticle<?, ?>> verticles = Collections.emptyList();
 
     @Builder.Default
     private final int instances = 1;
