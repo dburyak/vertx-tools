@@ -1,5 +1,6 @@
 package com.dburyak.vertx.core.deployment.spec;
 
+import com.dburyak.vertx.core.VerticleProducer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import lombok.Builder;
@@ -17,7 +18,7 @@ import static java.util.Objects.requireNonNull;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @SuperBuilder(toBuilder = true)
-public class HttpInVerticle extends Verticle<HttpInVerticle.InAction, HttpInVerticle.OutAction> {
+public class HttpProxyInVerticle extends Verticle<HttpProxyInVerticle.InAction, HttpProxyInVerticle.OutAction> {
     private static final String BASE_PATH_DEFAULT = "";
     private static final Headers HEADERS_DEFAULT = Headers.all();
     private static final Auth AUTH_DEFAULT = Auth.disabled();
@@ -25,8 +26,9 @@ public class HttpInVerticle extends Verticle<HttpInVerticle.InAction, HttpInVert
     private final String basePath;
     private final Headers headers;
     private final Auth auth;
+    private final int port;
 
-    protected HttpInVerticle(HttpInVerticleBuilder<?, ?> builder) {
+    protected HttpProxyInVerticle(HttpProxyInVerticleBuilder<?, ?> builder) {
         super(builder);
         if (!getInActions().getList().isEmpty()) {
             // double check to be sure
@@ -38,12 +40,18 @@ public class HttpInVerticle extends Verticle<HttpInVerticle.InAction, HttpInVert
         basePath = (builder.basePath != null) ? builder.basePath.strip() : BASE_PATH_DEFAULT;
         headers = (builder.headers != null) ? builder.headers : HEADERS_DEFAULT;
         auth = (builder.auth != null) ? builder.auth : AUTH_DEFAULT;
+        port = builder.port;
     }
 
     @Override
     public List<String> getAllAddresses() {
         // http in verticle doesn't listen on any address, only sends
         return Collections.emptyList();
+    }
+
+    @Override
+    public List<VerticleProducer<?>> createBySpec(Verticles verticles) {
+        return List.of(new com.dburyak.vertx.core.http.HttpProxyInVerticle.Producer(verticles, this));
     }
 
     @Data
@@ -76,7 +84,7 @@ public class HttpInVerticle extends Verticle<HttpInVerticle.InAction, HttpInVert
         private final Auth auth;
         private final Headers headers;
 
-        public String getFullPath(HttpInVerticle verticle) {
+        public String getFullPath(HttpProxyInVerticle verticle) {
             return ((basePath != null) ? basePath : verticle.basePath) + path;
         }
 

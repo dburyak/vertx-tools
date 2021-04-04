@@ -15,7 +15,7 @@ import static java.util.Objects.requireNonNull;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder(toBuilder = true)
-public class HttpOutVerticle extends Verticle<HttpOutVerticle.InAction, HttpOutVerticle.OutAction> {
+public class HttpProxyOutVerticle extends Verticle<HttpProxyOutVerticle.InAction, HttpProxyOutVerticle.OutAction> {
     private static final String BASE_ADDR_DEFAULT = "";
     private static final Headers HEADERS_DEFAULT = Headers.all();
     private static final Auth AUTH_DEFAULT = Auth.disabled();
@@ -32,7 +32,7 @@ public class HttpOutVerticle extends Verticle<HttpOutVerticle.InAction, HttpOutV
                 .collect(Collectors.toList());
     }
 
-    protected HttpOutVerticle(HttpOutVerticleBuilder<?, ?> builder) {
+    protected HttpProxyOutVerticle(HttpProxyOutVerticleBuilder<?, ?> builder) {
         super(builder);
         baseAddr = (builder.baseAddr != null) ? builder.baseAddr.strip() : BASE_ADDR_DEFAULT;
         if (builder.url == null || builder.url.isBlank()) {
@@ -70,7 +70,7 @@ public class HttpOutVerticle extends Verticle<HttpOutVerticle.InAction, HttpOutV
         private final Headers headers;
         private final Auth auth;
 
-        public String getFullUrl(HttpOutVerticle verticle) {
+        public String getFullUrl(HttpProxyOutVerticle verticle) {
             return ((url != null) ? url : verticle.url) + path;
         }
 

@@ -1,6 +1,5 @@
 package com.dburyak.vertx.core.deployment.spec;
 
-import com.dburyak.vertx.core.VerticleProducer;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
@@ -22,8 +21,7 @@ public abstract class Verticle<IN extends InAction, OUT extends OutAction> {
 
     public abstract List<String> getAllAddresses();
 
-    public abstract <T extends VerticleProducer<T>> List<com.dburyak.vertx.core.VerticleProducer<T>> createBySpec(
-            Verticles verticles);
+    public abstract List<com.dburyak.vertx.core.VerticleProducer<?>> createBySpec(Verticles verticles);
 
     protected Verticle(VerticleBuilder<IN, OUT, ?, ?> builder) {
         if (builder.name == null || builder.name.isBlank()) {

@@ -28,8 +28,8 @@ public class EventBusVerticle extends Verticle<EventBusVerticle.InAction, EventB
     @SneakyThrows({ClassNotFoundException.class, NoSuchMethodException.class, InstantiationException.class,
             IllegalAccessException.class, InvocationTargetException.class})
     @Override
-    public <T extends VerticleProducer<T>> List<VerticleProducer<T>> createBySpec(Verticles verticles) {
-        var verticleProducer = (VerticleProducer<T>) Class.forName(producer).getDeclaredConstructor().newInstance();
+    public List<VerticleProducer<?>> createBySpec(Verticles verticles) {
+        var verticleProducer = (VerticleProducer<?>) Class.forName(producer).getDeclaredConstructor().newInstance();
         verticleProducer.getDeploymentOptions().setInstances(getInstances());
         return List.of(verticleProducer);
     }
