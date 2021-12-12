@@ -1,0 +1,15 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+group = 'com.dburyak.tools.vertx.gradle'
+
+repositories {
+    mavenLocal()
+    gradlePluginPortal()
+}
+
+dependencies {
+    implementation "com.coditory.gradle:integration-test-plugin:${libs.versions.plugin.integration.test.get()}"
+    implementation 'io.micronaut.gradle:micronaut-gradle-plugin:3.1.0-M1'
+}

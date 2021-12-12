@@ -1,18 +1,3 @@
-pluginManagement {
-    repositories {
-        def gprUsername = System.properties['gpr.user'] ?: System.getenv('GPR_USER')
-        def gprPassword = System.properties['gpr.key'] ?: System.getenv('GPR_KEY')
-
-        mavenLocal()
-        gradlePluginPortal()
-        maven {
-            url = uri('https://maven.pkg.github.com/dburyak/gradle-plugin-integ-test')
-            credentials {
-                username(gprUsername)
-                password(gprPassword)
-            }
-        }
-    }
-}
-
 rootProject.name = 'tools-vertx'
+enableFeaturePreview('VERSION_CATALOGS')
+includeBuild 'gradle/build-conventions/vertx-toolchain'

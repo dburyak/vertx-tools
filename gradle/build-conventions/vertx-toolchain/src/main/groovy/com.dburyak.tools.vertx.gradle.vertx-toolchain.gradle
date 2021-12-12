@@ -1,0 +1,15 @@
+plugins {
+    id 'java'
+    id 'com.coditory.integration-test'
+    id 'io.micronaut.library'
+}
+
+dependencies {
+    // lombok
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    testCompileOnly libs.lombok
+    testAnnotationProcessor libs.lombok
+    integrationCompileOnly libs.lombok
+    integrationAnnotationProcessor libs.lombok
+}

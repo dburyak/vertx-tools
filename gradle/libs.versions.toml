@@ -1,0 +1,31 @@
+[versions]
+vertx = '4.2.1'
+groovy = '3.0.9'
+lombok = '1.18.22'
+micronautDi = '3.2.1'
+jackson = '2.13.0'
+
+# gradle plugins versions
+plugin-integration-test = '1.3.0'
+plugin-micronaut = '3.1.0-M1'
+
+
+########################################################################################################################
+[libraries]
+lombok = { module = 'org.projectlombok:lombok', version.ref = 'lombok' }
+groovy-all = { module = 'org.codehaus.groovy:groovy-all', version.ref = 'groovy' }
+vertx-core = { module = 'io.vertx:vertx-core', version.ref = 'vertx' }
+vertx-lang-groovy = { module = 'io.vertx:vertx-lang-groovy', version.ref = 'vertx' }
+vertx-rxjava3 = { module = 'io.vertx:vertx-rx-java3', version.ref = 'vertx' }
+
+jackson-databind = { module = 'com.fasterxml.jackson.core:jackson-databind', version.ref = 'jackson' }
+
+
+########################################################################################################################
+[bundles]
+
+
+########################################################################################################################
+[plugins]
+integration-test = { id = 'com.coditory.integration-test', version.ref = 'plugin-integration-test' }
+micronaut = { id = 'io.micronaut.library', version.ref = 'plugin-micronaut' }

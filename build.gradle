@@ -10,7 +10,7 @@ ext {
     githubArtifactRepoName = project.name
 }
 
-group = 'com.dburyak.vertx.tools.core'
+group = 'com.dburyak.tools.vertx'
 version gitVersion()
 description = 'Basic tools for vertx based projects'
 ext { isRelease = versionDetails().isCleanTag }
@@ -34,70 +34,70 @@ micronaut {
 
 dependencies {
     // lombok
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    integrationCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-    integrationAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    testCompileOnly libs.lombok
+    testAnnotationProcessor libs.lombok
+    integrationCompileOnly libs.lombok
+    integrationAnnotationProcessor libs.lombok
 
-    implementation "org.codehaus.groovy:groovy-all:${groovyVersion}"
-    implementation "io.vertx:vertx-core:${vertxVersion}"
-    implementation "io.vertx:vertx-lang-groovy:${vertxVersion}"
-    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonDatabindVersion}"
+    implementation libs.groovy.all
+    implementation libs.vertx.core
+    implementation libs.vertx.lang.groovy
+    implementation libs.jackson.databind
 
-    implementation "io.vertx:vertx-rx-java2:${vertxVersion}"
-    implementation "io.vertx:vertx-reactive-streams:${vertxVersion}"
-    implementation "io.vertx:vertx-config:${vertxVersion}"
-    implementation "io.vertx:vertx-auth-jwt:${vertxVersion}"
-    implementation "io.vertx:vertx-service-discovery:${vertxVersion}"
-    implementation "io.vertx:vertx-circuit-breaker:${vertxVersion}"
-    implementation "io.vertx:vertx-web-client:${vertxVersion}"
-    implementation "io.vertx:vertx-hazelcast:${vertxVersion}"
-
-    // service proxy
-    implementation "io.vertx:vertx-service-proxy:${vertxVersion}"
-    implementation "io.vertx:vertx-codegen:${vertxVersion}"
-    implementation "io.vertx:vertx-rx-java2-gen:${vertxVersion}"
-
-    // TODO: this may be a separate repo/lib : web
-    implementation "io.vertx:vertx-web:${vertxVersion}"
-    implementation "io.vertx:vertx-health-check:${vertxVersion}"
-
-    // TODO: this may be a separate repo/lib: mongo
-    implementation "io.vertx:vertx-mongo-client:${vertxVersion}"
-
-    // logging
-    implementation "org.slf4j:slf4j-api:${slf4jApiVersion}"
+    implementation libs.vertx.rxjava3
+//    implementation "io.vertx:vertx-reactive-streams:${vertxVersion}"
+//    implementation "io.vertx:vertx-config:${vertxVersion}"
+//    implementation "io.vertx:vertx-auth-jwt:${vertxVersion}"
+//    implementation "io.vertx:vertx-service-discovery:${vertxVersion}"
+//    implementation "io.vertx:vertx-circuit-breaker:${vertxVersion}"
+//    implementation "io.vertx:vertx-web-client:${vertxVersion}"
+//    implementation "io.vertx:vertx-hazelcast:${vertxVersion}"
+//
+//    // service proxy
+//    implementation "io.vertx:vertx-service-proxy:${vertxVersion}"
+//    implementation "io.vertx:vertx-codegen:${vertxVersion}"
+//    implementation "io.vertx:vertx-rx-java2-gen:${vertxVersion}"
+//
+//    // TODO: this may be a separate repo/lib : web
+//    implementation "io.vertx:vertx-web:${vertxVersion}"
+//    implementation "io.vertx:vertx-health-check:${vertxVersion}"
+//
+//    // TODO: this may be a separate repo/lib: mongo
+//    implementation "io.vertx:vertx-mongo-client:${vertxVersion}"
+//
+//    // logging
+//    implementation "org.slf4j:slf4j-api:${slf4jApiVersion}"
 
     // micronaut DI
-    def excludeMicronautHttp = {
-        exclude group: 'io.micronaut', module: 'micronaut-http'
-    }
-    api "io.micronaut:micronaut-inject:${micronautDiVersion}"
-    api "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
-    compileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
-    api "io.micronaut:micronaut-runtime-groovy:${micronautGroovyRuntimeVersion}"
-    annotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
-    testCompileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
-    testAnnotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
+//    def excludeMicronautHttp = {
+//        exclude group: 'io.micronaut', module: 'micronaut-http'
+//    }
+//    api "io.micronaut:micronaut-inject:${micronautDiVersion}"
+//    api "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
+//    compileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
+//    api "io.micronaut:micronaut-runtime-groovy:${micronautGroovyRuntimeVersion}"
+//    annotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
+//    testCompileOnly "io.micronaut:micronaut-inject-groovy:${micronautDiVersion}"
+//    testAnnotationProcessor "io.micronaut:micronaut-validation:${micronautDiVersion}", excludeMicronautHttp
 
-    api "com.esotericsoftware:kryo:${kryoVersion}"
-
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitEngineVersion}"
-    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${junitEngineVersion}"
-
-    // spock
-    testImplementation "org.spockframework:spock-core:${spockVersion}"
-    testImplementation "org.spockframework:spock-junit4:${spockVersion}"
-    testRuntimeOnly "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
-    testRuntimeOnly "org.objenesis:objenesis:${objenesisVersion}"
-
-    // vertx testing
-    testImplementation "io.vertx:vertx-unit:${vertxVersion}"
-
-    // logback impl used only for tests
-    testImplementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}"
+//    api "com.esotericsoftware:kryo:${kryoVersion}"
+//
+//    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitEngineVersion}"
+//    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${junitEngineVersion}"
+//
+//    // spock
+//    testImplementation "org.spockframework:spock-core:${spockVersion}"
+//    testImplementation "org.spockframework:spock-junit4:${spockVersion}"
+//    testRuntimeOnly "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
+//    testRuntimeOnly "org.objenesis:objenesis:${objenesisVersion}"
+//
+//    // vertx testing
+//    testImplementation "io.vertx:vertx-unit:${vertxVersion}"
+//
+//    // logback impl used only for tests
+//    testImplementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}"
 }
 
 /*
