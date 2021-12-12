@@ -15,4 +15,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'tools-vertx-core'
+rootProject.name = 'tools-vertx'
