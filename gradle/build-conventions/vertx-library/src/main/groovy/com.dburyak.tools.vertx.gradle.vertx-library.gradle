@@ -1,0 +1,10 @@
+plugins {
+    id 'com.dburyak.tools.vertx.gradle.vertx-toolchain'
+    id 'java-library'
+}
+
+dependencies {
+    api libs.vertx.core
+    api libs.vertx.rxjava3
+    api libs.slf4j.api
+}

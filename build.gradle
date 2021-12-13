@@ -66,9 +66,6 @@ dependencies {
 //
 //    // TODO: this may be a separate repo/lib: mongo
 //    implementation "io.vertx:vertx-mongo-client:${vertxVersion}"
-//
-//    // logging
-//    implementation "org.slf4j:slf4j-api:${slf4jApiVersion}"
 
     // micronaut DI
 //    def excludeMicronautHttp = {

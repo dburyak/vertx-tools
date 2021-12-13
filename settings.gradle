@@ -1,3 +1,9 @@
 rootProject.name = 'tools-vertx'
 enableFeaturePreview('VERSION_CATALOGS')
+
+// common build logic
 includeBuild 'gradle/build-conventions/vertx-toolchain'
+includeBuild 'gradle/build-conventions/vertx-library'
+
+include ':tools-vertx-di'
+include ':tools-vertx-event-bus'
