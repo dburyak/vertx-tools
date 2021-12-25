@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'groovy'
     id 'io.micronaut.library'
     id 'com.coditory.integration-test'
     id 'jacoco'
@@ -45,7 +46,20 @@ dependencies {
 
     // logging
     implementation libs.slf4j.api
+    testImplementation libs.log4j2.core
 
     // testing
+    testImplementation libs.vertx.junit5
+    testImplementation libs.assertj.core
+    testImplementation libs.groovy.all
+    testImplementation libs.spock.core
+    testRuntimeOnly libs.byte.buddy
+    testRuntimeOnly libs.objenesis
+}
 
+tasks.withType(Test) {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }

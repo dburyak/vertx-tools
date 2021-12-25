@@ -5,6 +5,11 @@ lombok = '1.18.22'
 micronaut = '3.2.1'
 jackson = '2.13.0'
 slf4j = '1.7.32'
+log4j2 = '2.16.0'
+assertj = '3.21.0'
+spock = '2.1-M2-groovy-3.0'
+byte-buddy = '1.11.0'
+objenesis = '3.2'
 
 # gradle plugins versions
 plugin-integration-test = '1.3.0'
@@ -18,10 +23,19 @@ groovy-all = { module = 'org.codehaus.groovy:groovy-all', version.ref = 'groovy'
 vertx-core = { module = 'io.vertx:vertx-core', version.ref = 'vertx' }
 vertx-lang-groovy = { module = 'io.vertx:vertx-lang-groovy', version.ref = 'vertx' }
 vertx-rxjava3 = { module = 'io.vertx:vertx-rx-java3', version.ref = 'vertx' }
+vertx-junit5 = { module = 'io.vertx:vertx-junit5', version.ref = 'vertx' }
 micronaut-inject-java = { module = 'io.micronaut:micronaut-inject', version.ref = 'micronaut' }
 micronaut-validation = { module = 'io.micronaut:micronaut-validation', version.ref = 'micronaut' }
 jackson-databind = { module = 'com.fasterxml.jackson.core:jackson-databind', version.ref = 'jackson' }
 slf4j-api = { module = 'org.slf4j:slf4j-api', version.ref = 'slf4j' }
+log4j2-api = { module = 'org.apache.logging.log4j:log4j-api', version.ref = 'log4j2' }
+log4j2-core = { module = 'org.apache.logging.log4j:log4j-core', version.ref = 'log4j2' }
+
+# testing
+assertj-core = { module = 'org.assertj:assertj-core', version.ref = 'assertj' }
+spock-core = { module = 'org.spockframework:spock-core', version.ref = 'spock' }
+byte-buddy = { module = 'net.bytebuddy:byte-buddy', version.ref = 'byte-buddy' }
+objenesis = { module = 'org.objenesis:objenesis', version.ref = 'objenesis' }
 
 
 ########################################################################################################################
