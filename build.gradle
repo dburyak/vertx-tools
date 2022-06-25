@@ -41,7 +41,7 @@ dependencies {
     integrationCompileOnly libs.lombok
     integrationAnnotationProcessor libs.lombok
 
-    implementation libs.groovy.all
+    implementation libs.groovy
     implementation libs.vertx.core
     implementation libs.vertx.lang.groovy
     implementation libs.jackson.databind

@@ -51,7 +51,7 @@ dependencies {
     // testing
     testImplementation libs.vertx.junit5
     testImplementation libs.assertj.core
-    testImplementation libs.groovy.all
+    testImplementation libs.groovy
     testImplementation libs.spock.core
     testRuntimeOnly libs.byte.buddy
     testRuntimeOnly libs.objenesis
