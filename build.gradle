@@ -1,52 +1,52 @@
-plugins {
-    id 'java-library'
-    id 'com.palantir.git-version' version '0.12.3'
-    id 'com.coditory.integration-test' version "1.3.0"
-    id 'io.micronaut.library' version '3.1.0-M1'
-}
-
-ext {
-    githubArtifactRepoOwner = 'dburyak'
-    githubArtifactRepoName = project.name
-}
-
-group = 'com.dburyak.tools.vertx'
-version gitVersion()
-description = 'Basic tools for vertx based projects'
-ext { isRelease = versionDetails().isCleanTag }
-if (!isRelease) {
-    project.version += '-SNAPSHOT'
-}
-archivesBaseName = project.name
-
-sourceCompatibility = 15
-targetCompatibility = 15
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
-}
-
-micronaut {
-    version = micronautDiVersion
-}
-
-dependencies {
-    // lombok
-    compileOnly libs.lombok
-    annotationProcessor libs.lombok
-    testCompileOnly libs.lombok
-    testAnnotationProcessor libs.lombok
-    integrationCompileOnly libs.lombok
-    integrationAnnotationProcessor libs.lombok
-
-    implementation libs.groovy
-    implementation libs.vertx.core
-    implementation libs.vertx.lang.groovy
-    implementation libs.jackson.databind
-
-    implementation libs.vertx.rxjava3
+//plugins {
+//    id 'java-library'
+//    id 'com.palantir.git-version' version '0.12.3'
+//    id 'com.coditory.integration-test' version "1.3.0"
+//    id 'io.micronaut.library' version '3.1.0-M1'
+//}
+//
+//ext {
+//    githubArtifactRepoOwner = 'dburyak'
+//    githubArtifactRepoName = project.name
+//}
+//
+//group = 'com.dburyak.tools.vertx'
+//version gitVersion()
+//description = 'Basic tools for vertx based projects'
+//ext { isRelease = versionDetails().isCleanTag }
+//if (!isRelease) {
+//    project.version += '-SNAPSHOT'
+//}
+//archivesBaseName = project.name
+//
+//sourceCompatibility = 15
+//targetCompatibility = 15
+//
+//repositories {
+//    mavenLocal()
+//    mavenCentral()
+//    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+//}
+//
+//micronaut {
+//    version = micronautDiVersion
+//}
+//
+//dependencies {
+//    // lombok
+//    compileOnly libs.lombok
+//    annotationProcessor libs.lombok
+//    testCompileOnly libs.lombok
+//    testAnnotationProcessor libs.lombok
+//    integrationCompileOnly libs.lombok
+//    integrationAnnotationProcessor libs.lombok
+//
+//    implementation libs.groovy
+//    implementation libs.vertx.core
+//    implementation libs.vertx.lang.groovy
+//    implementation libs.jackson.databind
+//
+//    implementation libs.vertx.rxjava3
 //    implementation "io.vertx:vertx-reactive-streams:${vertxVersion}"
 //    implementation "io.vertx:vertx-config:${vertxVersion}"
 //    implementation "io.vertx:vertx-auth-jwt:${vertxVersion}"
@@ -95,7 +95,7 @@ dependencies {
 //
 //    // logback impl used only for tests
 //    testImplementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}"
-}
+//}
 
 /*
 publishing {
@@ -129,61 +129,61 @@ publishing {
 }
 */
 
-defaultTasks 'build'
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    group 'build'
-    archiveClassifier.set 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    group 'build'
-    archiveClassifier.set 'javadoc'
-    from javadoc.destinationDir
-}
-
-tasks.withType(Javadoc) {
-    options.encoding 'UTF-8'
-    options.charSet 'UTF-8'
-}
-
-artifacts {
-    archives jar, sourcesJar, javadocJar
-}
-
-tasks.findAll { it.name.startsWith 'publish' }
-        .each { pubTask ->
-            pubTask.dependsOn build, check, groovydoc
-        }
-
-private def readGprCreds() {
-    def gprUser = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
-    def gprKey = project.findProperty('gpr.key') ?: System.getenv('GPR_KEY')
-    [user: gprUser?.strip() as boolean, key: gprKey?.strip() as boolean]
-}
-
-tasks.findAll { it.name =~ /publish\w*Git[Hh]ub/ }
-        .each { pubTask ->
-            pubTask.with {
-                doFirst {
-                    def creds = readGprCreds()
-                    if (!creds.values().every()) {
-                        System.err.println 'github package registry creds must be set via env variables : ' +
-                                'GPR_USER, GPR_KEY'
-                        throw new GradleException("no github package registry creds are set : " +
-                                "user=${creds.user}, key=${creds.key}")
-                    }
-                }
-                dependsOn sourcesJar, javadocJar
-            }
-        }
-
-wrapper {
-    gradleVersion = project.property('org.gradle.version')
-}
-
-tasks.withType(Test) {
-    useJUnitPlatform()
-    systemProperty 'vertx.logger-delegate-factory-class-name', 'io.vertx.core.logging.SLF4JLogDelegateFactory'
-}
+//defaultTasks 'build'
+//
+//task sourcesJar(type: Jar, dependsOn: classes) {
+//    group 'build'
+//    archiveClassifier.set 'sources'
+//    from sourceSets.main.allSource
+//}
+//
+//task javadocJar(type: Jar, dependsOn: javadoc) {
+//    group 'build'
+//    archiveClassifier.set 'javadoc'
+//    from javadoc.destinationDir
+//}
+//
+//tasks.withType(Javadoc) {
+//    options.encoding 'UTF-8'
+//    options.charSet 'UTF-8'
+//}
+//
+//artifacts {
+//    archives jar, sourcesJar, javadocJar
+//}
+//
+//tasks.findAll { it.name.startsWith 'publish' }
+//        .each { pubTask ->
+//            pubTask.dependsOn build, check, groovydoc
+//        }
+//
+//private def readGprCreds() {
+//    def gprUser = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
+//    def gprKey = project.findProperty('gpr.key') ?: System.getenv('GPR_KEY')
+//    [user: gprUser?.strip() as boolean, key: gprKey?.strip() as boolean]
+//}
+//
+//tasks.findAll { it.name =~ /publish\w*Git[Hh]ub/ }
+//        .each { pubTask ->
+//            pubTask.with {
+//                doFirst {
+//                    def creds = readGprCreds()
+//                    if (!creds.values().every()) {
+//                        System.err.println 'github package registry creds must be set via env variables : ' +
+//                                'GPR_USER, GPR_KEY'
+//                        throw new GradleException("no github package registry creds are set : " +
+//                                "user=${creds.user}, key=${creds.key}")
+//                    }
+//                }
+//                dependsOn sourcesJar, javadocJar
+//            }
+//        }
+//
+//wrapper {
+//    gradleVersion = project.property('org.gradle.version')
+//}
+//
+//tasks.withType(Test) {
+//    useJUnitPlatform()
+//    systemProperty 'vertx.logger-delegate-factory-class-name', 'io.vertx.core.logging.SLF4JLogDelegateFactory'
+//}

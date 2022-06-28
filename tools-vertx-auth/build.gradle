@@ -1,0 +1,7 @@
+plugins {
+    id 'com.dburyak.tools.vertx.gradle.vertx-library'
+}
+
+dependencies {
+    project ':tools-vertx-core'
+}
