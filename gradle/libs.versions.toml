@@ -24,7 +24,7 @@ vertx-core = { module = 'io.vertx:vertx-core', version.ref = 'vertx' }
 vertx-lang-groovy = { module = 'io.vertx:vertx-lang-groovy', version.ref = 'vertx' }
 vertx-rxjava3 = { module = 'io.vertx:vertx-rx-java3', version.ref = 'vertx' }
 vertx-junit5 = { module = 'io.vertx:vertx-junit5', version.ref = 'vertx' }
-vertx-hazelcast = { module = 'io.vertx:vertx-hazelcast', version.ref = 'vertx' }
+vertx-cluster-hazelcast = { module = 'io.vertx:vertx-hazelcast', version.ref = 'vertx' }
 micronaut-inject-java = { module = 'io.micronaut:micronaut-inject', version.ref = 'micronaut' }
 micronaut-validation = { module = 'io.micronaut:micronaut-validation', version.ref = 'micronaut' }
 jackson-databind = { module = 'com.fasterxml.jackson.core:jackson-databind', version.ref = 'jackson' }

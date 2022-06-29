@@ -2,8 +2,8 @@ package com.dburyak.vertx.core.util;
 
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Secondary;
+import jakarta.inject.Singleton;
 
-import javax.inject.Singleton;
 import java.util.Base64;
 
 @Factory

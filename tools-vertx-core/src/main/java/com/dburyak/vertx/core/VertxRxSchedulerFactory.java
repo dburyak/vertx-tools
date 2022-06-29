@@ -4,11 +4,10 @@ import com.dburyak.vertx.core.di.EventLoop;
 import com.dburyak.vertx.core.di.Worker;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Secondary;
-import io.reactivex.Scheduler;
-import io.vertx.reactivex.core.RxHelper;
-import io.vertx.reactivex.core.Vertx;
-
-import javax.inject.Singleton;
+import io.reactivex.rxjava3.core.Scheduler;
+import io.vertx.rxjava3.core.RxHelper;
+import io.vertx.rxjava3.core.Vertx;
+import jakarta.inject.Singleton;
 
 @Factory
 @Secondary

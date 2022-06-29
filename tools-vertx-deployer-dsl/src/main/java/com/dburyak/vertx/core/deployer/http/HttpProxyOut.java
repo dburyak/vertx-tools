@@ -1,4 +1,4 @@
-package com.dburyak.vertx.core.http;
+package com.dburyak.vertx.core.deployer.http;
 
 import javax.inject.Qualifier;
 

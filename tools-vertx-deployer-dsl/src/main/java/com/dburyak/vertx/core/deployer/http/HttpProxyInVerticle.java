@@ -1,7 +1,6 @@
-package com.dburyak.vertx.core.http;
+package com.dburyak.vertx.core.deployer.http;
 
 import com.dburyak.vertx.core.DiVerticle;
-import com.dburyak.vertx.core.VerticleProducer;
 import com.dburyak.vertx.core.deployment.spec.Deployment;
 import com.dburyak.vertx.core.deployment.spec.Verticles;
 import com.dburyak.vertx.core.eventbus.CallDispatcher;

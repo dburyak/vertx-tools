@@ -1,0 +1,7 @@
+plugins {
+    id 'com.dburyak.tools.vertx.gradle.vertx-library'
+}
+
+dependencies {
+    api libs.vertx.cluster.hazelcast
+}
