@@ -5,6 +5,7 @@ import io.micronaut.context.ApplicationContext;
 import io.micronaut.inject.qualifiers.Qualifiers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.rxjava3.core.Vertx;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,6 +37,7 @@ public abstract class VertxDiApp {
                         log.info("starting vertx application");
                         appCtx = ApplicationContext.run();
                         var vertx = appCtx.getBean(Vertx.class);
+                        log.info("initialization");
                         appCtx.getBeansOfType(Object.class, Qualifiers.byStereotype(AppInit.class));
                         var deployments = verticlesDeploymentDescriptors().stream()
                                 .flatMap(d -> {
@@ -45,13 +47,23 @@ public abstract class VertxDiApp {
                                 })
                                 .map(e -> {
                                     var verticleDeploymentOpts = e.getValue().deploymentOptions();
-                                    return vertx.deployVerticle(e.getKey(), verticleDeploymentOpts);
+                                    if (verticleDeploymentOpts.getInstances() > 1) {
+                                        verticleDeploymentOpts = new DeploymentOptions(verticleDeploymentOpts)
+                                                .setInstances(1);
+                                    }
+                                    return vertx.deployVerticle(e.getKey(), verticleDeploymentOpts)
+                                            .map(depId -> Map.entry(depId, e.getKey()));
                                 })
                                 .toList();
-                        return Observable.fromIterable(deployments);
+                        return Observable.fromIterable(deployments)
+                                .doOnSubscribe(ignr -> log.info("deploy verticles"));
                     }
                 })
+                .flatMapSingle(d -> d.doOnSuccess(depInfo ->
+                        log.info("verticle deployed: depId={}, verticle={}", depInfo.getKey(), depInfo.getValue()))
+                )
                 .ignoreElements()
+                .doOnComplete(() -> log.info("all verticles deployed"))
                 .doOnComplete(() -> log.info("vertx application started"));
     }
 

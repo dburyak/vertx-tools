@@ -18,6 +18,6 @@ import lombok.RequiredArgsConstructor;
 @PrototypeBeanBaseClass
 @RequiredArgsConstructor
 public abstract class DiVerticle extends AbstractVerticle {
-    protected final ApplicationContext beanCtx;
+    protected final ApplicationContext appCtx;
 }
 
