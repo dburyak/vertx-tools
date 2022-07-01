@@ -1,17 +1,17 @@
 package com.dburyak.vertx.core;
 
-import com.dburyak.vertx.core.di.EventLoop;
 import com.dburyak.vertx.core.di.AppInit;
+import com.dburyak.vertx.core.di.EventLoop;
 import com.dburyak.vertx.core.di.Worker;
-import io.micronaut.context.annotation.Context;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.plugins.RxJavaPlugins;
+import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.PostConstruct;
 
-@Context
 @AppInit
+@Singleton
 @Slf4j
 public class RxSchedulersInitializer {
     private final Scheduler vertxRxScheduler;

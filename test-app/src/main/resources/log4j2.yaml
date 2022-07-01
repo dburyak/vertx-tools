@@ -1,0 +1,16 @@
+configutation:
+  name: Default
+
+  appenders:
+    console:
+      name: console_appender
+      target: SYSTEM_OUT
+      patternLayout:
+        pattern: "[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n"
+
+  loggers:
+
+    Root:
+      level: info
+      AppenderRef:
+        - ref: console_appender

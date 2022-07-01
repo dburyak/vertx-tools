@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+    alias libs.plugins.micronaut
+}
+
+micronaut {
+    version libs.versions.micronaut.get()
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':tools-vertx-core')
+
+    // lombok
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    testCompileOnly libs.lombok
+    testAnnotationProcessor libs.lombok
+
+    // micronaut
+    compileOnly libs.micronaut.inject.java
+    annotationProcessor libs.micronaut.inject.java
+    compileOnly libs.micronaut.validation
+    annotationProcessor libs.micronaut.validation
+
+    // log4j
+    runtimeOnly libs.log4j2.core
+    runtimeOnly libs.log4j2.slf4j
+    implementation libs.jackson.databind
+    implementation libs.jackson.dataformat.yaml
+}

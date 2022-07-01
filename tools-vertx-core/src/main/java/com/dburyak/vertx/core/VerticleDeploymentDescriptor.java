@@ -1,9 +1,14 @@
 package com.dburyak.vertx.core;
 
 import io.vertx.core.DeploymentOptions;
+import lombok.Builder;
+import lombok.Value;
 
-public interface VerticleDeploymentDescriptor {
-    Class<? extends DiVerticle> verticleClass();
+@Value
+@Builder(toBuilder = true)
+public class VerticleDeploymentDescriptor {
+    Class<? extends DiVerticle> verticleClass;
 
-    DeploymentOptions deploymentOptions();
+    @Builder.Default
+    DeploymentOptions deploymentOptions = new DeploymentOptions().setInstances(1);
 }

@@ -41,12 +41,12 @@ public abstract class VertxDiApp {
                         appCtx.getBeansOfType(Object.class, Qualifiers.byStereotype(AppInit.class));
                         var deployments = verticlesDeploymentDescriptors().stream()
                                 .flatMap(d -> {
-                                    var verticleDeploymentOpts = d.deploymentOptions();
+                                    var verticleDeploymentOpts = d.getDeploymentOptions();
                                     return IntStream.range(0, verticleDeploymentOpts.getInstances())
-                                            .mapToObj(idx -> Map.entry(appCtx.getBean(d.verticleClass()), d));
+                                            .mapToObj(idx -> Map.entry(appCtx.getBean(d.getVerticleClass()), d));
                                 })
                                 .map(e -> {
-                                    var verticleDeploymentOpts = e.getValue().deploymentOptions();
+                                    var verticleDeploymentOpts = e.getValue().getDeploymentOptions();
                                     if (verticleDeploymentOpts.getInstances() > 1) {
                                         verticleDeploymentOpts = new DeploymentOptions(verticleDeploymentOpts)
                                                 .setInstances(1);

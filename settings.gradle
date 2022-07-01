@@ -13,3 +13,6 @@ include ':tools-vertx-auth'
 include ':tools-vertx-cluster-hazelcast'
 include ':tools-vertx-persistence'
 include ':tools-vertx-discovery'
+
+// TODO: remove this after normal integ tests are created
+include ':test-app'

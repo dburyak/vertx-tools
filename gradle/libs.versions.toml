@@ -28,9 +28,11 @@ vertx-cluster-hazelcast = { module = 'io.vertx:vertx-hazelcast', version.ref = '
 micronaut-inject-java = { module = 'io.micronaut:micronaut-inject', version.ref = 'micronaut' }
 micronaut-validation = { module = 'io.micronaut:micronaut-validation', version.ref = 'micronaut' }
 jackson-databind = { module = 'com.fasterxml.jackson.core:jackson-databind', version.ref = 'jackson' }
+jackson-dataformat-yaml = { module = 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml', version.ref = 'jackson' }
 slf4j-api = { module = 'org.slf4j:slf4j-api', version.ref = 'slf4j' }
 log4j2-api = { module = 'org.apache.logging.log4j:log4j-api', version.ref = 'log4j2' }
 log4j2-core = { module = 'org.apache.logging.log4j:log4j-core', version.ref = 'log4j2' }
+log4j2-slf4j = { module = 'org.apache.logging.log4j:log4j-slf4j-impl', version.ref = 'log4j2' }
 
 # testing
 assertj-core = { module = 'org.assertj:assertj-core', version.ref = 'assertj' }
