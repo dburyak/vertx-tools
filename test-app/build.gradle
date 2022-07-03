@@ -26,6 +26,7 @@ dependencies {
     annotationProcessor libs.micronaut.inject.java
     compileOnly libs.micronaut.validation
     annotationProcessor libs.micronaut.validation
+    implementation 'io.micronaut:micronaut-aop:3.5.2'
 
     // log4j
     runtimeOnly libs.log4j2.core

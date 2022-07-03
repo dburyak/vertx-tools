@@ -1,8 +1,8 @@
 package com.dburyak.vertx.core;
 
-import com.dburyak.vertx.core.di.AppInit;
-import com.dburyak.vertx.core.di.EventLoop;
-import com.dburyak.vertx.core.di.Worker;
+import com.dburyak.vertx.core.di.AppBootstrap;
+import com.dburyak.vertx.core.di.ForEventLoop;
+import com.dburyak.vertx.core.di.ForWorker;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.plugins.RxJavaPlugins;
 import jakarta.inject.Singleton;
@@ -10,15 +10,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.PostConstruct;
 
-@AppInit
+@AppBootstrap
 @Singleton
 @Slf4j
 public class RxSchedulersInitializer {
     private final Scheduler vertxRxScheduler;
     private final Scheduler vertxRxBlockingScheduler;
 
-    public RxSchedulersInitializer(@EventLoop Scheduler vertxRxScheduler,
-            @Worker Scheduler vertxRxBlockingScheduler) {
+    public RxSchedulersInitializer(@ForEventLoop Scheduler vertxRxScheduler,
+            @ForWorker Scheduler vertxRxBlockingScheduler) {
         this.vertxRxScheduler = vertxRxScheduler;
         this.vertxRxBlockingScheduler = vertxRxBlockingScheduler;
     }

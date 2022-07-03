@@ -1,6 +1,6 @@
 package com.dburyak.vertx.core;
 
-import com.dburyak.vertx.core.di.AppInit;
+import com.dburyak.vertx.core.di.AppBootstrap;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.inject.qualifiers.Qualifiers;
 import io.reactivex.rxjava3.core.Completable;
@@ -9,6 +9,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.rxjava3.core.Vertx;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -38,22 +39,33 @@ public abstract class VertxDiApp {
                         appCtx = ApplicationContext.run();
                         var vertx = appCtx.getBean(Vertx.class);
                         log.info("initialization");
-                        appCtx.getBeansOfType(Object.class, Qualifiers.byStereotype(AppInit.class));
+                        appCtx.getBeansOfType(Object.class, Qualifiers.byStereotype(AppBootstrap.class));
                         var deployments = verticlesDeploymentDescriptors().stream()
                                 .flatMap(d -> {
                                     var verticleDeploymentOpts = d.getDeploymentOptions();
                                     return IntStream.range(0, verticleDeploymentOpts.getInstances())
-                                            .mapToObj(idx -> Map.entry(appCtx.getBean(d.getVerticleClass()), d));
+                                            .mapToObj(ignr -> {
+                                                try {
+                                                    var verticleInstance = d.getVerticleClass()
+                                                            .getDeclaredConstructor().newInstance();
+                                                    verticleInstance.setAppCtx(appCtx);
+                                                    var modOpts = new DeploymentOptions(d.getDeploymentOptions())
+                                                            .setInstances(1);
+                                                    return Map.entry(verticleInstance, d.toBuilder()
+                                                            .deploymentOptions(modOpts)
+                                                            .build()
+                                                    );
+                                                } catch (InstantiationException | IllegalAccessException |
+                                                         NoSuchMethodException e) {
+                                                    log.error("verticle must have public no-args constructor");
+                                                    throw new RuntimeException(e);
+                                                } catch (InvocationTargetException e) {
+                                                    throw new RuntimeException(e);
+                                                }
+                                            });
                                 })
-                                .map(e -> {
-                                    var verticleDeploymentOpts = e.getValue().getDeploymentOptions();
-                                    if (verticleDeploymentOpts.getInstances() > 1) {
-                                        verticleDeploymentOpts = new DeploymentOptions(verticleDeploymentOpts)
-                                                .setInstances(1);
-                                    }
-                                    return vertx.deployVerticle(e.getKey(), verticleDeploymentOpts)
-                                            .map(depId -> Map.entry(depId, e.getKey()));
-                                })
+                                .map(e -> vertx.rxDeployVerticle(e.getKey(), e.getValue().getDeploymentOptions())
+                                        .map(depId -> Map.entry(depId, e.getKey())))
                                 .toList();
                         return Observable.fromIterable(deployments)
                                 .doOnSubscribe(ignr -> log.info("deploy verticles"));

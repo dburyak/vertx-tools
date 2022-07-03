@@ -31,6 +31,7 @@ dependencies {
     implementation libs.vertx.rxjava3
 
     // micronaut
+    implementation libs.micronaut.aop
     compileOnly libs.micronaut.inject.java
     annotationProcessor libs.micronaut.inject.java
     compileOnly libs.micronaut.validation

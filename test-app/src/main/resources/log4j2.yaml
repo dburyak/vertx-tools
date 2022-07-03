@@ -1,16 +1,16 @@
 configutation:
   name: Default
-
   appenders:
     console:
-      name: console_appender
+      name: console
       target: SYSTEM_OUT
       patternLayout:
-        pattern: "[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n"
-
+        pattern: "%style{%d{ISO8601}}{normal,white} %highlight{%-5level }[%style{%19.19t}{bright,blue}] %style{%-36.36C{1.}}{bright,yellow}: %msg%n%throwable"
   loggers:
-
-    Root:
+    root:
       level: info
-      AppenderRef:
-        - ref: console_appender
+      appenderRef:
+        - ref: console
+    logger:
+      - name: com.dburyak.vertx
+        level: debug

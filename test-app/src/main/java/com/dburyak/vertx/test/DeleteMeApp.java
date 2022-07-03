@@ -29,7 +29,7 @@ public class DeleteMeApp extends VertxDiApp {
                         .build(),
                 VerticleDeploymentDescriptor.builder()
                         .verticleClass(HelloVerticle2.class)
-                        .deploymentOptions(new DeploymentOptions().setInstances(5))
+                        .deploymentOptions(new DeploymentOptions().setInstances(40))
                         .build()
         );
     }

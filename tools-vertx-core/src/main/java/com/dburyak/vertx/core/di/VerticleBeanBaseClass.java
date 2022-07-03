@@ -11,8 +11,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Inherited meta-annotation that defines prototype bean scope by default for subclasses.
  */
+@Prototype
+@DefaultScope(Prototype.class)
 @Inherited
 @Retention(RUNTIME)
-@DefaultScope(Prototype.class)
-public @interface PrototypeBeanBaseClass {
+public @interface VerticleBeanBaseClass {
 }

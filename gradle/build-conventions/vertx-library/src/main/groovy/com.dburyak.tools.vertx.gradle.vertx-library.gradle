@@ -6,5 +6,6 @@ plugins {
 dependencies {
     api libs.vertx.core
     api libs.vertx.rxjava3
+    api libs.micronaut.aop
     api libs.slf4j.api
 }
