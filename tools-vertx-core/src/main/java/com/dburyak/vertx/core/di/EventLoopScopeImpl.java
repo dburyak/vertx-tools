@@ -36,14 +36,11 @@ public class EventLoopScopeImpl extends AbstractConcurrentCustomScope<EventLoopS
     }
 
     private Map<BeanIdentifier, CreatedBean<?>> getEventLoopBeans(boolean assertOnEventLoop) {
-        return beans.computeIfAbsent(currentVertxEventLoopName(assertOnEventLoop), elThreadName -> new HashMap<>());
-    }
-
-    private String currentVertxEventLoopName(boolean assertOnEventLoop) {
         if (assertOnEventLoop && !isEventLoopContext()) {
             throw new IllegalArgumentException("not event loop context: currentThread=" + Thread.currentThread());
         }
-        return Thread.currentThread().getName();
+        var elThreadName = Thread.currentThread().getName();
+        return beans.computeIfAbsent(elThreadName, tn -> new HashMap<>());
     }
 
     private boolean isEventLoopContext() {

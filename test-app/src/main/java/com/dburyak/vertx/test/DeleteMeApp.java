@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 @Slf4j
 public class DeleteMeApp extends VertxDiApp {
 
@@ -16,7 +18,7 @@ public class DeleteMeApp extends VertxDiApp {
         log.info("starting ....");
         var app = new DeleteMeApp();
         app.start()
-                .delay(10, TimeUnit.SECONDS)
+                .delay(5_500, MILLISECONDS)
                 .andThen(app.stop())
                 .blockingAwait();
     }
@@ -29,7 +31,7 @@ public class DeleteMeApp extends VertxDiApp {
                         .build(),
                 VerticleDeploymentDescriptor.builder()
                         .verticleClass(HelloVerticle2.class)
-                        .deploymentOptions(new DeploymentOptions().setInstances(40))
+                        .deploymentOptions(new DeploymentOptions().setInstances(7))
                         .build()
         );
     }

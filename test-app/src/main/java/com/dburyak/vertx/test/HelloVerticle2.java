@@ -16,15 +16,23 @@ import java.util.concurrent.TimeUnit;
 public class HelloVerticle2 extends DiVerticle {
     @Setter(onMethod_ = {@Inject})
     private SampleEventLoopBean sampleEventLoopBean;
+
+    @Setter(onMethod_ = {@Inject})
+    private SampleVerticleBean sampleVerticleBean;
+
     private Disposable ticker;
 
     @Override
     public Completable rxStart() {
         return Completable.fromRunnable(() -> {
-            log.info("hello from verticle 2: instance={}, bean={}", this, sampleEventLoopBean);
+            log.info("hello from verticle 2: instance={}, elBean={}, vBean={}",
+                    this, sampleEventLoopBean, sampleVerticleBean);
             ticker = Observable.interval(1, TimeUnit.SECONDS)
-                    .doOnNext(ignr -> log.info("tick verticle 2: {}", ignr))
-                    .doOnNext(ignr -> sampleEventLoopBean.hello())
+                    .doOnNext(tick -> {
+                        log.info("tick verticle 2: {}", tick);
+                        sampleEventLoopBean.hello();
+                        sampleVerticleBean.hello();
+                    })
                     .subscribe();
         });
     }
@@ -32,7 +40,8 @@ public class HelloVerticle2 extends DiVerticle {
     @Override
     public Completable rxStop() {
         return Completable.fromRunnable(() -> {
-            log.info("stop verticle 2: instance={}, bean={}", this, sampleEventLoopBean);
+            log.info("stop verticle 2: instance={}, elBean={}, vBean={}",
+                    this, sampleEventLoopBean, sampleVerticleBean);
             ticker.dispose();
         });
     }
