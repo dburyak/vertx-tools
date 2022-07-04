@@ -2,6 +2,7 @@ package com.dburyak.vertx.test;
 
 import com.dburyak.vertx.core.di.EventLoopScope;
 import io.micronaut.context.annotation.Bean;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
 @Bean
@@ -17,5 +18,10 @@ public class SampleEventLoopBean {
     public void hello() {
         totalCalls++;
         log.info("hello from bean: calls={}, this={}", totalCalls, this);
+    }
+
+    @PreDestroy
+    public void dispose() {
+        log.info("dispose sample bean");
     }
 }
