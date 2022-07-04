@@ -57,7 +57,8 @@ public abstract class VertxDiApp {
                                                     );
                                                 } catch (InstantiationException | IllegalAccessException |
                                                          NoSuchMethodException e) {
-                                                    log.error("verticle must have public no-args constructor");
+                                                    log.error("verticle must have public no-args constructor: {}",
+                                                            d.getVerticleClass());
                                                     throw new RuntimeException(e);
                                                 } catch (InvocationTargetException e) {
                                                     throw new RuntimeException(e);
@@ -72,10 +73,10 @@ public abstract class VertxDiApp {
                     }
                 })
                 .flatMapSingle(d -> d.doOnSuccess(depInfo ->
-                        log.info("verticle deployed: depId={}, verticle={}", depInfo.getKey(), depInfo.getValue()))
+                        log.debug("verticle deployed: depId={}, verticle={}", depInfo.getKey(), depInfo.getValue()))
                 )
                 .ignoreElements()
-                .doOnComplete(() -> log.info("all verticles deployed"))
+                .doOnComplete(() -> log.info("verticles deployed"))
                 .doOnComplete(() -> log.info("vertx application started"));
     }
 
@@ -87,14 +88,17 @@ public abstract class VertxDiApp {
                     return Completable.complete();
                 }
                 var vertx = appCtx.getBean(Vertx.class);
-                return vertx.close()
+                return vertx.rxClose()
                         .doOnSubscribe(ignr -> log.info("stopping vertx application"))
+                        .doOnComplete(() -> log.info("vertx stopped"))
                         .andThen(Completable.fromRunnable(() -> {
                             synchronized (startupLock) {
                                 appCtx.stop();
                                 appCtx = null;
                             }
-                        }));
+                            log.info("beans disposed");
+                        }))
+                        .doOnComplete(() -> log.info("vertx application stopped"));
             }
         });
     }

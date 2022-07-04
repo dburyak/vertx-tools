@@ -19,15 +19,17 @@ public class VertxFactory {
     @Singleton
     @Secondary
     public Vertx vertx(VertxOptions vertxOptions, Optional<ClusterManager> clusterManager) {
-        var vertx = clusterManager
-                .map(cm -> {
-                    var clusteredVertxOpts = new VertxOptions(vertxOptions);
-                    clusteredVertxOpts.setClusterManager(cm);
-                    return Vertx.clusteredVertx(clusteredVertxOpts);
-                })
-                .orElseGet(() -> Single.just(Vertx.vertx(vertxOptions)))
-                .blockingGet();
-        log.info("vertx created : {}", vertx);
+        var opts = vertxOptions;
+        Single<Vertx> vertxFuture;
+        if (clusterManager.isPresent()) {
+            opts = new VertxOptions(vertxOptions)
+                    .setClusterManager(clusterManager.get());
+            vertxFuture = Vertx.rxClusteredVertx(opts);
+        } else {
+            vertxFuture = Single.just(Vertx.vertx(opts));
+        }
+        var vertx = vertxFuture.blockingGet();
+        log.info("vertx created: vertx={}, opts={}", vertx, opts);
         return vertx;
     }
 
