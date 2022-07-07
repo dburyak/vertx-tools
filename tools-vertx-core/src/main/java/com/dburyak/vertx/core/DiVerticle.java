@@ -5,6 +5,7 @@ import io.micronaut.context.ApplicationContext;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.rxjava3.core.AbstractVerticle;
+import jakarta.inject.Inject;
 import lombok.Setter;
 
 /**
@@ -64,5 +65,9 @@ public abstract class DiVerticle extends AbstractVerticle {
     protected void doOnInit(Vertx vertx, Context context) {
         // subclasses can extend verticle initialization behavior with this method
     }
-}
 
+    @Inject
+    protected void setVertx(io.vertx.rxjava3.core.Vertx vertx) {
+        this.vertx = vertx;
+    }
+}
