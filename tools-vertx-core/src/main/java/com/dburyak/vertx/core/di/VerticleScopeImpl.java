@@ -5,7 +5,6 @@ import io.micronaut.context.scope.CreatedBean;
 import io.micronaut.inject.BeanIdentifier;
 import io.vertx.rxjava3.core.Vertx;
 import jakarta.inject.Singleton;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Collections.emptyMap;
 
 @Singleton
-@Slf4j
 public class VerticleScopeImpl extends AbstractConcurrentCustomScope<VerticleScope> {
     private final Map<String, Map<BeanIdentifier, CreatedBean<?>>> beans = new ConcurrentHashMap<>();
 

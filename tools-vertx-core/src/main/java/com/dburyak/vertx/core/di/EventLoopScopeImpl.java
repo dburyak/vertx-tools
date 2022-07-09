@@ -1,10 +1,8 @@
 package com.dburyak.vertx.core.di;
 
 import jakarta.inject.Singleton;
-import lombok.extern.slf4j.Slf4j;
 
 @Singleton
-@Slf4j
 public class EventLoopScopeImpl extends VertxCtxScopeBase<EventLoopScope> {
 
     public EventLoopScopeImpl() {

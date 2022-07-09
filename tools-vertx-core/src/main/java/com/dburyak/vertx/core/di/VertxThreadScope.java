@@ -11,14 +11,16 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Verticle bean scope.
+ * Vertx thread bean scope.
  *
- * <p>Similar to the concept of "ThreadLocal" but works per-verticle instead of per-thread.
- * Should be used when different verticles should have different instances of the annotated bean.
+ * <p>Almost identical to "ThreadLocal" scope but injection will fail if injected on other thread than vertx thread
+ * (event loop or worker).
+ * Very useful for not-thread-safe stateful beans - just use this scope and don't put any effort in making it thread
+ * safe, as this bean will always be called only on the same vertx thread.
  */
 @Scope
 @Documented
 @Retention(RUNTIME)
 @Target({TYPE, METHOD})
-public @interface VerticleScope {
+public @interface VertxThreadScope {
 }

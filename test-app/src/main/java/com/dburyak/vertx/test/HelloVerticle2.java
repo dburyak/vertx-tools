@@ -34,6 +34,10 @@ public class HelloVerticle2 extends DiVerticle {
                         sampleVerticleBean.hello();
                     })
                     .subscribe();
+            new Thread(() -> {
+                var bean = appCtx.getBean(SampleThreadLocalBean.class);
+                log.info("thread local bean injected: bean={}", bean);
+            }).start();
         });
     }
 

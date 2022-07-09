@@ -49,9 +49,6 @@ public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractCo
         if (assertOnVertxCtx && !isOnCtx()) {
             throw new IllegalArgumentException(notOnCtxErrorMessage());
         }
-        var elThreadName = Thread.currentThread().getName();
-        return beans.computeIfAbsent(elThreadName, tn -> new HashMap<>());
+        return beans.computeIfAbsent(Thread.currentThread().getName(), tn -> new HashMap<>());
     }
-
-
 }

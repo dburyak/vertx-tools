@@ -17,7 +17,7 @@ public class DeleteMeApp extends VertxDiApp {
         log.info("starting ....");
         var app = new DeleteMeApp();
         app.start()
-                .delay(5_500, MILLISECONDS)
+                .delay(12_500, MILLISECONDS)
                 .andThen(app.stop())
                 .blockingAwait();
     }
