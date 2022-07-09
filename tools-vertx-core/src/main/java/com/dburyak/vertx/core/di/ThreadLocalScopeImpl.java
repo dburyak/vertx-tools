@@ -1,5 +1,6 @@
 package com.dburyak.vertx.core.di;
 
+import com.dburyak.vertx.core.config.ThreadLocalScopeProperties;
 import io.micronaut.context.scope.AbstractConcurrentCustomScope;
 import io.micronaut.context.scope.CreatedBean;
 import io.micronaut.inject.BeanIdentifier;
@@ -19,12 +20,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ThreadLocalScopeImpl extends AbstractConcurrentCustomScope<ThreadLocalScope> {
     private final Vertx vertx;
+    private final ThreadLocalScopeProperties props;
     private final Map<Thread, Map<BeanIdentifier, CreatedBean<?>>> beans = new ConcurrentHashMap<>();
     private volatile Disposable cleanupTicker;
 
-    public ThreadLocalScopeImpl(Vertx vertx) {
+    public ThreadLocalScopeImpl(Vertx vertx, ThreadLocalScopeProperties props) {
         super(ThreadLocalScope.class);
         this.vertx = vertx;
+        this.props = props;
     }
 
     @Override
@@ -45,7 +48,8 @@ public class ThreadLocalScopeImpl extends AbstractConcurrentCustomScope<ThreadLo
 
     @PostConstruct
     void startCleanupTicker() {
-        cleanupTicker = FlowableHelper.toFlowable(vertx.periodicStream(10_000).getDelegate())
+        var periodMs = props.getCleanupCheckerPeriod().toMillis();
+        cleanupTicker = FlowableHelper.toFlowable(vertx.periodicStream(periodMs).getDelegate())
                 .onBackpressureLatest()
                 .flatMapSingle(tick -> Flowable.fromIterable(beans.keySet())
                         .filter(t -> !t.isAlive())

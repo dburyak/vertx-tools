@@ -1,0 +1,5 @@
+vertx:
+  di:
+    scope:
+      thread-local:
+        cleanup-checker-period: 7.2s
