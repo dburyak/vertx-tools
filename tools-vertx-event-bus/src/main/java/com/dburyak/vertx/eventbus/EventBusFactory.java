@@ -1,13 +1,16 @@
 package com.dburyak.vertx.eventbus;
 
+import com.dburyak.vertx.core.di.VertxThreadScope;
+import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Secondary;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.eventbus.EventBus;
+import io.vertx.rxjava3.core.Vertx;
+import io.vertx.rxjava3.core.eventbus.EventBus;
+import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.inject.Singleton;
+import java.util.List;
 
 @Factory
 @Secondary
@@ -16,18 +19,22 @@ public class EventBusFactory {
 
     @Singleton
     @Secondary
-    public EventBus eventBus(Vertx vertx, MessageCodec<Object, Object> ebMsgCodec) {
-        // rx.EventBus is not thread safe, but the wrapped core.EventBus is thread safe,
-        // so per-verticle singleton thin wrapper should be used that wraps single-in-app thread safe instance
-
-        var eb = EventBus.newInstance(vertx.getDelegate().eventBus());
-        try {
-            eb.registerCodec(ebMsgCodec);
-            log.debug("registered EB codec: {}", ebMsgCodec.name());
-        } catch (Exception ignored) {
-            // codec is already registered by another verticle
-            log.debug("avoid duplicate EB codec registration");
-        }
+    public io.vertx.core.eventbus.EventBus coreEventBus(Vertx vertx, List<MessageCodec<?, ?>> ebMsgCodecs) {
+        var eb = vertx.getDelegate().eventBus();
+        ebMsgCodecs.forEach(codec -> {
+            log.debug("register EB codec: {}", codec.name());
+            eb.registerCodec(codec);
+        });
         return eb;
+    }
+
+    @Bean
+    @VertxThreadScope
+    @Secondary
+    public EventBus rxEventBus(io.vertx.core.eventbus.EventBus coreEventBus) {
+        // rx.EventBus is NOT thread safe, but the wrapped core.EventBus is thread safe,
+        // so per-thread singleton thin wrapper should be used that wraps single-in-app thread safe instance
+
+        return EventBus.newInstance(coreEventBus);
     }
 }

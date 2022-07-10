@@ -1,11 +1,11 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.eventbus.kryo;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 
 @Slf4j
-public class LocalAwareKryoCopyingMessageCodec extends KryoMessageCodec {
+public class LocalAwareKryoCopyingMessageCodec extends KryoMessageCodecBase {
 
     @Override
     public Object transform(Object data) {

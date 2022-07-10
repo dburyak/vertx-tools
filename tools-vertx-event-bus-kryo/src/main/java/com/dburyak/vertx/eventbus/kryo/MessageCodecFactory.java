@@ -1,4 +1,4 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.eventbus.kryo;
 
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Secondary;

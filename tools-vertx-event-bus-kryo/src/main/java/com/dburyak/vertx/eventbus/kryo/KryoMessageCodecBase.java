@@ -1,17 +1,14 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.eventbus.kryo;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
-import lombok.Setter;
 
-import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 
-@Setter(onMethod_ = {@Inject})
-public abstract class KryoMessageCodec implements MessageCodec<Object, Object> {
+public abstract class KryoMessageCodecBase implements MessageCodec<Object, Object> {
     protected Kryo kryo;
 
     @Override

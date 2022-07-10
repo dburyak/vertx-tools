@@ -3,6 +3,6 @@ plugins {
 }
 
 dependencies {
-    api project(':tools-vertx-core')
+    api project(':tools-vertx-event-bus')
     api libs.kryo
 }

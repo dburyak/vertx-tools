@@ -1,6 +1,6 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.eventbus.kryo;
 
-public class LocalAwareJsonUnsafeMessageCodec extends JsonMessageCodec {
+public class LocalAwareKryoUnsafeMessageCodec extends KryoMessageCodecBase {
 
     /**
      * Volatile ref to provide safe publishing of the data object, so the receiver could see the state "data" had

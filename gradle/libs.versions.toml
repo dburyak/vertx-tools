@@ -6,6 +6,7 @@ groovy = { require = '[4.0, )', prefer = '4.0.3' }
 lombok = { require = '[1.18, )', prefer = '1.18.24' }
 jackson = { require = '[2.13, )', prefer = '2.13.3' }
 slf4j = { require = '[1.7, )', prefer = '1.7.36' }
+kryo = { require = '[5.3, )', prefer = '5.3.0' }
 
 # testing only
 log4j2 = '2.18.0'
@@ -37,6 +38,7 @@ slf4j-api = { module = 'org.slf4j:slf4j-api', version.ref = 'slf4j' }
 log4j2-api = { module = 'org.apache.logging.log4j:log4j-api', version.ref = 'log4j2' }
 log4j2-core = { module = 'org.apache.logging.log4j:log4j-core', version.ref = 'log4j2' }
 log4j2-slf4j = { module = 'org.apache.logging.log4j:log4j-slf4j-impl', version.ref = 'log4j2' }
+kryo = { module = 'com.esotericsoftware:kryo', version.ref = 'kryo' }
 
 # testing
 assertj-core = { module = 'org.assertj:assertj-core', version.ref = 'assertj' }
