@@ -1,18 +1,21 @@
 [versions]
-vertx = '4.3.1'
-micronaut = '3.5.2'
-groovy = '4.0.3'
-lombok = '1.18.24'
-jackson = '2.13.3'
-slf4j = '1.7.36'
-log4j2 = '2.17.2'
+# public dependencies
+vertx = { require = '[4, 5)', prefer = '4.3.2' }
+micronaut = { require = '[3.5, )', prefer = '3.5.2' }
+groovy = { require = '[4.0, )', prefer = '4.0.3' }
+lombok = { require = '[1.18, )', prefer = '1.18.24' }
+jackson = { require = '[2.13, )', prefer = '2.13.3' }
+slf4j = { require = '[1.7, )', prefer = '1.7.36' }
+
+# testing only
+log4j2 = '2.18.0'
 assertj = '3.23.1'
 spock = '2.2-M1-groovy-4.0'
-byte-buddy = '1.12.11'
+byte-buddy = '1.12.12'
 objenesis = '3.2'
 
 # gradle plugins versions
-plugin-integration-test = '1.4.0'
+plugin-integration-test = '1.4.2'
 plugin-micronaut = '3.4.1'
 
 

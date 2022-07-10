@@ -27,10 +27,18 @@ dependencies {
     annotationProcessor libs.micronaut.validation
 
     // log4j
-    runtimeOnly libs.log4j2.core
-    runtimeOnly libs.log4j2.slf4j
-    implementation libs.jackson.databind
-    implementation libs.jackson.dataformat.yaml
+    implementation libs.log4j2.slf4j
+    implementation libs.log4j2.core
+    runtimeOnly libs.jackson.databind
+    runtimeOnly libs.jackson.dataformat.yaml
 }
 
 mainClassName = 'com.dburyak.vertx.test.DeleteMeApp'
+
+task printRuntimeClasspath {
+    doLast {
+        configurations.runtimeClasspath.each {
+            println it
+        }
+    }
+}

@@ -32,17 +32,15 @@ dependencies {
 
     // micronaut
     implementation libs.micronaut.aop
+    implementation libs.micronaut.validation
     compileOnly libs.micronaut.inject.java
     annotationProcessor libs.micronaut.inject.java
-    implementation libs.micronaut.validation
     annotationProcessor libs.micronaut.validation
     testCompileOnly libs.micronaut.inject.java
     testAnnotationProcessor libs.micronaut.inject.java
-    testImplementation libs.micronaut.validation
     testAnnotationProcessor libs.micronaut.validation
     integrationCompileOnly libs.micronaut.inject.java
     integrationAnnotationProcessor libs.micronaut.inject.java
-    integrationImplementation libs.micronaut.validation
     integrationAnnotationProcessor libs.micronaut.validation
 
     // logging
