@@ -1,14 +1,16 @@
 package com.dburyak.vertx.test;
 
-import io.micronaut.context.annotation.Bean;
+import com.dburyak.vertx.core.VertxOptionsConfigurer;
 import io.micronaut.context.annotation.Factory;
-import io.vertx.core.VertxOptions;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
 @Factory
 public class VertxOptsFactory {
 
-    @Bean
-    public VertxOptions vertxOptions() {
-        return new VertxOptions().setEventLoopPoolSize(2);
+    @Singleton
+    @Named("eventLoopSizeConfigurer")
+    public VertxOptionsConfigurer eventLoopSizeConfigurer() {
+        return opts -> opts.setEventLoopPoolSize(2);
     }
 }

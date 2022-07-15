@@ -1,7 +1,8 @@
-package com.dburyak.vertx.eventbus.kryo;
+package com.dburyak.vertx.eventbus;
 
-import com.dburyak.vertx.eventbus.JsonMessageCodec;
+import jakarta.inject.Singleton;
 
+@Singleton
 public class LocalAwareJsonUnsafeMessageCodec extends JsonMessageCodec {
 
     /**

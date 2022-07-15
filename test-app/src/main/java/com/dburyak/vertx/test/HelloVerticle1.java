@@ -5,7 +5,7 @@ import io.micronaut.context.annotation.Bean;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.Disposable;
-import io.vertx.core.Vertx;
+import io.vertx.rxjava3.core.eventbus.EventBus;
 import jakarta.inject.Inject;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +21,9 @@ public class HelloVerticle1 extends DiVerticle {
     @Setter(onMethod_ = {@Inject})
     private SampleVerticleBean sampleVerticleBean;
 
+    @Setter(onMethod_ = {@Inject})
+    private EventBus eventBus;
+
     private Disposable ticker;
 
     @Override
@@ -35,12 +38,15 @@ public class HelloVerticle1 extends DiVerticle {
                         sampleVerticleBean.hello();
                     })
                     .subscribe();
-            vertx.rxExecuteBlocking(resultPromise -> {
-                log.info("on blocking thread");
-                log.info("is event loop context: {}", Vertx.currentContext().isEventLoopContext());
-                log.info("is worker context: {}", Vertx.currentContext().isWorkerContext());
-                resultPromise.complete();
-            }).subscribe();
+            Observable.interval(3, 3, TimeUnit.SECONDS)
+                    .take(1)
+                    .subscribe(tick -> {
+                        var data = SampleDto.builder()
+                                .strValue("str-data")
+                                .intValue(42)
+                                .build();
+                        eventBus.send("com.dburyak.vertx.test.HelloVerticle2", data);
+                    });
         });
     }
 

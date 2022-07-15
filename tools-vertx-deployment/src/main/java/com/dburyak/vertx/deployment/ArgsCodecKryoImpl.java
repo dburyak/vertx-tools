@@ -1,4 +1,4 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.deployment;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;

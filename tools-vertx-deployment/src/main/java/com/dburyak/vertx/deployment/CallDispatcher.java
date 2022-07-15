@@ -1,4 +1,4 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.deployment;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;

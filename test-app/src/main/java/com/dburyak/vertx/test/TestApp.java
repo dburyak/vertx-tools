@@ -11,11 +11,11 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @Slf4j
-public class DeleteMeApp extends VertxDiApp {
+public class TestApp extends VertxDiApp {
 
     public static void main(String[] args) {
         log.info("starting ....");
-        var app = new DeleteMeApp();
+        var app = new TestApp();
         app.start()
                 .delay(12_500, MILLISECONDS)
                 .andThen(app.stop())

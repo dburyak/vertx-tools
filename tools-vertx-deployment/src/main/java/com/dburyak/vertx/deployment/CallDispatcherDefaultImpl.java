@@ -1,4 +1,4 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.deployment;
 
 import com.dburyak.vertx.core.deployment.spec.Deployment;
 import io.micronaut.context.annotation.Secondary;

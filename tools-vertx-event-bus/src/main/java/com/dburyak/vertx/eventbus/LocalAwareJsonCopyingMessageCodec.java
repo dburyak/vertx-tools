@@ -1,10 +1,11 @@
-package com.dburyak.vertx.eventbus.kryo;
+package com.dburyak.vertx.eventbus;
 
-import com.dburyak.vertx.eventbus.JsonMessageCodec;
+import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 
+@Singleton
 @Slf4j
 public class LocalAwareJsonCopyingMessageCodec extends JsonMessageCodec {
 
@@ -15,7 +16,7 @@ public class LocalAwareJsonCopyingMessageCodec extends JsonMessageCodec {
         try {
             return dataClass.getDeclaredConstructor(data.getClass()).newInstance(data);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-                | NoSuchMethodException e) {
+                 | NoSuchMethodException e) {
             log.error("failed to call copy constructor of data object", e);
             throw new IllegalArgumentException("data object must implement copy constructor: " + data, e);
         }

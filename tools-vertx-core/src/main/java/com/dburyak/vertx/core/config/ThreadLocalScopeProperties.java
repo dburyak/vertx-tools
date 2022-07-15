@@ -18,7 +18,8 @@ public class ThreadLocalScopeProperties {
     /**
      * Cleanup checker period.
      * <p>
-     * Checker runs periodically to find dead threads associated with bean contexts and destroy such dangling contexts.
+     * Checker runs periodically to find dead threads associated with bean contexts and destroy such dangling contexts
+     * and beans.
      */
     @MinDuration("1s")
     private Duration cleanupCheckerPeriod = Duration.ofSeconds(5);

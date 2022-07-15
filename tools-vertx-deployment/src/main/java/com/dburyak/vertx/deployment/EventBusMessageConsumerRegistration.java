@@ -1,4 +1,4 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.deployment;
 
 import io.reactivex.disposables.Disposable;
 import io.vertx.reactivex.core.eventbus.MessageConsumer;

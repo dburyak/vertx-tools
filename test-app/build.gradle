@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     implementation project(':tools-vertx-core')
+    implementation project(':tools-vertx-event-bus')
 
     // lombok
     compileOnly libs.lombok

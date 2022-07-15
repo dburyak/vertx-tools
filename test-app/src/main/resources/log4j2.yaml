@@ -12,5 +12,5 @@ configutation:
       appenderRef:
         - ref: console
     logger:
-      - name: com.dburyak.vertx.core
+      - name: com.dburyak.vertx
         level: debug
