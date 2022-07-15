@@ -6,12 +6,12 @@ vertx:
   event-bus:
     codec:
       json-unsafe:
-        isEnabled: true
+        enabled: true
         type: com.dburyak.vertx.eventbus.LocalAwareJsonUnsafeMessageCodec
-        isDefault: false
+        default: true
         defaultType: java.lang.Object
       json-copying:
         enabled: true
         type: com.dburyak.vertx.eventbus.LocalAwareJsonCopyingMessageCodec
-        default: false
+        default: true
         defaultType: java.lang.Object

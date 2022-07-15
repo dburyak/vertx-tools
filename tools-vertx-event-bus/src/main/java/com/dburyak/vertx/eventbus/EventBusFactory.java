@@ -2,6 +2,7 @@ package com.dburyak.vertx.eventbus;
 
 import com.dburyak.vertx.core.VertxOptionsConfigurer;
 import com.dburyak.vertx.eventbus.config.EventBusProperties;
+import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Secondary;
@@ -21,25 +22,28 @@ public class EventBusFactory {
 
     @Context
     @Secondary
-    public io.vertx.core.eventbus.EventBus coreEventBus(Vertx vertx, EventBusProperties eventBusProperties,
-            List<MessageCodec<?, ?>> ebMsgCodecs) {
+    public io.vertx.core.eventbus.EventBus coreEventBus(ApplicationContext appCtx, Vertx vertx,
+            EventBusProperties eventBusProperties) {
         var eb = vertx.getDelegate().eventBus();
-        // TODO: currently here .............. register codecs based on config properties object
-//        eventBusProperties.getCodecs().forEach((name, codecCfg) -> {
-//            if (!codecCfg.isEnabled()) {
-//                return;
-//            }
-//            try {
-//                var codecType = Class.forName(codecCfg.getType());
-//            } catch (ClassNotFoundException e) {
-//                throw new RuntimeException(e);
-//            }
-//        });
-
-        // FIXME: ...... ^^^^^
-        ebMsgCodecs.forEach(codec -> {
-            log.debug("register EB codec: {}", codec.name());
-            eb.registerCodec(codec);
+        eventBusProperties.getCodecs().forEach(codecProps -> {
+            if (!codecProps.isEnabled()) {
+                return;
+            }
+            try {
+                var codecType = Class.forName(codecProps.getType());
+                var codec = (MessageCodec) appCtx.getBean(codecType);
+                if (codecProps.isDefault()) {
+                    var defaultType = Class.forName(codecProps.getDefaultType());
+                    log.debug("register eb default codec: forType={}, codec={}", defaultType, codec);
+                    eb.registerDefaultCodec(defaultType, codec);
+                } else {
+                    log.debug("register eb codec: codec={}", codec);
+                    eb.registerCodec(codec);
+                }
+            } catch (ClassNotFoundException e) {
+                log.error("");
+                throw new RuntimeException(e);
+            }
         });
         return eb;
     }
