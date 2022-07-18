@@ -1,7 +1,7 @@
 package com.dburyak.vertx.eventbus.kryo;
 
-import com.dburyak.vertx.core.di.VerticleScope;
 import com.dburyak.vertx.core.di.VertxThreadScope;
+import com.dburyak.vertx.eventbus.kryo.config.KryoCodecProperties;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.SerializerFactory;
 import com.esotericsoftware.kryo.io.Input;
@@ -11,8 +11,6 @@ import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Secondary;
-import io.micronaut.context.annotation.Value;
-import jakarta.inject.Singleton;
 
 @Factory
 @Requires(classes = Kryo.class)
@@ -29,7 +27,6 @@ public class KryoFactory {
         return kryo;
     }
 
-    @Singleton
     @Bean(preDestroy = "close")
     @VertxThreadScope
     @Secondary
@@ -37,16 +34,15 @@ public class KryoFactory {
         return new Input();
     }
 
-    @Singleton
     @Bean(preDestroy = "close")
     @VertxThreadScope
     @Secondary
-    public Output output(@Value("${tools.eventbus.kryo.output.buffer.initial-size:1024}")
-            int initialKryoOutputBufferSize) {
-        return new Output(initialKryoOutputBufferSize, -1);
+    public Output output(KryoCodecProperties kryoProps) {
+        return new Output(kryoProps.getOutputBufferInitialSize(), -1);
     }
 
-    @Singleton
+    @Bean
+    @VertxThreadScope
     @Secondary
     public SerializerFactory<?> defaultKryoSerializerFactory() {
         var config = new CompatibleFieldSerializer.CompatibleFieldSerializerConfig();

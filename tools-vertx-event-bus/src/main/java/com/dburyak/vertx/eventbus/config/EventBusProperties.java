@@ -20,8 +20,19 @@ public class EventBusProperties {
      */
     private List<CodecProperties> codecs;
 
+    /**
+     * Whether to fail application startup process if error happened while loading/registering codec.
+     * Setting this option to true allows to fail fast if any codec is misconfigured. Otherwise, such erroneous codec
+     * will be skipped.
+     */
+    private boolean failOnCodecError = false;
+
     @Inject
     public void setCodecs(List<CodecProperties> codecs) {
         this.codecs = codecs;
+    }
+
+    public boolean shouldFailOnCodecError() {
+        return failOnCodecError;
     }
 }

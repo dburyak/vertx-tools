@@ -20,6 +20,7 @@ import java.util.List;
 @Slf4j
 public class EventBusFactory {
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Context
     @Secondary
     public io.vertx.core.eventbus.EventBus coreEventBus(ApplicationContext appCtx, Vertx vertx,
@@ -32,17 +33,23 @@ public class EventBusFactory {
             try {
                 var codecType = Class.forName(codecProps.getType());
                 var codec = (MessageCodec) appCtx.getBean(codecType);
+                var namedCodec = NamedMessageCodec.of(codecProps.getName(), codec);
                 if (codecProps.isDefault()) {
                     var defaultType = Class.forName(codecProps.getDefaultType());
-                    log.debug("register eb default codec: forType={}, codec={}", defaultType, codec);
-                    eb.registerDefaultCodec(defaultType, codec);
+                    log.info("register eb default codec: forType={}, codec={}", defaultType, namedCodec);
+                    eb.registerDefaultCodec(defaultType, namedCodec);
                 } else {
-                    log.debug("register eb codec: codec={}", codec);
-                    eb.registerCodec(codec);
+                    log.info("register eb codec: codec={}", namedCodec);
+                    eb.registerCodec(namedCodec);
                 }
             } catch (ClassNotFoundException e) {
-                log.error("");
-                throw new RuntimeException(e);
+                var errMsg = "failed to find codec class: codecProps={}";
+                if (eventBusProperties.shouldFailOnCodecError()) {
+                    log.error(errMsg, codecProps);
+                    throw new RuntimeException(e);
+                } else {
+                    log.warn(errMsg, codecProps);
+                }
             }
         });
         return eb;
