@@ -34,7 +34,7 @@ dependencies {
     runtimeOnly libs.jackson.dataformat.yaml
 }
 
-mainClassName = 'com.dburyak.vertx.test.DeleteMeApp'
+mainClassName = 'com.dburyak.vertx.test.TestApp'
 
 task printRuntimeClasspath {
     doLast {
