@@ -1,20 +1,20 @@
-rootProject.name = 'tools-vertx'
-enableFeaturePreview('VERSION_CATALOGS')
+rootProject.name = 'vertx-tools'
 
 // common build logic
-includeBuild 'gradle/build-conventions/vertx-toolchain'
-includeBuild 'gradle/build-conventions/vertx-library'
+includeBuild 'build-conventions/vertx-toolchain'
+includeBuild 'build-conventions/vertx-library'
+include ':build-conventions:versions'
 
-include ':tools-vertx-core'
-include ':tools-vertx-deployment'
-include ':tools-vertx-deployer-dsl'
-include ':tools-vertx-event-bus'
-include ':tools-vertx-event-bus-kryo'
-include ':tools-vertx-health'
-include ':tools-vertx-auth'
-include ':tools-vertx-cluster-hazelcast'
-include ':tools-vertx-persistence'
-include ':tools-vertx-discovery'
+include ':vertx-tools-core'
+//include ':tools-vertx-deployment'
+//include ':tools-vertx-deployer-dsl'
+include ':vertx-tools-event-bus'
+//include ':tools-vertx-event-bus-kryo'
+//include ':tools-vertx-health'
+//include ':tools-vertx-auth'
+//include ':tools-vertx-cluster-hazelcast'
+//include ':tools-vertx-persistence'
+//include ':tools-vertx-discovery'
 
 // TODO: remove this after normal integ tests are created
 include ':test-app'

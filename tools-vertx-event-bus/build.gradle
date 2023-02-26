@@ -1,8 +1,0 @@
-plugins {
-    id 'com.dburyak.tools.vertx.gradle.vertx-library'
-}
-
-dependencies {
-    api project(':tools-vertx-core')
-    api libs.kryo
-}

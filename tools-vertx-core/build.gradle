@@ -1,3 +1,0 @@
-plugins {
-    id 'com.dburyak.tools.vertx.gradle.vertx-library'
-}

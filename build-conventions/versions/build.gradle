@@ -1,0 +1,42 @@
+plugins {
+    id 'java-platform'
+}
+
+javaPlatform {
+    allowDependencies()
+}
+
+dependencies {
+    api platform('com.fasterxml.jackson:jackson-bom:[2.14, 3)!!2.14.2')
+    api platform('org.apache.logging.log4j:log4j-bom:[2.20, 3)!!2.20.0')
+    api platform('org.assertj:assertj-bom:[3.24, 4)!!3.24.2')
+    api platform('org.spockframework:spock-bom:2.4-M1-groovy-4.0')
+
+    constraints {
+
+        // vertx
+        def vertxVersion = '[4, 5)!!4.3.8'
+        api "io.vertx:vertx-core:$vertxVersion"
+        api "io.vertx:vertx-rx-java3:$vertxVersion"
+        api "io.vertx:vertx-lang-groovy:$vertxVersion"
+        api "io.vertx:vertx-junit5:$vertxVersion"
+        api "io.vertx:vertx-hazelcast:$vertxVersion"
+
+        // micronaut
+        def micronautVersion = '[3.8, 4)!!3.8.5'
+        api "io.micronaut:micronaut-inject:$micronautVersion"
+        api "io.micronaut:micronaut-aop:$micronautVersion"
+        api "io.micronaut:micronaut-validation:$micronautVersion"
+
+
+        api 'org.projectlombok:lombok:[1.18, 1.19)!!1.18.26'
+        api 'org.apache.groovy:groovy-all:[4.0, 5)!!4.0.9'
+        def slf4jVersion = '[2, 3)!!2.0.6'
+        api "org.slf4j:slf4j-api:$slf4jVersion"
+        api "org.slf4j:slf4j-nop:$slf4jVersion"
+        api 'com.esotericsoftware:kryo:[5.4, 6)!!5.4.0'
+
+        api 'net.bytebuddy:byte-buddy:[1.14, 2)!!1.14.0'
+        api 'org.objenesis:objenesis:[3.3, 4)!!3.3'
+    }
+}

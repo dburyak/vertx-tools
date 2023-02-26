@@ -2,6 +2,10 @@ dependencyLocking {
     lockAllConfigurations()
 }
 
+wrapper {
+    gradleVersion = project.property('org.gradle.version')
+}
+
 
 
 //plugins {

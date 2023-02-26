@@ -1,45 +1,21 @@
 plugins {
-    id 'java'
+    id 'com.dburyak.vertx.tools.vertx-toolchain'
     id 'application'
-    alias libs.plugins.micronaut
-}
-
-micronaut {
-    version libs.versions.micronaut.get()
-}
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-}
-
-dependencies {
-    implementation project(':tools-vertx-core')
-    implementation project(':tools-vertx-event-bus')
-
-    // lombok
-    compileOnly libs.lombok
-    annotationProcessor libs.lombok
-    testCompileOnly libs.lombok
-    testAnnotationProcessor libs.lombok
-
-    // micronaut
-    annotationProcessor libs.micronaut.inject.java
-    annotationProcessor libs.micronaut.validation
-
-    // log4j
-    implementation libs.log4j2.slf4j
-    implementation libs.log4j2.core
-    runtimeOnly libs.jackson.databind
-    runtimeOnly libs.jackson.dataformat.yaml
 }
 
 mainClassName = 'com.dburyak.vertx.test.TestApp'
 
-task printRuntimeClasspath {
-    doLast {
-        configurations.runtimeClasspath.each {
-            println it
-        }
-    }
+dependencies {
+    implementation project(':vertx-tools-core')
+    implementation project(':vertx-tools-event-bus')
+
+    // log4j
+    implementation 'org.apache.logging.log4j:log4j-core'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
+    runtimeOnly 'com.fasterxml.jackson.core:jackson-databind'
+    runtimeOnly 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+//    implementation libs.log4j2.slf4j
+//    implementation libs.log4j2.core
+//    runtimeOnly libs.jackson.databind
+//    runtimeOnly libs.jackson.dataformat.yaml
 }
