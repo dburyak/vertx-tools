@@ -58,7 +58,7 @@ public class EventBusFactory {
     @Singleton
     @Secondary
     public EventBus rxEventBus(io.vertx.core.eventbus.EventBus coreEventBus) {
-        // rx.EventBus is NOT thread safe, but the wrapped core.EventBus is;
+        // "rx.EventBus" is NOT thread safe, but the wrapped core.EventBus is,
         // so here we eagerly initialize core.EventBus delegate and avoid not-thread-safe caching in rx.EventBus
         // since produced object will never change, and creation will happen before other threads will
         // inject reference to created object, safe publishing is guaranteed here

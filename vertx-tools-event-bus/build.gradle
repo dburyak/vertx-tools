@@ -4,5 +4,4 @@ plugins {
 
 dependencies {
     api project(':vertx-tools-core')
-    api 'com.esotericsoftware:kryo'
 }

@@ -14,8 +14,4 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
     runtimeOnly 'com.fasterxml.jackson.core:jackson-databind'
     runtimeOnly 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-//    implementation libs.log4j2.slf4j
-//    implementation libs.log4j2.core
-//    runtimeOnly libs.jackson.databind
-//    runtimeOnly libs.jackson.dataformat.yaml
 }

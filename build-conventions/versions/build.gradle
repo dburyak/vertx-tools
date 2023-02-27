@@ -31,7 +31,7 @@ dependencies {
 
         api 'org.projectlombok:lombok:[1.18, 1.19)!!1.18.26'
         api 'org.apache.groovy:groovy-all:[4.0, 5)!!4.0.9'
-        def slf4jVersion = '[2, 3)!!2.0.6'
+        def slf4jVersion = '[1.7, 2)!!1.7.36'
         api "org.slf4j:slf4j-api:$slf4jVersion"
         api "org.slf4j:slf4j-nop:$slf4jVersion"
         api 'com.esotericsoftware:kryo:[5.4, 6)!!5.4.0'
