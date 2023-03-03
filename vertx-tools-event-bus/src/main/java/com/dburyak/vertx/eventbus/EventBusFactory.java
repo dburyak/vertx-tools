@@ -33,14 +33,43 @@ public class EventBusFactory {
             try {
                 var codecType = Class.forName(codecProps.getType());
                 var codec = (MessageCodec) appCtx.getBean(codecType);
-                var namedCodec = NamedMessageCodec.of(codecProps.getName(), codec);
-                if (codecProps.isDefault()) {
-                    var defaultType = Class.forName(codecProps.getDefaultType());
-                    log.info("register eb default codec: forType={}, codec={}", defaultType, namedCodec);
-                    eb.registerDefaultCodec(defaultType, namedCodec);
-                } else {
+                if (!codecProps.isDefault()) {
+                    var namedCodec = NamedMessageCodec.of(codecProps.getName(), codec);
                     log.info("register eb codec: codec={}", namedCodec);
                     eb.registerCodec(namedCodec);
+                } else if (codecProps.getDefaultTypes().size() == 1) {
+                    try {
+                        var defaultType = Class.forName(codecProps.getDefaultTypes().get(0));
+                        var namedCodec = NamedMessageCodec.of(codecProps.getName(), codec);
+                        log.info("register eb default codec: forType={}, codec={}", defaultType, namedCodec);
+                        eb.registerDefaultCodec(defaultType, namedCodec);
+                    } catch (ClassNotFoundException e) {
+                        var errMsg = "failed to find target class for default codec: codecProps={}";
+                        if (eventBusProperties.shouldFailOnCodecError()) {
+                            log.error(errMsg, codecProps);
+                            throw new RuntimeException(e);
+                        } else {
+                            log.warn(errMsg, codecProps);
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < codecProps.getDefaultTypes().size(); i++) {
+                        try {
+                            var defaultTypeStr = codecProps.getDefaultTypes().get(i);
+                            var defaultType = Class.forName(defaultTypeStr);
+                            var namedCodec = NamedMessageCodec.of(codecProps.getName() + "-" + i, codec);
+                            log.info("register eb default codec: forType={}, codec={}", defaultType, namedCodec);
+                            eb.registerDefaultCodec(defaultType, namedCodec);
+                        } catch (ClassNotFoundException e) {
+                            var errMsg = "failed to find target class for default codec: codecProps={}, codecNum={}";
+                            if (eventBusProperties.shouldFailOnCodecError()) {
+                                log.error(errMsg, codecProps, i);
+                                throw new RuntimeException(e);
+                            } else {
+                                log.warn(errMsg, codecProps, i);
+                            }
+                        }
+                    }
                 }
             } catch (ClassNotFoundException e) {
                 var errMsg = "failed to find codec class: codecProps={}";

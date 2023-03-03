@@ -4,6 +4,8 @@ import io.micronaut.context.annotation.EachProperty;
 import io.micronaut.context.annotation.Parameter;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * Global configuration for EventBus codec.
  */
@@ -35,9 +37,11 @@ public class CodecProperties {
     private boolean isDefault;
 
     /**
-     * Message DTO java class this codec should convert if it is registered as "default" codec.
+     * Message DTO java classes this codec should convert if it is registered as "default" codec. In other words, list
+     * of java classes this codec should be used to convert when no codec name is specified in delivery options, or
+     * delivery options are not specified at all.
      */
-    private String defaultType;
+    private List<String> defaultTypes;
 
     public CodecProperties(@Parameter("name") String name) {
         this.name = name;

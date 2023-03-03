@@ -41,7 +41,7 @@ public class HelloVerticle1 extends DiVerticle {
             Observable.interval(3, 3, TimeUnit.SECONDS)
                     .take(1)
                     .subscribe(tick -> {
-                        var data = SampleDto.builder()
+                        var data = SampleDtoOne.builder()
                                 .strValue("str-data")
                                 .intValue(42)
                                 .build();

@@ -7,11 +7,11 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class SampleDto {
+public class SampleDtoOne {
     private String strValue;
     private int intValue;
 
-    public SampleDto(SampleDto from) {
+    public SampleDtoOne(SampleDtoOne from) {
         this.strValue = from.strValue;
         this.intValue = from.intValue;
     }
