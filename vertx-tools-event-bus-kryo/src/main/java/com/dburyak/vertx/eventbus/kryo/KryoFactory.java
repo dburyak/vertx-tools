@@ -6,20 +6,17 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.SerializerFactory;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
-import io.micronaut.context.annotation.Secondary;
 
 @Factory
 @Requires(classes = Kryo.class)
-@Secondary
 public class KryoFactory {
 
     @Bean
     @VertxThreadScope
-    @Secondary
+    @Requires(missingBeans = Kryo.class)
     public Kryo kryo(SerializerFactory<?> defaultKryoSerializerFactory) {
         var kryo = new Kryo();
         kryo.setDefaultSerializer(defaultKryoSerializerFactory);
@@ -29,23 +26,22 @@ public class KryoFactory {
 
     @Bean(preDestroy = "close")
     @VertxThreadScope
-    @Secondary
+    @Requires(missingBeans = Input.class)
     public Input input() {
         return new Input();
     }
 
     @Bean(preDestroy = "close")
     @VertxThreadScope
-    @Secondary
+    @Requires(missingBeans = Output.class)
     public Output output(KryoCodecProperties kryoProps) {
         return new Output(kryoProps.getOutputBufferInitialSize(), -1);
     }
 
     @Bean
     @VertxThreadScope
-    @Secondary
+    @Requires(missingBeans = SerializerFactory.class)
     public SerializerFactory<?> defaultKryoSerializerFactory() {
-        var config = new CompatibleFieldSerializer.CompatibleFieldSerializerConfig();
-        return new SerializerFactory.CompatibleFieldSerializerFactory(config);
+        return new SerializerFactory.FieldSerializerFactory();
     }
 }

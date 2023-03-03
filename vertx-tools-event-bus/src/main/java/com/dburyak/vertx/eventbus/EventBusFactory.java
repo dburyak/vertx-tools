@@ -5,7 +5,7 @@ import com.dburyak.vertx.eventbus.config.EventBusProperties;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Factory;
-import io.micronaut.context.annotation.Secondary;
+import io.micronaut.context.annotation.Requires;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.rxjava3.core.Vertx;
@@ -16,13 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 @Factory
-@Secondary
 @Slf4j
 public class EventBusFactory {
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     @Context
-    @Secondary
+    @Requires(missingBeans = io.vertx.core.eventbus.EventBus.class)
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public io.vertx.core.eventbus.EventBus coreEventBus(ApplicationContext appCtx, Vertx vertx,
             EventBusProperties eventBusProperties) {
         var eb = vertx.getDelegate().eventBus();
@@ -85,7 +84,7 @@ public class EventBusFactory {
     }
 
     @Singleton
-    @Secondary
+    @Requires(missingBeans = EventBus.class)
     public EventBus rxEventBus(io.vertx.core.eventbus.EventBus coreEventBus) {
         // "rx.EventBus" is NOT thread safe, but the wrapped core.EventBus is,
         // so here we eagerly initialize core.EventBus delegate and avoid not-thread-safe caching in rx.EventBus
@@ -96,7 +95,7 @@ public class EventBusFactory {
     }
 
     @Singleton
-    @Secondary
+    @Requires(missingBeans = VertxOptionsConfigurer.class)
     public VertxOptionsConfigurer eventBusConfigurersApplied(List<EventBusConfigurer> eventBusConfigurers) {
         return (vertxOptions) -> {
             var ebOptions = new EventBusOptions();

@@ -10,7 +10,6 @@ import io.vertx.rxjava3.core.Vertx;
 import jakarta.inject.Singleton;
 
 @Factory
-@Secondary
 public class VertxRxSchedulerFactory {
 
     @Singleton
