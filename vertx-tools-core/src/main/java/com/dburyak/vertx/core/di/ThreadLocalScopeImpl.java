@@ -49,6 +49,7 @@ public class ThreadLocalScopeImpl extends AbstractConcurrentCustomScope<ThreadLo
     @PostConstruct
     void startCleanupTicker() {
         var periodMs = props.getCleanupCheckerPeriod().toMillis();
+        log.debug("using thread local cleanup checker period: periodMs={}", periodMs);
         cleanupTicker = FlowableHelper.toFlowable(vertx.periodicStream(periodMs).getDelegate())
                 .onBackpressureLatest()
                 .flatMapSingle(tick -> Flowable.fromIterable(beans.keySet())

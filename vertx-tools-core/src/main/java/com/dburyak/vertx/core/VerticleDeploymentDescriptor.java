@@ -7,7 +7,7 @@ import lombok.Value;
 @Value
 @Builder(toBuilder = true)
 public class VerticleDeploymentDescriptor {
-    Class<? extends DiVerticle> verticleClass;
+    Class<? extends AbstractDiVerticle> verticleClass;
 
     @Builder.Default
     DeploymentOptions deploymentOptions = new DeploymentOptions().setInstances(1);

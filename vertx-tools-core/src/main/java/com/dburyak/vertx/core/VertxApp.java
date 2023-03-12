@@ -18,11 +18,11 @@ import java.util.stream.IntStream;
  * Base class for DI enabled vertx application.
  * <p>
  * Unlike classic vertx application where all the initialization needs to be done imperatively, this class does it
- * in declarative manner. To use it declare verticles by inheriting from {@link DiVerticle} and specify which verticles
+ * in declarative manner. To use it declare verticles by inheriting from {@link AbstractDiVerticle} and specify which verticles
  * to deploy in this application.
  */
 @Slf4j
-public abstract class VertxDiApp {
+public abstract class VertxApp {
     private final Object startupLock = new Object();
     private volatile ApplicationContext appCtx = null;
 

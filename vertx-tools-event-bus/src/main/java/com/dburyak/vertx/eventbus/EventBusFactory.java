@@ -95,7 +95,6 @@ public class EventBusFactory {
     }
 
     @Singleton
-    @Requires(missingBeans = VertxOptionsConfigurer.class)
     public VertxOptionsConfigurer eventBusConfigurersApplied(List<EventBusConfigurer> eventBusConfigurers) {
         return (vertxOptions) -> {
             var ebOptions = new EventBusOptions();

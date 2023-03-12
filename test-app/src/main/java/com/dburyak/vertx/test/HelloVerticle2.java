@@ -1,6 +1,6 @@
 package com.dburyak.vertx.test;
 
-import com.dburyak.vertx.core.DiVerticle;
+import com.dburyak.vertx.core.AbstractDiVerticle;
 import io.micronaut.context.annotation.Bean;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 @Bean
 @Slf4j
-public class HelloVerticle2 extends DiVerticle {
+public class HelloVerticle2 extends AbstractDiVerticle {
     @Setter(onMethod_ = {@Inject})
     private SampleEventLoopBean sampleEventLoopBean;
 

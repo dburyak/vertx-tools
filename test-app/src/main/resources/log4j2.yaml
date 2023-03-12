@@ -13,4 +13,4 @@ configutation:
         - ref: console
     logger:
       - name: com.dburyak.vertx
-        level: debug
+        level: trace

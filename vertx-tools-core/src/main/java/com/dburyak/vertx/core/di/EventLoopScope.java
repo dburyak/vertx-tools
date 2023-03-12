@@ -18,8 +18,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * safe, as this bean will always be called only on the same exact event loop thread.
  */
 @Scope
-@Documented
 @Retention(RUNTIME)
 @Target({TYPE, METHOD})
+@Documented
 public @interface EventLoopScope {
 }

@@ -13,7 +13,7 @@ import lombok.Setter;
  * <p>
  * This is a base building block for actor-based system that adds important features on top of Vertx
  * {@link io.vertx.core.AbstractVerticle}/${@link AbstractVerticle}. Implementations should be used through
- * {@link VertxDiApp} instead of default Vertx mechanisms otherwise DI won't work.
+ * {@link VertxApp} instead of default Vertx mechanisms otherwise DI won't work.
  * <p>
  * This base class has already all the necessary scope annotations in place. Only
  * {@link io.micronaut.context.annotation.Bean} annotations may be needed to explicitly mark it as a bean. This may fix
@@ -21,7 +21,7 @@ import lombok.Setter;
  * Subclasses should not put any scope annotations since instantiation and initialization of DI Verticles
  * happens not through regular DI mechanisms but through manual bean creation and injection.
  * Instead, use standard vertx verticle {@link io.vertx.core.DeploymentOptions} specified as part of
- * {@link VerticleDeploymentDescriptor} provided for {@link VertxDiApp} for controlling number of instances.
+ * {@link VerticleDeploymentDescriptor} provided for {@link VertxApp} for controlling number of instances.
  * <p>
  * DiVerticle deployment happens in five phases:
  * <ul>
@@ -41,14 +41,10 @@ import lombok.Setter;
  * injection can be safely used on any beans other than verticles.
  */
 @VerticleBeanBaseClass
-public abstract class DiVerticle extends AbstractVerticle {
+public abstract class AbstractDiVerticle extends AbstractVerticle {
 
     @Setter
     protected volatile ApplicationContext appCtx;
-
-    public DiVerticle() {
-        // default constructor must be provided for instantiation outside from DI container
-    }
 
     @Override
     public final void init(Vertx vertx, Context context) {

@@ -4,12 +4,13 @@ import com.dburyak.vertx.core.config.DurationTypeConverter;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.validation.validator.constraints.ConstraintValidator;
 import io.micronaut.validation.validator.constraints.ConstraintValidatorContext;
-import jakarta.inject.Inject;
+import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
 
+@RequiredArgsConstructor
 public class MinDurationValidator implements ConstraintValidator<MinDuration, Duration> {
-    private DurationTypeConverter durationTypeConverter;
+    private final DurationTypeConverter durationTypeConverter;
 
     @Override
     public boolean isValid(Duration value, AnnotationValue<MinDuration> annotationMetadata,
@@ -24,10 +25,5 @@ public class MinDurationValidator implements ConstraintValidator<MinDuration, Du
         var minDurationStr = minDurationParam.get().strip().toLowerCase();
         var minDuration = durationTypeConverter.convert(minDurationStr, Duration.class).get();
         return value.compareTo(minDuration) >= 0;
-    }
-
-    @Inject
-    public void setDurationTypeConverter(DurationTypeConverter durationTypeConverter) {
-        this.durationTypeConverter = durationTypeConverter;
     }
 }

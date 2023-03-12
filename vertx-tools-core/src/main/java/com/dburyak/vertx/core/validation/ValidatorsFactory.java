@@ -13,8 +13,6 @@ public class ValidatorsFactory {
     @Singleton
     public ConstraintValidator<MinDuration, Duration> minDurationConstraintValidator(
             DurationTypeConverter durationTypeConverter) {
-        var validator =  new MinDurationValidator();
-        validator.setDurationTypeConverter(durationTypeConverter);
-        return validator;
+        return new MinDurationValidator(durationTypeConverter);
     }
 }
