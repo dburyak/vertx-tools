@@ -3,15 +3,29 @@ plugins {
     id 'application'
 }
 
-mainClassName = 'com.dburyak.vertx.test.TestApp'
-
 dependencies {
     implementation project(':vertx-tools-core')
     implementation project(':vertx-tools-event-bus')
+    implementation project(':vertx-tools-event-bus-kryo')
+    implementation project(':vertx-tools-cluster-hazelcast')
 
     // log4j
     implementation 'org.apache.logging.log4j:log4j-core'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
     runtimeOnly 'com.fasterxml.jackson.core:jackson-databind'
     runtimeOnly 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+}
+
+mainClassName = 'com.dburyak.vertx.test.TestApp'
+
+run {
+    jvmArgs = [
+            '--add-modules', 'java.se',
+            '--add-exports', 'java.base/jdk.internal.ref=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+            '--add-opens', 'java.base/sun.nio.ch=ALL-UNNAMED',
+            '--add-opens', 'java.management/sun.management=ALL-UNNAMED',
+            '--add-opens', 'jdk.management/com.sun.management.internal=ALL-UNNAMED',
+    ]
 }

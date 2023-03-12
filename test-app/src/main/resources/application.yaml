@@ -5,14 +5,14 @@ vertx:
         cleanup-checker-period: 7.2s
   event-bus:
     codec:
-      json:
+      kryo:
         enabled: true
-        type: com.dburyak.vertx.eventbus.LocalAwareJsonUnsafeMessageCodec
+        type: com.dburyak.vertx.eventbus.kryo.LocalAwareKryoUnsafeMessageCodec
         default: true
         defaultTypes: com.dburyak.vertx.eventbus.VisibleObject
-      json-copying:
+      kryo-copying:
         enabled: true
-        type: com.dburyak.vertx.eventbus.LocalAwareJsonCopyingMessageCodec
+        type: com.dburyak.vertx.eventbus.kryo.LocalAwareKryoCopyingMessageCodec
         default: true
         defaultTypes:
           - com.dburyak.vertx.test.SampleDtoOne

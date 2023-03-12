@@ -15,7 +15,7 @@ dependencies {
     constraints {
 
         // vertx
-        def vertxVersion = '[4, 5)!!4.3.8'
+        def vertxVersion = '[4, 5)!!4.4.0'
         api "io.vertx:vertx-core:$vertxVersion"
         api "io.vertx:vertx-rx-java3:$vertxVersion"
         api "io.vertx:vertx-lang-groovy:$vertxVersion"

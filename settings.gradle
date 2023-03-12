@@ -12,7 +12,7 @@ include ':vertx-tools-event-bus'
 include ':vertx-tools-event-bus-kryo'
 //include ':tools-vertx-health'
 //include ':tools-vertx-auth'
-//include ':tools-vertx-cluster-hazelcast'
+include ':vertx-tools-cluster-hazelcast'
 //include ':tools-vertx-persistence'
 //include ':tools-vertx-discovery'
 
