@@ -5,6 +5,7 @@ import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Context;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
 import java.time.Duration;
 
 /**
@@ -22,5 +23,6 @@ public class ThreadLocalScopeProperties {
      * and beans.
      */
     @MinDuration("1s")
+    @NotNull
     private Duration cleanupCheckerPeriod = Duration.ofSeconds(5);
 }

@@ -1,0 +1,8 @@
+plugins {
+    id 'com.dburyak.vertx.tools.vertx-library'
+}
+
+dependencies {
+    api project(':gcp:vertx-tools-gcp-core')
+    api 'com.google.cloud:google-cloud-secretmanager'
+}

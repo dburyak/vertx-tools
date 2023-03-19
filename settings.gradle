@@ -15,6 +15,11 @@ include ':vertx-tools-event-bus-kryo'
 include ':vertx-tools-cluster-hazelcast'
 //include ':tools-vertx-persistence'
 //include ':tools-vertx-discovery'
+include ':vertx-tools-config'
+include ':vertx-tools-config-server'
+include ':gcp:vertx-tools-gcp-core'
+include ':gcp:vertx-tools-gcp-secretmanager'
+include ':gcp:vertx-tools-config-gcp-secretmanager'
 
 // TODO: remove this after normal integ tests are created
 include ':test-app'

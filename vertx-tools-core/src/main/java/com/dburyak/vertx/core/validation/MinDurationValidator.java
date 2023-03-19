@@ -16,7 +16,7 @@ public class MinDurationValidator implements ConstraintValidator<MinDuration, Du
     public boolean isValid(Duration value, AnnotationValue<MinDuration> annotationMetadata,
             ConstraintValidatorContext context) {
         if (value == null) {
-            return false;
+            return true;
         }
         var minDurationParam = annotationMetadata.get("value", String.class);
         if (minDurationParam.isEmpty()) {

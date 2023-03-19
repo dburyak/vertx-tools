@@ -17,3 +17,11 @@ vertx:
         defaultTypes:
           - com.dburyak.vertx.test.SampleDtoOne
           - com.dburyak.vertx.test.SampleDtoTwo
+
+  gcp:
+    config:
+      secret-manager:
+        enabled: true
+        secret-config-options:
+          app.test.secret-1: dmytro-test-secret-1
+          app.test.secret-2: dmytro-test-secret-2

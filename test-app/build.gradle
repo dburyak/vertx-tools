@@ -8,6 +8,8 @@ dependencies {
     implementation project(':vertx-tools-event-bus')
     implementation project(':vertx-tools-event-bus-kryo')
     implementation project(':vertx-tools-cluster-hazelcast')
+    implementation project(':vertx-tools-config')
+    implementation project(':gcp:vertx-tools-config-gcp-secretmanager')
 
     // log4j
     implementation 'org.apache.logging.log4j:log4j-core'

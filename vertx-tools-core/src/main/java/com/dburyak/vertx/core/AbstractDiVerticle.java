@@ -12,8 +12,18 @@ import lombok.Setter;
  * Verticle base class with DI support.
  * <p>
  * This is a base building block for actor-based system that adds important features on top of Vertx
- * {@link io.vertx.core.AbstractVerticle}/${@link AbstractVerticle}. Implementations should be used through
+ * {@link io.vertx.core.AbstractVerticle}/{@link AbstractVerticle}. Implementations should be used through
  * {@link VertxApp} instead of default Vertx mechanisms otherwise DI won't work.
+ * <p>
+ * DI verticles have 2 major limitations compared to regular DI beans:
+ * <ul>
+ *     <li>must provide default constructor
+ *     <li>cannot use constructor-based injection, only setter-based injection is allowed
+ * </ul>
+ * No extra measures are needed to make verticles thread-safe for non-final fields for injected beans.
+ * Injection always happens on the same EventLoop thread that is assigned to verticle. So DI verticles remain
+ * thread-safe with simple modifiable fields for injected beans (as long as injected beans themselves are thread safe
+ * within their declared scope of course).
  * <p>
  * This base class has already all the necessary scope annotations in place. Only
  * {@link io.micronaut.context.annotation.Bean} annotations may be needed to explicitly mark it as a bean. This may fix

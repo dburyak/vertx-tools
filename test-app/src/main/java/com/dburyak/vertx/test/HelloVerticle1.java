@@ -5,6 +5,7 @@ import io.micronaut.context.annotation.Bean;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.Disposable;
+import io.vertx.rxjava3.config.ConfigRetriever;
 import io.vertx.rxjava3.core.eventbus.EventBus;
 import jakarta.inject.Inject;
 import lombok.Setter;
@@ -15,16 +16,20 @@ import java.util.concurrent.TimeUnit;
 @Bean
 @Slf4j
 public class HelloVerticle1 extends AbstractDiVerticle {
-    @Setter(onMethod_ = {@Inject})
+    @Setter(onMethod_ = @Inject)
     private SampleEventLoopBean sampleEventLoopBean;
 
-    @Setter(onMethod_ = {@Inject})
+    @Setter(onMethod_ = @Inject)
     private SampleVerticleBean sampleVerticleBean;
 
-    @Setter(onMethod_ = {@Inject})
+    @Setter(onMethod_ = @Inject)
     private EventBus eventBus;
 
+    @Setter(onMethod_ = @Inject)
+    private ConfigRetriever configRetriever;
+
     private Disposable ticker;
+    private Disposable configPoll;
 
     @Override
     public Completable rxStart() {
@@ -47,6 +52,8 @@ public class HelloVerticle1 extends AbstractDiVerticle {
                                 .build();
                         eventBus.send("com.dburyak.vertx.test.HelloVerticle2", data);
                     });
+            configPoll = configRetriever.rxGetConfig()
+                    .subscribe(cfgJson -> log.debug("config retrieved: {}", cfgJson));
         });
     }
 
@@ -56,6 +63,7 @@ public class HelloVerticle1 extends AbstractDiVerticle {
             log.info("stop verticle 1: instance={}, elBean={}, vBean={}",
                     this, sampleEventLoopBean, sampleVerticleBean);
             ticker.dispose();
+            configPoll.dispose();
         });
     }
 }

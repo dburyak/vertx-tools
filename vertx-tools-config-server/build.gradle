@@ -1,0 +1,7 @@
+plugins {
+    id 'com.dburyak.vertx.tools.vertx-library'
+}
+
+dependencies {
+    api project(':vertx-tools-config')
+}

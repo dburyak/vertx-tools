@@ -11,6 +11,7 @@ dependencies {
     api platform('org.apache.logging.log4j:log4j-bom:[2.20, 3)!!2.20.0')
     api platform('org.assertj:assertj-bom:[3.24, 4)!!3.24.2')
     api platform('org.spockframework:spock-bom:2.4-M1-groovy-4.0')
+    api platform('com.google.cloud:libraries-bom:[26.10, 27)!!26.10.0')
 
     constraints {
 
@@ -21,9 +22,10 @@ dependencies {
         api "io.vertx:vertx-lang-groovy:$vertxVersion"
         api "io.vertx:vertx-junit5:$vertxVersion"
         api "io.vertx:vertx-hazelcast:$vertxVersion"
+        api "io.vertx:vertx-config:$vertxVersion"
 
         // micronaut
-        def micronautVersion = '[3.8, 4)!!3.8.5'
+        def micronautVersion = '[3.8, 4)!!3.8.7'
         api "io.micronaut:micronaut-inject:$micronautVersion"
         api "io.micronaut:micronaut-aop:$micronautVersion"
         api "io.micronaut:micronaut-validation:$micronautVersion"

@@ -11,5 +11,5 @@ repositories {
 
 dependencies {
     implementation 'com.coditory.gradle:integration-test-plugin:1.4.5'
-    implementation 'io.micronaut.gradle:micronaut-minimal-plugin:3.7.3'
+    implementation 'io.micronaut.gradle:micronaut-minimal-plugin:3.7.6'
 }

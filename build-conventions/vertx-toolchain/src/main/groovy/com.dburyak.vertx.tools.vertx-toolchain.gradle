@@ -24,7 +24,7 @@ configurations {
 micronaut {
     // this must match the version of micronaut dependencies defined in build-conventions/versions.gradle
     // there's no easy way to have it defined in a single place
-    version '[3.8, 4)!!3.8.5'
+    version '[3.8, 4)!!3.8.7'
 }
 
 dependencies {
