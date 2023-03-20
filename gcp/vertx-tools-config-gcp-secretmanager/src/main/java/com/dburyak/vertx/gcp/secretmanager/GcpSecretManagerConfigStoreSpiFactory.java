@@ -17,7 +17,6 @@ public class GcpSecretManagerConfigStoreSpiFactory implements ConfigStoreFactory
 
     @Override
     public ConfigStore create(Vertx vertx, JsonObject configuration) {
-        log.debug("create() called with configuration: {}", configuration);
         return new GcpSecretManagerConfigStore(vertx, configuration);
     }
 }

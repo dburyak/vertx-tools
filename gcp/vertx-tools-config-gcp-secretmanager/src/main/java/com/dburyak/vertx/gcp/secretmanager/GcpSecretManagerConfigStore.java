@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 @Singleton
@@ -46,20 +48,22 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
             return Future.succeededFuture(Buffer.buffer("{}"));
         }
         var resultPromise = Promise.<Buffer>promise();
+        var startedAt = Instant.now();
         Observable.fromIterable(cfg.getSecretConfigOptions().entrySet())
                 .flatMapSingle(secretOpt -> secretManager.getSecretString(secretOpt.getValue())
                         .map(secretValue -> Map.entry(secretOpt.getKey(), secretValue)))
                 .toMap(Map.Entry::getKey, Map.Entry::getValue)
+                .doOnSuccess(m -> log.debug("gsm secret options retrieved: numSecrets={}, duration={}",
+                        m.size(), Duration.between(startedAt, Instant.now())))
                 .map(m -> {
                     var json = new JsonObject();
                     m.forEach(json::put);
                     return json;
                 })
                 .subscribe(json -> {
-                    log.debug("get() succeeded: {}", json);
                     resultPromise.complete(Buffer.buffer(json.encode()));
                 }, err -> {
-                    log.error("get() failed", err);
+                    log.error("gsm secrets retrieval failed: err={}", err.toString(), err);
                     resultPromise.fail(err);
                 });
         return resultPromise.future();
@@ -67,7 +71,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
 
     @Override
     public Future<Void> close() {
-        log.debug("close() called");
+        // nothing to close here, this object is aggregate - collaborators are closed elsewhere
         return Future.succeededFuture();
     }
 }

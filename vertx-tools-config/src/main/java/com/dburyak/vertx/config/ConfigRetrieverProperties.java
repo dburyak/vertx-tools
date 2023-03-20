@@ -31,4 +31,6 @@ public class ConfigRetrieverProperties {
      */
     @MinDuration("1s")
     private Duration scanPeriod;
+
+    private boolean processPlaceholders = true;
 }

@@ -12,8 +12,10 @@ dependencies {
     implementation project(':gcp:vertx-tools-config-gcp-secretmanager')
 
     // log4j
+    implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.logging.log4j:log4j-core'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
+    implementation 'org.apache.logging.log4j:log4j-jul'
     runtimeOnly 'com.fasterxml.jackson.core:jackson-databind'
     runtimeOnly 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 }
@@ -29,5 +31,6 @@ run {
             '--add-opens', 'java.base/sun.nio.ch=ALL-UNNAMED',
             '--add-opens', 'java.management/sun.management=ALL-UNNAMED',
             '--add-opens', 'jdk.management/com.sun.management.internal=ALL-UNNAMED',
+            '-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager'
     ]
 }
