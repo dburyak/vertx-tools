@@ -38,8 +38,8 @@ dependencies {
     // micronaut
     implementation 'io.micronaut:micronaut-aop'
     implementation 'io.micronaut.validation:micronaut-validation'
-    annotationProcessor 'io.micronaut:micronaut-inject'
-    annotationProcessor 'io.micronaut.validation:micronaut-validation'
+    annotationProcessor 'io.micronaut:micronaut-inject-java'
+    annotationProcessor 'io.micronaut.validation:micronaut-validation-processor'
 
     // logging
     implementation 'org.slf4j:slf4j-api'
