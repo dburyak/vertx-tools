@@ -2,10 +2,11 @@ plugins {
     id 'groovy-gradle-plugin'
 }
 
-group = 'com.dburyak.vertx.tools'
+java {
+    group = 'com.dburyak.vertx.tools'
+}
 
 repositories {
-    mavenLocal()
     gradlePluginPortal()
 }
 

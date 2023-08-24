@@ -7,6 +7,8 @@ javaPlatform {
 }
 
 dependencies {
+    // micronautVersion is defined in gradle.properties (in repo root)
+    api platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
     api platform('com.fasterxml.jackson:jackson-bom:[2.14, 3)!!2.14.2')
     api platform('org.apache.logging.log4j:log4j-bom:[2.20, 3)!!2.20.0')
     api platform('org.assertj:assertj-bom:[3.24, 4)!!3.24.2')
@@ -23,13 +25,6 @@ dependencies {
         api "io.vertx:vertx-junit5:$vertxVersion"
         api "io.vertx:vertx-hazelcast:$vertxVersion"
         api "io.vertx:vertx-config:$vertxVersion"
-
-        // micronaut
-        def micronautVersion = '[3.8, 4)!!3.8.7'
-        api "io.micronaut:micronaut-inject:$micronautVersion"
-        api "io.micronaut:micronaut-aop:$micronautVersion"
-        api "io.micronaut:micronaut-validation:$micronautVersion"
-
 
         api 'org.projectlombok:lombok:[1.18, 1.19)!!1.18.26'
         api 'org.apache.groovy:groovy-all:[4.0, 5)!!4.0.9'

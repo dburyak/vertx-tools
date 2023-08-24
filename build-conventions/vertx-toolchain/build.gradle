@@ -2,14 +2,16 @@ plugins {
     id 'groovy-gradle-plugin'
 }
 
-group = 'com.dburyak.vertx.tools'
+java {
+    group = 'com.dburyak.vertx.tools'
+}
 
 repositories {
-    mavenLocal()
     gradlePluginPortal()
 }
 
 dependencies {
+    implementation 'com.dburyak.vertx.tools:dependency-management'
     implementation 'com.coditory.gradle:integration-test-plugin:1.4.5'
-    implementation 'io.micronaut.gradle:micronaut-minimal-plugin:3.7.6'
+    implementation 'io.micronaut.gradle:micronaut-minimal-plugin:4.0.2'
 }

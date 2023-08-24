@@ -1,0 +1,12 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation platform(project(':build-conventions:versions'))
+    annotationProcessor platform(project(':build-conventions:versions'))
+}

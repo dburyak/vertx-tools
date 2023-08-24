@@ -1,15 +1,17 @@
 plugins {
     id 'java'
     id 'groovy'
+    id 'com.dburyak.vertx.tools.dependency-management'
     id 'io.micronaut.minimal.library'
     id 'com.coditory.integration-test'
     id 'jacoco'
 }
 
-group = 'com.dburyak.vertx.tools'
+java {
+    group = 'com.dburyak.vertx.tools'
+}
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
@@ -21,11 +23,11 @@ configurations {
     integrationCompileOnly { extendsFrom testCompileOnly, integrationAnnotationProcessor }
 }
 
-micronaut {
-    // this must match the version of micronaut dependencies defined in build-conventions/versions.gradle
-    // there's no easy way to have it defined in a single place
-    version '[3.8, 4)!!3.8.7'
-}
+//micronaut {
+//    // this must match the version of micronaut dependencies defined in build-conventions/versions.gradle
+//    // there's no easy way to have it defined in a single place
+//    version '[3.8, 4)!!3.8.7'
+//}
 
 dependencies {
     implementation platform(project(':build-conventions:versions'))
@@ -40,9 +42,9 @@ dependencies {
 
     // micronaut
     implementation 'io.micronaut:micronaut-aop'
-    implementation 'io.micronaut:micronaut-validation'
+    implementation 'io.micronaut.validation:micronaut-validation'
     annotationProcessor 'io.micronaut:micronaut-inject'
-    annotationProcessor 'io.micronaut:micronaut-validation'
+    annotationProcessor 'io.micronaut.validation:micronaut-validation'
 
     // logging
     implementation 'org.slf4j:slf4j-api'
@@ -73,7 +75,7 @@ jacocoTestReport {
     }
 }
 
-task printRuntimeClasspath {
+tasks.register('printRuntimeClasspath') {
     doLast {
         configurations.runtimeClasspath.each {
             println it
@@ -81,7 +83,7 @@ task printRuntimeClasspath {
     }
 }
 
-task printCompileClasspath {
+tasks.register('printCompileClasspath') {
     doLast {
         configurations.compileClasspath.each {
             println it

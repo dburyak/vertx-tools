@@ -20,10 +20,9 @@ dependencies {
     runtimeOnly 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 }
 
-mainClassName = 'com.dburyak.vertx.test.TestApp'
-
-run {
-    jvmArgs = [
+application {
+    mainClass = 'com.dburyak.vertx.test.TestApp'
+    applicationDefaultJvmArgs = [
             '--add-modules', 'java.se',
             '--add-exports', 'java.base/jdk.internal.ref=ALL-UNNAMED',
             '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
