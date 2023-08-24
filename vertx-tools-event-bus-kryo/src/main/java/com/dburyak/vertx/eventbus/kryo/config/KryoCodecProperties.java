@@ -1,9 +1,8 @@
 package com.dburyak.vertx.eventbus.kryo.config;
 
 import io.micronaut.context.annotation.ConfigurationProperties;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
-
-import javax.validation.constraints.Positive;
 
 /**
  * Kryo event bus codec configuration.

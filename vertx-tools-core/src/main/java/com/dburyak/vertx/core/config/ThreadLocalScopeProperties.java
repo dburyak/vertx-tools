@@ -3,9 +3,9 @@ package com.dburyak.vertx.core.config;
 import com.dburyak.vertx.core.validation.MinDuration;
 import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Context;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
 import java.time.Duration;
 
 /**

@@ -5,10 +5,9 @@ import com.dburyak.vertx.core.di.ForEventLoop;
 import com.dburyak.vertx.core.di.ForWorker;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.plugins.RxJavaPlugins;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.PostConstruct;
 
 @AppBootstrap
 @Singleton

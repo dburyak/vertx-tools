@@ -23,16 +23,11 @@ configurations {
     integrationCompileOnly { extendsFrom testCompileOnly, integrationAnnotationProcessor }
 }
 
-//micronaut {
-//    // this must match the version of micronaut dependencies defined in build-conventions/versions.gradle
-//    // there's no easy way to have it defined in a single place
-//    version '[3.8, 4)!!3.8.7'
-//}
+micronaut {
+    importMicronautPlatform = false
+}
 
 dependencies {
-    implementation platform(project(':build-conventions:versions'))
-    annotationProcessor platform(project(':build-conventions:versions'))
-
     // lombok
     annotationProcessor 'org.projectlombok:lombok'
 
@@ -60,7 +55,7 @@ dependencies {
     testRuntimeOnly 'org.objenesis:objenesis'
 }
 
-tasks.withType(Test) {
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
     testLogging {
         events "passed", "skipped", "failed"
@@ -69,9 +64,10 @@ tasks.withType(Test) {
 }
 
 jacocoTestReport {
-    executionData(fileTree(project.buildDir).include("jacoco/*.exec"))
+    executionData(fileTree(project.layout.buildDirectory).include("jacoco/*.exec"))
     reports {
         html.required = true
+        xml.required = true
     }
 }
 

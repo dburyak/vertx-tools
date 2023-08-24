@@ -4,9 +4,9 @@ import com.dburyak.vertx.core.validation.MinDuration;
 import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.core.convert.format.MapFormat;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
 import java.time.Duration;
 import java.util.Map;
 
