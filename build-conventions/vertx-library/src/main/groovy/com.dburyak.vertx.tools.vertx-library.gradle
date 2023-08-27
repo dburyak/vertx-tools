@@ -2,10 +2,12 @@ plugins {
     id 'com.dburyak.vertx.tools.vertx-toolchain'
     id 'java-library'
     id 'com.dburyak.vertx.tools.publish-gcp-ar'
+    id 'com.palantir.git-version'
 }
 
 java {
     group = 'com.dburyak.vertx.tools'
+    version = gitVersion()
 }
 
 dependencies {

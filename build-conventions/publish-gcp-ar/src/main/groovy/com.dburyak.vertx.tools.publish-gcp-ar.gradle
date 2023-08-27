@@ -38,7 +38,7 @@ afterEvaluate {
 
         publishing {
             publications {
-                gcpArMaven(MavenPublication) {
+                gcpAr(MavenPublication) {
                     from components.java
                 }
             }
