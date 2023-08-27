@@ -12,5 +12,5 @@ repositories {
 
 dependencies {
     implementation 'com.dburyak.vertx.tools:vertx-toolchain'
-    implementation 'com.dburyak.vertx.tools:ar-publish'
+    implementation 'com.dburyak.vertx.tools:publish-gcp-ar'
 }

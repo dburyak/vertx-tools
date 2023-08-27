@@ -1,7 +1,11 @@
 plugins {
     id 'com.dburyak.vertx.tools.vertx-toolchain'
     id 'java-library'
-    id 'com.dburyak.vertx.tools.ar-publish'
+    id 'com.dburyak.vertx.tools.publish-gcp-ar'
+}
+
+java {
+    group = 'com.dburyak.vertx.tools'
 }
 
 dependencies {
@@ -10,4 +14,11 @@ dependencies {
     api 'io.micronaut.validation:micronaut-validation'
     api 'io.micronaut:micronaut-aop'
     api 'org.slf4j:slf4j-api'
+}
+
+publishToGcpArtifactRegistry {
+    enabled = findProperty('publishToGcpArtifactRegistry')?.toString()?.toBoolean()
+    location = findProperty('gcpArtifactRegistryLocation') ?: System.getenv('GCP_AR_LOCATION')
+    gcpProjectId = findProperty('gcpArtifactRegistryProjectId') ?: System.getenv('GCP_AR_GCP_PROJECT_ID')
+    repoName = findProperty('gcpArtifactRegistryRepoName') ?: System.getenv('GCP_AR_REPOSITORY_NAME')
 }

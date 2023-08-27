@@ -1,11 +1,11 @@
 rootProject.name = 'vertx-tools'
 
 // common build logic
+include ':build-conventions:versions'
 includeBuild 'build-conventions/dependency-management'
 includeBuild 'build-conventions/vertx-toolchain'
 includeBuild 'build-conventions/vertx-library'
-include ':build-conventions:versions'
-includeBuild 'build-conventions/ar-publish'
+includeBuild 'build-conventions/publish-gcp-ar'
 
 include ':vertx-tools-core'
 //include ':tools-vertx-deployment'

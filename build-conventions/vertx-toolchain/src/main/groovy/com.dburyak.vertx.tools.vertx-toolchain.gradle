@@ -7,10 +7,6 @@ plugins {
     id 'jacoco'
 }
 
-java {
-    group = 'com.dburyak.vertx.tools'
-}
-
 repositories {
     mavenCentral()
 }
