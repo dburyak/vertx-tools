@@ -4,6 +4,7 @@ plugins {
 
 java {
     group = 'com.dburyak.vertx.tools'
+    version = '1.0.0'
 }
 
 repositories {
@@ -11,6 +12,5 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.dburyak.vertx.tools:vertx-toolchain'
-    implementation 'com.dburyak.vertx.tools:ar-publish'
+    implementation 'gradle.plugin.com.google.cloud.artifactregistry:artifactregistry-gradle-plugin:2.2.1'
 }

@@ -5,6 +5,7 @@ includeBuild 'build-conventions/dependency-management'
 includeBuild 'build-conventions/vertx-toolchain'
 includeBuild 'build-conventions/vertx-library'
 include ':build-conventions:versions'
+includeBuild 'build-conventions/ar-publish'
 
 include ':vertx-tools-core'
 //include ':tools-vertx-deployment'
