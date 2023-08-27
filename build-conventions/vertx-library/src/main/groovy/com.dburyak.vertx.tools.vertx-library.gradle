@@ -8,6 +8,9 @@ plugins {
 java {
     group = 'com.dburyak.vertx.tools'
     version = gitVersion()
+    if (!versionDetails().isCleanTag) {
+        version += '-SNAPSHOT'
+    }
 }
 
 dependencies {
