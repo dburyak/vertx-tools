@@ -2,9 +2,17 @@ package com.dburyak.vertx.core.di;
 
 import jakarta.inject.Singleton;
 
+/**
+ * Vertx event loop bean scope implementation.
+ *
+ * @see EventLoopScope
+ */
 @Singleton
 public class EventLoopScopeImpl extends VertxCtxScopeBase<EventLoopScope> {
 
+    /**
+     * Default constructor.
+     */
     public EventLoopScopeImpl() {
         super(EventLoopScope.class);
     }

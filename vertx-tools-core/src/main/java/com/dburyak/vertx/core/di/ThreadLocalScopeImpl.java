@@ -6,7 +6,6 @@ import io.micronaut.context.scope.CreatedBean;
 import io.micronaut.inject.BeanIdentifier;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.disposables.Disposable;
-import io.vertx.rxjava3.FlowableHelper;
 import io.vertx.rxjava3.core.Vertx;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
@@ -15,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 @Slf4j
@@ -50,7 +50,7 @@ public class ThreadLocalScopeImpl extends AbstractConcurrentCustomScope<ThreadLo
     void startCleanupTicker() {
         var periodMs = props.getCleanupCheckerPeriod().toMillis();
         log.debug("using thread local cleanup checker period: periodMs={}", periodMs);
-        cleanupTicker = FlowableHelper.toFlowable(vertx.periodicStream(periodMs).getDelegate())
+        cleanupTicker = Flowable.interval(periodMs, TimeUnit.MILLISECONDS)
                 .onBackpressureLatest()
                 .flatMapSingle(tick -> Flowable.fromIterable(beans.keySet())
                         .filter(t -> !t.isAlive())

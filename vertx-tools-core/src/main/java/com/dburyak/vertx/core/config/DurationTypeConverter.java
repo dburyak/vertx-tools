@@ -7,6 +7,9 @@ import jakarta.inject.Singleton;
 import java.time.Duration;
 import java.util.Optional;
 
+/**
+ * Type converter to support duration configuration properties.
+ */
 @Singleton
 public class DurationTypeConverter implements TypeConverter<String, Duration> {
 

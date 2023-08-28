@@ -37,11 +37,12 @@ import lombok.Setter;
  * <ul>
  *     <li>verticle instantiation with default constructor on the calling thread
  *     <li>deployment initial phase on the calling thread
- *     <li>dependency injection on the vertx event loop thread
+ *     <li>dependency injection on the vertx event loop thread as part of Verticle.init(Vertx, Context) call
  *     <li>verticle initialization routine on the vertx event loop thread
- *     <li>verticle startup
+ *     <li>verticle startup routine on the vertx event loop thread
  * </ul>
- * Thus, all implementations must provide default constructor for first phase.
+ * Thus, all implementations must provide default constructor for the first phase.
+ * <p>
  * Dependency injection through constructor arguments is not possible due to vertx internal design - it creates
  * verticle instance on the calling thread, not on the event loop context thread.
  * Performing beans injection on vertx event loop thread allows to avoid visibility issues when using stateful
@@ -53,11 +54,16 @@ import lombok.Setter;
 @VerticleBeanBaseClass
 public abstract class AbstractDiVerticle extends AbstractVerticle {
 
+    /**
+     * DI application context. Is set by {@link VertxApp} during verticle deployment.
+     * TODO: make it final, set it in constructor
+     */
     @Setter
     protected volatile ApplicationContext appCtx;
 
     @Override
     public final void init(Vertx vertx, Context context) {
+        // this call triggers DI on the vertx event loop thread assigned to this verticle
         appCtx.registerSingleton(this);
         doOnInit(vertx, context);
     }
@@ -72,6 +78,11 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
         // subclasses can extend verticle initialization behavior with this method
     }
 
+    /**
+     * Setter for vertx instance that is used for dependency injection.
+     *
+     * @param vertx vertx instance
+     */
     @Inject
     protected void setVertx(io.vertx.rxjava3.core.Vertx vertx) {
         this.vertx = vertx;

@@ -32,6 +32,11 @@ public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractCo
         beans.values().forEach(this::destroyScope);
     }
 
+    /**
+     * Subclass specific error message for the case when scope is accessed from unexpected thread.
+     *
+     * @return subclass specific error message
+     */
     protected abstract String notOnCtxErrorMessage();
 
     protected abstract boolean vertxThreadMatches();
