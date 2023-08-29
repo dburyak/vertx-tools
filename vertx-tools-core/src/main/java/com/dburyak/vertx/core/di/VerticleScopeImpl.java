@@ -12,10 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.emptyMap;
 
+/**
+ * Verticle bean scope implementation.
+ */
 @Singleton
 public class VerticleScopeImpl extends AbstractConcurrentCustomScope<VerticleScope> {
     private final Map<String, Map<BeanIdentifier, CreatedBean<?>>> beans = new ConcurrentHashMap<>();
 
+    /**
+     * Default constructor.
+     */
     public VerticleScopeImpl() {
         super(VerticleScope.class);
     }

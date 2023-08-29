@@ -6,7 +6,6 @@ import io.micronaut.context.scope.CreatedBean;
 import io.micronaut.inject.BeanIdentifier;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.disposables.Disposable;
-import io.vertx.rxjava3.core.Vertx;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
@@ -16,20 +15,33 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Thread local bean scope implementation.
+ */
 @Singleton
 @Slf4j
 public class ThreadLocalScopeImpl extends AbstractConcurrentCustomScope<ThreadLocalScope> {
-    private final Vertx vertx;
     private final ThreadLocalScopeProperties props;
     private final Map<Thread, Map<BeanIdentifier, CreatedBean<?>>> beans = new ConcurrentHashMap<>();
     private volatile Disposable cleanupTicker;
 
-    public ThreadLocalScopeImpl(Vertx vertx, ThreadLocalScopeProperties props) {
+    /**
+     * Constructor.
+     *
+     * @param props thread local scope properties
+     */
+    public ThreadLocalScopeImpl(ThreadLocalScopeProperties props) {
         super(ThreadLocalScope.class);
-        this.vertx = vertx;
         this.props = props;
     }
 
+    /**
+     * Get beans map for current thread.
+     *
+     * @param forCreation true if map is needed for bean creation, false if for bean destruction
+     *
+     * @return beans map for current thread
+     */
     @Override
     protected Map<BeanIdentifier, CreatedBean<?>> getScopeMap(boolean forCreation) {
         return beans.computeIfAbsent(Thread.currentThread(), tn -> new HashMap<>());

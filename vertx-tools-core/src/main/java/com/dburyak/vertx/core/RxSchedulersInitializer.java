@@ -9,6 +9,10 @@ import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Initializes RxJava schedulers for vertx. This makes rxjava scheduling operators to use proper vertx threads. Example
+ * operators - interval, timer, delay, throttle, etc.
+ */
 @AppBootstrap
 @Singleton
 @Slf4j
@@ -16,6 +20,12 @@ public class RxSchedulersInitializer {
     private final Scheduler vertxRxScheduler;
     private final Scheduler vertxRxBlockingScheduler;
 
+    /**
+     * Constructor.
+     *
+     * @param vertxRxScheduler scheduler for event loop threads
+     * @param vertxRxBlockingScheduler scheduler for worker threads
+     */
     public RxSchedulersInitializer(@ForEventLoop Scheduler vertxRxScheduler,
             @ForWorker Scheduler vertxRxBlockingScheduler) {
         this.vertxRxScheduler = vertxRxScheduler;

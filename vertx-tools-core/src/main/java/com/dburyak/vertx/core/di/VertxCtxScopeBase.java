@@ -10,25 +10,56 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Base class for DI bean scopes that are bound to vertx threads. This scope works as thread local scope but injection
+ * is allowed only from specific kind of vertx threads.
+ *
+ * @param <T> scope annotation type
+ */
 public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractConcurrentCustomScope<T> {
+
+    /**
+     * Map of all beans created in the scope. Key is thread name. Value is map of beans created for given thread.
+     */
     protected final Map<String, Map<BeanIdentifier, CreatedBean<?>>> beans = new ConcurrentHashMap<>();
 
+    /**
+     * Constructor.
+     *
+     * @param annotationType scope annotation type specific for the implementation subclass
+     */
     protected VertxCtxScopeBase(Class<T> annotationType) {
         super(annotationType);
     }
 
+    /**
+     * Get beans map for current vertx context/thread.
+     *
+     * @param forCreation whether it is for bean creation (get or create bean) or for bean destruction (destroy
+     *         bean)
+     *
+     * @return beans map for current thread
+     */
     @Override
-    protected Map<BeanIdentifier, CreatedBean<?>> getScopeMap(boolean forCreation) {
+    protected final Map<BeanIdentifier, CreatedBean<?>> getScopeMap(boolean forCreation) {
         return getVertxCtxBeans(forCreation);
     }
 
+    /**
+     * Always return true as no any special startup/initialization routine is required for this type of scope.
+     *
+     * @return true
+     */
     @Override
-    public boolean isRunning() {
+    public final boolean isRunning() {
         return true;
     }
 
+    /**
+     * Destroy all beans in the scope on close.
+     */
     @Override
-    public void close() {
+    public final void close() {
         beans.values().forEach(this::destroyScope);
     }
 
@@ -39,6 +70,11 @@ public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractCo
      */
     protected abstract String notOnCtxErrorMessage();
 
+    /**
+     * Subclass specific check if current vertx thread is suitable for the scope.
+     *
+     * @return whether current thread is suitable for the scope
+     */
     protected abstract boolean vertxThreadMatches();
 
     private boolean isOnCtx() {

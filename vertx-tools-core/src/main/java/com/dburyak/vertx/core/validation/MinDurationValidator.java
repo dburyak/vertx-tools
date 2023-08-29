@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
 
+/**
+ * Validator implementation for {@link MinDuration} annotation.
+ */
 @RequiredArgsConstructor
 public class MinDurationValidator implements ConstraintValidator<MinDuration, Duration> {
     private final DurationTypeConverter durationTypeConverter;

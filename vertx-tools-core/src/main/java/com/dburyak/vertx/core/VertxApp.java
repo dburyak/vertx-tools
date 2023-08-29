@@ -17,17 +17,27 @@ import java.util.stream.IntStream;
 /**
  * Base class for DI enabled vertx application.
  * <p>
- * Unlike classic vertx application where all the initialization needs to be done imperatively, this class does it
- * in declarative manner. To use it declare verticles by inheriting from {@link AbstractDiVerticle} and specify which verticles
- * to deploy in this application.
+ * Unlike classic vertx application where all the initialization needs to be done imperatively, this class does it in
+ * declarative manner. To use it declare verticles by inheriting from {@link AbstractDiVerticle} and specify which
+ * verticles to deploy in this application using {@link VerticleDeploymentDescriptor}.
  */
 @Slf4j
 public abstract class VertxApp {
     private final Object startupLock = new Object();
     private volatile ApplicationContext appCtx = null;
 
+    /**
+     * Specify verticles to deploy in this application.
+     *
+     * @return collection of verticle deployment descriptors
+     */
     protected abstract Collection<VerticleDeploymentDescriptor> verticlesDeploymentDescriptors();
 
+    /**
+     * Start DI enabled vertx application.
+     *
+     * @return completable that completes when application is started
+     */
     public final Completable start() {
         return Observable.defer(() -> {
                     synchronized (startupLock) {
@@ -80,6 +90,11 @@ public abstract class VertxApp {
                 .doOnComplete(() -> log.info("vertx application started"));
     }
 
+    /**
+     * Stop DI enabled vertx application.
+     *
+     * @return completable that completes when application is stopped
+     */
     public final Completable stop() {
         return Completable.defer(() -> {
             synchronized (startupLock) {

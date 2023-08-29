@@ -2,9 +2,15 @@ package com.dburyak.vertx.core.di;
 
 import jakarta.inject.Singleton;
 
+/**
+ * Vertx worker bean scope implementation.
+ */
 @Singleton
 public class WorkerScopeImpl extends VertxCtxScopeBase<WorkerScope> {
 
+    /**
+     * Default constructor.
+     */
     protected WorkerScopeImpl() {
         super(WorkerScope.class);
     }

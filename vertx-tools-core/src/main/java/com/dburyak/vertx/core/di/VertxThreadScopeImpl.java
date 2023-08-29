@@ -2,9 +2,15 @@ package com.dburyak.vertx.core.di;
 
 import jakarta.inject.Singleton;
 
+/**
+ * Vertx thread bean scope implementation.
+ */
 @Singleton
 public class VertxThreadScopeImpl extends VertxCtxScopeBase<VertxThreadScope> {
 
+    /**
+     * Default constructor.
+     */
     public VertxThreadScopeImpl() {
         super(VertxThreadScope.class);
     }

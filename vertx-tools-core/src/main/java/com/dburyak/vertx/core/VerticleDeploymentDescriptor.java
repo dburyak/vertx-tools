@@ -4,6 +4,9 @@ import io.vertx.core.DeploymentOptions;
 import lombok.Builder;
 import lombok.Value;
 
+/**
+ * Contains all the parameters for defining verticle to be deployed in declarative way.
+ */
 @Value
 @Builder(toBuilder = true)
 public class VerticleDeploymentDescriptor {

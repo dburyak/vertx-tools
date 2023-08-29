@@ -12,10 +12,21 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Factory for vertx related beans.
+ */
 @Factory
 @Slf4j
 public class VertxFactory {
 
+    /**
+     * {@link Vertx} bean.
+     *
+     * @param vertxOptions vertx options
+     * @param clusterManager cluster manager if any
+     *
+     * @return singleton instance of {@link Vertx}
+     */
     @Singleton
     @Requires(missingBeans = Vertx.class)
     public Vertx vertx(VertxOptions vertxOptions, Optional<ClusterManager> clusterManager) {
@@ -33,6 +44,13 @@ public class VertxFactory {
         return vertx;
     }
 
+    /**
+     * Vertx options bean.
+     *
+     * @param configurers vertx options configurers
+     *
+     * @return vertx options
+     */
     @Singleton
     @Requires(missingBeans = VertxOptions.class)
     public VertxOptions vertxOptions(List<VertxOptionsConfigurer> configurers) {
