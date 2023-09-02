@@ -9,9 +9,19 @@ import jakarta.inject.Singleton;
 
 import java.util.Optional;
 
+/**
+ * Factory for Hazelcast default beans.
+ */
 @Factory
 public class HazelcastClusterManagerFactory {
 
+    /**
+     * Default Hazelcast {@link ClusterManager} bean.
+     *
+     * @param hazelcastConfig hazelcast config
+     *
+     * @return hazelcast cluster manager
+     */
     @Singleton
     @Requires(missingBeans = ClusterManager.class)
     public ClusterManager hazelcastClusterManager(Optional<Config> hazelcastConfig) {

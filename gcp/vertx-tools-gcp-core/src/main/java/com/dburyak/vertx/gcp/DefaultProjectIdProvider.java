@@ -4,6 +4,10 @@ import com.google.cloud.ServiceOptions;
 import io.micronaut.context.annotation.Requires;
 import jakarta.inject.Singleton;
 
+/**
+ * {@link ProjectIdProvider} default provider bean. This implementation follows discovery mechanism documented in
+ * <a href="https://github.com/googleapis/google-cloud-java#specifying-a-project-id">gcp-java-sdk-docs</a>.
+ */
 @Singleton
 @Requires(missingBeans = ProjectIdProvider.class)
 public class DefaultProjectIdProvider implements ProjectIdProvider {
