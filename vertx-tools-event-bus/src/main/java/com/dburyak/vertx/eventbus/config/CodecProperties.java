@@ -30,9 +30,9 @@ public class CodecProperties {
     private String type;
 
     /**
-     * Whether this codec should be registered as "default". Default codecs are registered by message DTO java
-     * class. So whenever object of that class is sent corresponding registered "default" codec is used, sender does
-     * not have to explicitly specify which exact codec to use by specifying codec "name".
+     * Whether this codec should be registered as "default". Default codecs are registered by message DTO java class. So
+     * whenever object of that class is sent corresponding registered "default" codec is used, sender does not have to
+     * explicitly specify which exact codec to use by specifying codec "name".
      */
     private boolean isDefault;
 
@@ -43,6 +43,11 @@ public class CodecProperties {
      */
     private List<String> defaultTypes;
 
+    /**
+     * Constructor.
+     *
+     * @param name codec {@link #name}
+     */
     public CodecProperties(@Parameter("name") String name) {
         this.name = name;
     }

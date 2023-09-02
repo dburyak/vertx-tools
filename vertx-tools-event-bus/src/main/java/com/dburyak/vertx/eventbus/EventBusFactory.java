@@ -15,10 +15,24 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+/**
+ * Factory for default {@link EventBus} related beans. It is strongly recommended to not override any of these beans,
+ * and instead use {@link EventBusConfigurer} to customize {@link EventBus} instance.
+ */
 @Factory
 @Slf4j
 public class EventBusFactory {
 
+    /**
+     * Default {@link io.vertx.core.eventbus.EventBus} bean. It is strongly recommended to not override this bean, and
+     * instead use {@link EventBusConfigurer} to customize {@link EventBus} instance.
+     *
+     * @param appCtx micronaut application context
+     * @param vertx vertx instance
+     * @param eventBusProperties event bus properties
+     *
+     * @return event bus bean
+     */
     @Context
     @Requires(missingBeans = io.vertx.core.eventbus.EventBus.class)
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -83,6 +97,13 @@ public class EventBusFactory {
         return eb;
     }
 
+    /**
+     * Default rx-fied {@link EventBus} bean.
+     *
+     * @param coreEventBus core plain vertx event bus
+     *
+     * @return rx event bus bean
+     */
     @Singleton
     @Requires(missingBeans = EventBus.class)
     public EventBus rxEventBus(io.vertx.core.eventbus.EventBus coreEventBus) {
@@ -94,6 +115,14 @@ public class EventBusFactory {
         return EventBus.newInstance(coreEventBus);
     }
 
+    /**
+     * {@link VertxOptionsConfigurer} that applies all registered {@link EventBusConfigurer}s and makes this config
+     * being applied to vertx.
+     *
+     * @param eventBusConfigurers all registered event bus configurers
+     *
+     * @return vertx options configurer for applying event bus configurers
+     */
     @Singleton
     public VertxOptionsConfigurer eventBusConfigurersApplied(List<EventBusConfigurer> eventBusConfigurers) {
         return (vertxOptions) -> {

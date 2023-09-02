@@ -21,17 +21,29 @@ public class EventBusProperties {
     private List<CodecProperties> codecs;
 
     /**
-     * Whether to fail application startup process if error happened while loading/registering codec.
-     * Setting this option to true allows to fail fast if any codec is misconfigured. Otherwise, such erroneous codec
-     * will be skipped.
+     * Whether to fail application startup process if error happened while loading/registering codec. Setting this
+     * option to true allows to fail fast if any codec is misconfigured. Otherwise, such erroneous codec will be
+     * skipped.
      */
     private boolean failOnCodecError = false;
 
+    /**
+     * Set EventBus message codecs configurations.
+     *
+     * @param codecs codecs
+     */
     @Inject
     public void setCodecs(List<CodecProperties> codecs) {
         this.codecs = codecs;
     }
 
+    /**
+     * Whether to fail application startup process if error happened while loading/registering codec. Setting this
+     * option to true allows to fail fast if any codec is misconfigured. Otherwise, such erroneous codec will be
+     * skipped.
+     *
+     * @return whether to fail application startup process if error happened while loading/registering codec
+     */
     public boolean shouldFailOnCodecError() {
         return failOnCodecError;
     }

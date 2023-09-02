@@ -6,6 +6,12 @@ import io.vertx.core.json.Json;
 
 import java.util.List;
 
+/**
+ * Message codec that encodes POJOs as JSON.
+ *
+ * @param <S> type of message to send
+ * @param <R> type of message to receive
+ */
 public abstract class JsonMessageCodec<S, R> implements MessageCodec<S, R> {
 
     @Override

@@ -18,6 +18,16 @@ public class NamedMessageCodec<S, R> implements MessageCodec<S, R> {
     private final String name;
     private final MessageCodec<S, R> codec;
 
+    /**
+     * Static factory method to create named message codec.
+     *
+     * @param name codec name
+     * @param codec codec instance
+     * @param <S> send type
+     * @param <R> receive type
+     *
+     * @return new named message codec instance
+     */
     public static <S, R> NamedMessageCodec<S, R> of(String name, MessageCodec<S, R> codec) {
         return new NamedMessageCodec<>(name, codec);
     }
