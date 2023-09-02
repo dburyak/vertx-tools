@@ -20,10 +20,3 @@ dependencies {
     api 'io.micronaut:micronaut-aop'
     api 'org.slf4j:slf4j-api'
 }
-
-publishToGcpArtifactRegistry {
-    enabled = findProperty('publishToGcpArtifactRegistry')?.toString()?.toBoolean()
-    location = findProperty('gcpArtifactRegistryLocation') ?: System.getenv('GCP_AR_LOCATION')
-    gcpProjectId = findProperty('gcpArtifactRegistryProjectId') ?: System.getenv('GCP_AR_GCP_PROJECT_ID')
-    repoName = findProperty('gcpArtifactRegistryRepoName') ?: System.getenv('GCP_AR_REPOSITORY_NAME')
-}
