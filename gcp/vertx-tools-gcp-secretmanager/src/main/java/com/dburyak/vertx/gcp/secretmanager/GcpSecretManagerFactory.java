@@ -11,9 +11,21 @@ import jakarta.inject.Singleton;
 
 import java.io.IOException;
 
+/**
+ * Factory for GCP Secret Manager related default implementations beans.
+ */
 @Factory
 public class GcpSecretManagerFactory {
 
+    /**
+     * Underlying gcp sdk GSM client default bean.
+     *
+     * @param credentialsProvider credentials provider
+     *
+     * @return GSM client
+     *
+     * @throws IOException if client creation failed
+     */
     @Singleton
     @Requires(missingBeans = SecretManagerServiceClient.class)
     public SecretManagerServiceClient secretManagerServiceClient(CredentialsProvider credentialsProvider)
@@ -24,6 +36,15 @@ public class GcpSecretManagerFactory {
         return SecretManagerServiceClient.create(settings);
     }
 
+    /**
+     * GCP Secret Manager default implementation bean.
+     *
+     * @param vertx vertx
+     * @param projectIdProvider gcp project id provider
+     * @param secretManagerServiceClient GSM client
+     *
+     * @return GSM client
+     */
     @Singleton
     @Requires(missingBeans = GcpSecretManager.class)
     public GcpSecretManager gcpSecretManager(Vertx vertx, ProjectIdProvider projectIdProvider,

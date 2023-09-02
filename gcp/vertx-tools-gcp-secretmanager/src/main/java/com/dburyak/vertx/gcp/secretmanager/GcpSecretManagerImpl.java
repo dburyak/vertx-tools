@@ -7,11 +7,21 @@ import com.google.cloud.secretmanager.v1.SecretVersionName;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.core.Vertx;
 
+/**
+ * Default implementation of GCP Secret Manager client.
+ */
 public class GcpSecretManagerImpl implements GcpSecretManager {
     private final Vertx vertx;
     private final String projectId;
     private final SecretManagerServiceClient secretManagerServiceClient;
 
+    /**
+     * Constructor.
+     *
+     * @param vertx vertx
+     * @param projectId gcp project id
+     * @param secretManagerServiceClient GSM client
+     */
     public GcpSecretManagerImpl(Vertx vertx, String projectId, SecretManagerServiceClient secretManagerServiceClient) {
         this.vertx = vertx;
         this.projectId = projectId;
