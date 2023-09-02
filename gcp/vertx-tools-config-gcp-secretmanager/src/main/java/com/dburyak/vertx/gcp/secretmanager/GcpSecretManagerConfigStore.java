@@ -1,56 +1,50 @@
 package com.dburyak.vertx.gcp.secretmanager;
 
-import io.micronaut.context.ApplicationContext;
 import io.reactivex.rxjava3.core.Observable;
 import io.vertx.config.spi.ConfigStore;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 
+/**
+ * Config store implementation for GCP Secret Manager.
+ * <p>
+ * This class is instantiated via SPI mechanism (from {@link GcpSecretManagerConfigStoreSpiFactory}) outside of DI
+ * container, by direct constructor call. Therefore, all the collaborator beans are injected via setters after
+ * instantiation by DI container explicit injection.
+ */
 @Singleton
-@RequiredArgsConstructor
 @Slf4j
 public class GcpSecretManagerConfigStore implements ConfigStore {
 
-    // just a public alias
+    /**
+     * Config store type for registering in vertx.
+     */
     public static final String TYPE = GcpSecretManagerConfigStoreSpiFactory.NAME;
 
-    private final Vertx spiVertx;
-    private final JsonObject spiCfg;
-
-    @Setter(onMethod_ = @Inject)
-    private volatile ApplicationContext appCtx;
-
-    @Setter(onMethod_ = @Inject)
-    private volatile io.vertx.rxjava3.core.Vertx vertx;
-
-    @Setter(onMethod_ = @Inject)
     private volatile GcpSecretManagerConfigProperties cfg;
-
-    @Setter(onMethod_ = @Inject)
     private volatile GcpSecretManager secretManager;
 
 
     @Override
     public Future<Buffer> get() {
-        if (cfg.getSecretConfigOptions().isEmpty()) {
+        var cfgLocal = cfg;
+        if (cfgLocal.getSecretConfigOptions().isEmpty()) {
             return Future.succeededFuture(Buffer.buffer("{}"));
         }
+        var gsmLocal = secretManager;
         var resultPromise = Promise.<Buffer>promise();
         var startedAt = Instant.now();
-        Observable.fromIterable(cfg.getSecretConfigOptions().entrySet())
-                .flatMapSingle(secretOpt -> secretManager.getSecretString(secretOpt.getValue())
+        Observable.fromIterable(cfgLocal.getSecretConfigOptions().entrySet())
+                .flatMapSingle(secretOpt -> gsmLocal.getSecretString(secretOpt.getValue())
                         .map(secretValue -> Map.entry(secretOpt.getKey(), secretValue)))
                 .toMap(Map.Entry::getKey, Map.Entry::getValue)
                 .doOnSuccess(m -> log.debug("gsm secret options retrieved: numSecrets={}, duration={}",
@@ -73,5 +67,25 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     public Future<Void> close() {
         // nothing to close here, this object is aggregate - collaborators are closed elsewhere
         return Future.succeededFuture();
+    }
+
+    /**
+     * Set secret manager.
+     *
+     * @param secretManager secret manager
+     */
+    @Inject
+    public void setSecretManager(GcpSecretManager secretManager) {
+        this.secretManager = secretManager;
+    }
+
+    /**
+     * Set GSM config.
+     *
+     * @param cfg GSM config
+     */
+    @Inject
+    public void setCfg(GcpSecretManagerConfigProperties cfg) {
+        this.cfg = cfg;
     }
 }

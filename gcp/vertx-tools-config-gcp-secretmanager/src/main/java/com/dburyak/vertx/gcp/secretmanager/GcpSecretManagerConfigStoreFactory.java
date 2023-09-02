@@ -7,9 +7,19 @@ import io.vertx.config.ConfigStoreOptions;
 
 import static com.dburyak.vertx.gcp.secretmanager.GcpSecretManagerConfigStore.TYPE;
 
+/**
+ * Factory for {@link ConfigStoreOptions} for GCP Secret Manager config store.
+ */
 @Factory
 public class GcpSecretManagerConfigStoreFactory {
 
+    /**
+     * Creates config store options for GCP Secret Manager config store.
+     *
+     * @param cfg GSM config properties
+     *
+     * @return GSM config store options
+     */
     @Bean
     @Requires(property = "vertx.gcp.config.secret-manager.enabled", value = "true", defaultValue = "true")
     public ConfigStoreOptions gcpSecretManagerConfigStore(GcpSecretManagerConfigProperties cfg) {

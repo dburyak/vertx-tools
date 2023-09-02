@@ -6,6 +6,10 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * SPI factory for {@link GcpSecretManagerConfigStore}. This factory is instantiated by vertx via SPI mechanism, by
+ * calling default constructor.
+ */
 @Slf4j
 public class GcpSecretManagerConfigStoreSpiFactory implements ConfigStoreFactory {
     static final String NAME = "gcp-secret-manager";
@@ -17,6 +21,6 @@ public class GcpSecretManagerConfigStoreSpiFactory implements ConfigStoreFactory
 
     @Override
     public ConfigStore create(Vertx vertx, JsonObject configuration) {
-        return new GcpSecretManagerConfigStore(vertx, configuration);
+        return new GcpSecretManagerConfigStore();
     }
 }
