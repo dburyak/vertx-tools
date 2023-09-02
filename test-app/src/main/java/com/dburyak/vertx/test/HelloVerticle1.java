@@ -8,7 +8,6 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.vertx.rxjava3.config.ConfigRetriever;
 import io.vertx.rxjava3.core.eventbus.EventBus;
 import jakarta.inject.Inject;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
@@ -16,16 +15,9 @@ import java.util.concurrent.TimeUnit;
 @Bean
 @Slf4j
 public class HelloVerticle1 extends AbstractDiVerticle {
-    @Setter(onMethod_ = @Inject)
     private SampleEventLoopBean sampleEventLoopBean;
-
-    @Setter(onMethod_ = @Inject)
     private SampleVerticleBean sampleVerticleBean;
-
-    @Setter(onMethod_ = @Inject)
     private EventBus eventBus;
-
-    @Setter(onMethod_ = @Inject)
     private ConfigRetriever configRetriever;
 
     private Disposable ticker;
@@ -65,5 +57,25 @@ public class HelloVerticle1 extends AbstractDiVerticle {
             ticker.dispose();
             configPoll.dispose();
         });
+    }
+
+    @Inject
+    public void setSampleEventLoopBean(SampleEventLoopBean sampleEventLoopBean) {
+        this.sampleEventLoopBean = sampleEventLoopBean;
+    }
+
+    @Inject
+    public void setSampleVerticleBean(SampleVerticleBean sampleVerticleBean) {
+        this.sampleVerticleBean = sampleVerticleBean;
+    }
+
+    @Inject
+    public void setEventBus(EventBus eventBus) {
+        this.eventBus = eventBus;
+    }
+
+    @Inject
+    public void setConfigRetriever(ConfigRetriever configRetriever) {
+        this.configRetriever = configRetriever;
     }
 }

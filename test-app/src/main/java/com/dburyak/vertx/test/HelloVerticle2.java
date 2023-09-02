@@ -9,7 +9,6 @@ import io.vertx.rxjava3.core.eventbus.EventBus;
 import io.vertx.rxjava3.core.eventbus.Message;
 import io.vertx.rxjava3.core.eventbus.MessageConsumer;
 import jakarta.inject.Inject;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
@@ -17,13 +16,8 @@ import java.util.concurrent.TimeUnit;
 @Bean
 @Slf4j
 public class HelloVerticle2 extends AbstractDiVerticle {
-    @Setter(onMethod_ = {@Inject})
     private SampleEventLoopBean sampleEventLoopBean;
-
-    @Setter(onMethod_ = {@Inject})
     private SampleVerticleBean sampleVerticleBean;
-
-    @Setter(onMethod_ = {@Inject})
     private EventBus eventBus;
 
     private Disposable ticker;
@@ -56,6 +50,21 @@ public class HelloVerticle2 extends AbstractDiVerticle {
                     this, sampleEventLoopBean, sampleVerticleBean);
             ticker.dispose();
         });
+    }
+
+    @Inject
+    public void setSampleEventLoopBean(SampleEventLoopBean sampleEventLoopBean) {
+        this.sampleEventLoopBean = sampleEventLoopBean;
+    }
+
+    @Inject
+    public void setSampleVerticleBean(SampleVerticleBean sampleVerticleBean) {
+        this.sampleVerticleBean = sampleVerticleBean;
+    }
+
+    @Inject
+    public void setEventBus(EventBus eventBus) {
+        this.eventBus = eventBus;
     }
 
     private void echo(Message<Object> msg) {
