@@ -3,50 +3,35 @@ plugins {
     id 'com.google.cloud.artifactregistry.gradle-plugin' apply false
 }
 
-interface GcpArtifactRegistryExtension {
-    Property<Boolean> getEnabled()
-    Property<String> getLocation()
-    Property<String> getGcpProjectId()
-    Property<String> getRepoName()
-}
+def enabled = findProperty('publishToGcpArtifactRegistry') ?: System.getenv('GCP_AR_PUBLISH_ENABLED')?.toBoolean()
+def location = findProperty('gcpArtifactRegistryLocation') ?: System.getenv('GCP_AR_LOCATION')
+def gcpProjectId = findProperty('gcpArtifactRegistryProjectId') ?: System.getenv('GCP_AR_GCP_PROJECT_ID')
+def repoName = findProperty('gcpArtifactRegistryRepoName') ?: System.getenv('GCP_AR_REPOSITORY_NAME')
 
-def cfg = project.extensions.create('publishToGcpArtifactRegistry', GcpArtifactRegistryExtension)
-cfg.enabled.convention(false)
-cfg.location.convention(null)
-cfg.gcpProjectId.convention(null)
-cfg.repoName.convention(null)
+if (enabled) {
+    if (!location || !gcpProjectId || !repoName) {
+        throw new GradleException('location, projectId and repositoryName values must be set to ' +
+                'publish to GCP Artifact Registry')
+    }
 
-afterEvaluate {
-    if (cfg.enabled.getOrElse(false)) {
-        def (location, gcpProjectId, repoName) = [
-                cfg.location.getOrNull(),
-                cfg.gcpProjectId.getOrNull(),
-                cfg.repoName.getOrNull()
-        ]
-        if (!location || !gcpProjectId || !repoName) {
-            throw new GradleException('location, projectId and repositoryName values must be set to ' +
-                    'publish to GCP Artifact Registry')
-        }
+    project.plugins.apply 'maven-publish'
+    project.plugins.apply 'com.google.cloud.artifactregistry.gradle-plugin'
 
-        project.plugins.apply 'maven-publish'
-        project.plugins.apply 'com.google.cloud.artifactregistry.gradle-plugin'
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
 
-        java {
-            withJavadocJar()
-            withSourcesJar()
-        }
-
-        publishing {
-            publications {
-                gcpAr(MavenPublication) {
-                    from components.java
-                }
+    publishing {
+        publications {
+            gcpAr(MavenPublication) {
+                from components.java
             }
+        }
 
-            repositories {
-                maven {
-                    url "artifactregistry://$location-maven.pkg.dev/$gcpProjectId/$repoName"
-                }
+        repositories {
+            maven {
+                url "artifactregistry://$location-maven.pkg.dev/$gcpProjectId/$repoName"
             }
         }
     }
