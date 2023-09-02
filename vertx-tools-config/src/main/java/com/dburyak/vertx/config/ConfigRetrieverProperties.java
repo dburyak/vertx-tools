@@ -7,6 +7,9 @@ import lombok.Data;
 
 import java.time.Duration;
 
+/**
+ * Configuration properties for {@link io.vertx.config.ConfigRetriever}.
+ */
 @ConfigurationProperties("vertx.config")
 @Context
 @Data
@@ -32,5 +35,8 @@ public class ConfigRetrieverProperties {
     @MinDuration("1s")
     private Duration scanPeriod;
 
+    /**
+     * Whether to process {@code ${}} placeholders in the configuration.
+     */
     private boolean processPlaceholders = true;
 }

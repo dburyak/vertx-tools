@@ -13,10 +13,23 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+/**
+ * Factory for {@link ConfigRetriever} bean.
+ */
 @Factory
 @Slf4j
 public class ConfigRetrieverFactory {
 
+    /**
+     * Default {@link ConfigRetriever} bean.
+     *
+     * @param vertx vertx instance
+     * @param configRetrieverOptions config retriever options
+     * @param cfgProcessors config processors
+     * @param appCtx micronaut application context
+     *
+     * @return config retriever bean
+     */
     @Singleton
     @Requires(missingBeans = ConfigRetriever.class)
     public ConfigRetriever configRetriever(Vertx vertx, ConfigRetrieverOptions configRetrieverOptions,
@@ -37,6 +50,14 @@ public class ConfigRetrieverFactory {
         return cfgRetriever;
     }
 
+    /**
+     * Default {@link ConfigRetrieverOptions} bean.
+     *
+     * @param cfg config retriever properties
+     * @param cfgStores config stores
+     *
+     * @return config retriever options bean
+     */
     @Singleton
     @Requires(missingBeans = ConfigRetrieverOptions.class)
     public ConfigRetrieverOptions configRetrieverOptions(ConfigRetrieverProperties cfg,
