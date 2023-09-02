@@ -5,6 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * Kryo message codec that copies data via copy constructor for local communications. Copying is used to pass data
+ * between vertx threads without synchronization. This codec is a safe alternative for
+ * {@link com.dburyak.vertx.eventbus.LocalAwareJsonUnsafeMessageCodec}.
+ *
+ * @param <T> type of message to send
+ */
 @Singleton
 @Slf4j
 public class LocalAwareKryoCopyingMessageCodec<T> extends KryoMessageCodecBase<T, T> {

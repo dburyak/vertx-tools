@@ -10,10 +10,21 @@ import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
 
+/**
+ * Factory for Kryo related default implementations beans.
+ */
 @Factory
 @Requires(classes = Kryo.class)
 public class KryoFactory {
 
+    /**
+     * Kryo default bean. This is not thread safe object, so we're using vertx thread scope to make sure that each vertx
+     * thread has its own instance of Kryo.
+     *
+     * @param defaultKryoSerializerFactory default serializer factory
+     *
+     * @return Kryo instance
+     */
     @Bean
     @VertxThreadScope
     @Requires(missingBeans = Kryo.class)
@@ -24,6 +35,12 @@ public class KryoFactory {
         return kryo;
     }
 
+    /**
+     * Kryo Input default bean. This is not thread safe object, so we're using vertx thread scope to make sure that each
+     * vertx thread has its own instance of Kryo Input.
+     *
+     * @return Kryo Input instance
+     */
     @Bean(preDestroy = "close")
     @VertxThreadScope
     @Requires(missingBeans = Input.class)
@@ -31,6 +48,14 @@ public class KryoFactory {
         return new Input();
     }
 
+    /**
+     * Kryo Output default bean. This is not thread safe object, so we're using vertx thread scope to make sure that
+     * each vertx thread has its own instance of Kryo Output.
+     *
+     * @param kryoProps kryo properties
+     *
+     * @return Kryo Output instance
+     */
     @Bean(preDestroy = "close")
     @VertxThreadScope
     @Requires(missingBeans = Output.class)
@@ -38,6 +63,11 @@ public class KryoFactory {
         return new Output(kryoProps.getOutputBufferInitialSize(), -1);
     }
 
+    /**
+     * Kryo SerializerFactory default bean.
+     *
+     * @return Kryo SerializerFactory instance
+     */
     @Bean
     @VertxThreadScope
     @Requires(missingBeans = SerializerFactory.class)

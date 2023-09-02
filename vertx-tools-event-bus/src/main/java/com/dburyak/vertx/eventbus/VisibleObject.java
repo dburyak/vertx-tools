@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Visible object is a wrapper around any object that provides volatile visibility guarantees. Intended to be used only
- * for EventBus messages and codecs.
+ * for EventBus messages and codecs to avoid unnecessary data copying for local EventBus messages.
  *
  * @param <T> type of wrapped object
  */
