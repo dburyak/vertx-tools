@@ -24,15 +24,13 @@ if (enabled) {
 
     publishing {
         publications {
-            gcpAr(MavenPublication) {
+            library(MavenPublication) {
                 from components.java
             }
         }
 
         repositories {
-            maven {
-                url "artifactregistry://$location-maven.pkg.dev/$gcpProjectId/$repoName"
-            }
+            maven { url "artifactregistry://$location-maven.pkg.dev/$gcpProjectId/$repoName" }
         }
     }
 }
