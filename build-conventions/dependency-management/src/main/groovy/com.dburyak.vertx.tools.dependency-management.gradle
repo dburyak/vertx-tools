@@ -2,11 +2,24 @@ plugins {
     id 'java'
 }
 
+configurations {
+    vertxToolsInternal {
+        visible = false
+        canBeConsumed = false
+        canBeResolved = false
+    }
+    compileClasspath { extendsFrom vertxToolsInternal }
+    runtimeClasspath { extendsFrom vertxToolsInternal }
+    testCompileClasspath { extendsFrom vertxToolsInternal }
+    testRuntimeClasspath { extendsFrom vertxToolsInternal }
+    productionRuntimeClasspath { extendsFrom vertxToolsInternal }
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation platform(project(':build-conventions:versions'))
+    vertxToolsInternal platform(project(':build-conventions:versions'))
     annotationProcessor platform(project(':build-conventions:versions'))
 }

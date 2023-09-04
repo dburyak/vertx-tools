@@ -22,10 +22,22 @@ if (enabled) {
         withSourcesJar()
     }
 
+    javadoc {
+        options.addBooleanOption('html5', true)
+    }
+
     publishing {
         publications {
             library(MavenPublication) {
                 from components.java
+                versionMapping {
+                    usage(Usage.JAVA_API) {
+                        fromResolutionOf('runtimeClasspath')
+                    }
+                    usage(Usage.JAVA_RUNTIME) {
+                        fromResolutionResult()
+                    }
+                }
             }
         }
 
