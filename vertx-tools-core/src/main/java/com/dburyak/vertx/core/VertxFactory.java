@@ -40,7 +40,7 @@ public class VertxFactory {
             vertxFuture = Single.just(Vertx.vertx(opts));
         }
         var vertx = vertxFuture.blockingGet();
-        log.info("vertx created: vertx={}, opts={}", vertx, opts);
+        log.debug("vertx created: vertx={}, opts={}", vertx, opts);
         return vertx;
     }
 

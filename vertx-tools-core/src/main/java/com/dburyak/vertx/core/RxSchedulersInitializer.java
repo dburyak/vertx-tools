@@ -34,7 +34,7 @@ public class RxSchedulersInitializer {
 
     @PostConstruct
     void init() {
-        log.info("configure rx schedulers for vertx");
+        log.debug("configure rx schedulers for vertx");
         RxJavaPlugins.setComputationSchedulerHandler(ignr -> vertxRxScheduler);
         RxJavaPlugins.setIoSchedulerHandler(ignr -> vertxRxBlockingScheduler);
         RxJavaPlugins.setNewThreadSchedulerHandler(ignr -> vertxRxScheduler);

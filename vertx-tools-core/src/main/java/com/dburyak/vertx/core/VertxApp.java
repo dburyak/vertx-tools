@@ -10,6 +10,8 @@ import io.vertx.rxjava3.core.Vertx;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -39,6 +41,7 @@ public abstract class VertxApp {
      * @return completable that completes when application is started
      */
     public final Completable start() {
+        var invokedAt = Instant.now();
         return Observable.defer(() -> {
                     synchronized (startupLock) {
                         if (appCtx != null) {
@@ -87,7 +90,8 @@ public abstract class VertxApp {
                 )
                 .ignoreElements()
                 .doOnComplete(() -> log.info("verticles deployed"))
-                .doOnComplete(() -> log.info("vertx application started"));
+                .doOnComplete(() -> log.info("vertx application started: time={}",
+                        Duration.between(invokedAt, Instant.now())));
     }
 
     /**
