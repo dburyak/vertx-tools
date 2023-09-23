@@ -1,6 +1,7 @@
 package com.dburyak.vertx.gcp.secretmanager;
 
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import io.vertx.config.spi.ConfigStore;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -30,21 +31,49 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
      */
     public static final String TYPE = GcpSecretManagerConfigStoreSpiFactory.NAME;
 
+    // it's safe to have only volatile here as config store is never called concurrently by vertx, but may be called
+    // from different EL threads
     private volatile GcpSecretManagerConfigProperties cfg;
     private volatile GcpSecretManager secretManager;
+    private volatile JsonObject cachedSecrets;
+    private volatile Instant lastRefreshedAt;
 
 
     @Override
     public Future<Buffer> get() {
-        var cfgLocal = cfg;
-        if (cfgLocal.getSecretConfigOptions().isEmpty()) {
-            return Future.succeededFuture(Buffer.buffer("{}"));
-        }
-        var gsmLocal = secretManager;
+        Single<JsonObject> secretsFuture;
         var resultPromise = Promise.<Buffer>promise();
+        if (lastRefreshedAt != null &&
+                Duration.between(lastRefreshedAt, Instant.now()).compareTo(cfg.getRefreshPeriod()) < 0) {
+            secretsFuture = Single.just(cachedSecrets);
+        } else {
+            secretsFuture = retrieveSecrets().doOnSuccess(json -> {
+                cachedSecrets = json;
+                lastRefreshedAt = Instant.now();
+            });
+        }
+        secretsFuture.subscribe(json -> {
+            resultPromise.complete(Buffer.buffer(json.encode()));
+        }, err -> {
+            log.error("gsm secrets retrieval failed: err={}", err.toString(), err);
+            resultPromise.fail(err);
+        });
+        return resultPromise.future();
+    }
+
+    @Override
+    public Future<Void> close() {
+        // nothing to close here, this object is aggregate - collaborators are closed elsewhere
+        return Future.succeededFuture();
+    }
+
+    private Single<JsonObject> retrieveSecrets() {
+        if (cfg.getSecretConfigOptions().isEmpty()) {
+            return Single.just(new JsonObject());
+        }
         var startedAt = Instant.now();
-        Observable.fromIterable(cfgLocal.getSecretConfigOptions().entrySet())
-                .flatMapSingle(secretOpt -> gsmLocal.getSecretString(secretOpt.getValue())
+        return Observable.fromIterable(cfg.getSecretConfigOptions().entrySet())
+                .flatMapSingle(secretOpt -> secretManager.getSecretString(secretOpt.getValue())
                         .map(secretValue -> Map.entry(secretOpt.getKey(), secretValue)))
                 .toMap(Map.Entry::getKey, Map.Entry::getValue)
                 .doOnSuccess(m -> log.debug("gsm secret options retrieved: numSecrets={}, duration={}",
@@ -53,20 +82,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     var json = new JsonObject();
                     m.forEach(json::put);
                     return json;
-                })
-                .subscribe(json -> {
-                    resultPromise.complete(Buffer.buffer(json.encode()));
-                }, err -> {
-                    log.error("gsm secrets retrieval failed: err={}", err.toString(), err);
-                    resultPromise.fail(err);
                 });
-        return resultPromise.future();
-    }
-
-    @Override
-    public Future<Void> close() {
-        // nothing to close here, this object is aggregate - collaborators are closed elsewhere
-        return Future.succeededFuture();
     }
 
     /**

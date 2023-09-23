@@ -28,7 +28,7 @@ public class GcpSecretManagerConfigProperties {
 
     @MinDuration("1s")
     @NotNull
-    private Duration refreshPeriod = Duration.ofMinutes(30);
+    private Duration refreshPeriod = Duration.ofHours(1);
 
     @MapFormat(transformation = MapFormat.MapTransformation.FLAT)
     @NotNull
