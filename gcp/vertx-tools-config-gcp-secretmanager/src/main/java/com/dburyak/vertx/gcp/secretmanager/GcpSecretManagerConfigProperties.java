@@ -1,6 +1,5 @@
 package com.dburyak.vertx.gcp.secretmanager;
 
-import com.dburyak.vertx.core.validation.MinDuration;
 import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.core.convert.format.MapFormat;
@@ -26,8 +25,10 @@ public class GcpSecretManagerConfigProperties {
 
     private String projectId;
 
-    @MinDuration("1s")
-    @NotNull
+    /**
+     * How often to re-read secrets from Google Secret Manager.
+     * Null, zero or negative value means no refresh.
+     */
     private Duration refreshPeriod = Duration.ofHours(1);
 
     @MapFormat(transformation = MapFormat.MapTransformation.FLAT)

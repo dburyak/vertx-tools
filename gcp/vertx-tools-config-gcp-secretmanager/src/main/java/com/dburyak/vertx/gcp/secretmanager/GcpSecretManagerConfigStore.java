@@ -37,14 +37,15 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     private volatile GcpSecretManager secretManager;
     private volatile JsonObject cachedSecrets;
     private volatile Instant lastRefreshedAt;
+    private volatile boolean isRefreshEnabled;
 
 
     @Override
     public Future<Buffer> get() {
         Single<JsonObject> secretsFuture;
         var resultPromise = Promise.<Buffer>promise();
-        if (lastRefreshedAt != null &&
-                Duration.between(lastRefreshedAt, Instant.now()).compareTo(cfg.getRefreshPeriod()) < 0) {
+        if (lastRefreshedAt != null && isRefreshEnabled
+                && Duration.between(lastRefreshedAt, Instant.now()).compareTo(cfg.getRefreshPeriod()) < 0) {
             secretsFuture = Single.just(cachedSecrets);
         } else {
             secretsFuture = retrieveSecrets().doOnSuccess(json -> {
@@ -103,5 +104,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     @Inject
     public void setCfg(GcpSecretManagerConfigProperties cfg) {
         this.cfg = cfg;
+        this.isRefreshEnabled = cfg.getRefreshPeriod() != null
+                && cfg.getRefreshPeriod().compareTo(Duration.ZERO) > 0;
     }
 }
