@@ -26,10 +26,9 @@ public class GcpSecretManagerConfigProperties {
     private String projectId;
 
     /**
-     * How often to re-read secrets from Google Secret Manager.
-     * Null, zero or negative value means no refresh.
+     * How often to re-read secrets from Google Secret Manager. Null, zero or negative value means no refresh.
      */
-    private Duration refreshPeriod = Duration.ofHours(1);
+    private Duration refreshPeriod = Duration.ZERO;
 
     @MapFormat(transformation = MapFormat.MapTransformation.FLAT)
     @NotNull

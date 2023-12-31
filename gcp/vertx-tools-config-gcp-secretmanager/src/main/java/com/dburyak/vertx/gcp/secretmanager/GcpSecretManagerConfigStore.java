@@ -105,6 +105,6 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     public void setCfg(GcpSecretManagerConfigProperties cfg) {
         this.cfg = cfg;
         this.isRefreshEnabled = cfg.getRefreshPeriod() != null
-                && cfg.getRefreshPeriod().compareTo(Duration.ZERO) > 0;
+                && !cfg.getRefreshPeriod().isNegative() && !cfg.getRefreshPeriod().isZero();
     }
 }
