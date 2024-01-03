@@ -44,14 +44,16 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     public Future<Buffer> get() {
         Single<JsonObject> secretsFuture;
         var resultPromise = Promise.<Buffer>promise();
-        if (lastRefreshedAt != null && isRefreshEnabled
-                && Duration.between(lastRefreshedAt, Instant.now()).compareTo(cfg.getRefreshPeriod()) < 0) {
-            secretsFuture = Single.just(cachedSecrets);
-        } else {
+        var isFirstCall = lastRefreshedAt == null;
+        var isOutdated = !isFirstCall && isRefreshEnabled
+                && Duration.between(lastRefreshedAt, Instant.now()).compareTo(cfg.getRefreshPeriod()) < 0;
+        if (isFirstCall || isOutdated) { // fetch
             secretsFuture = retrieveSecrets().doOnSuccess(json -> {
                 cachedSecrets = json;
                 lastRefreshedAt = Instant.now();
             });
+        } else { // use cached
+            secretsFuture = Single.just(cachedSecrets);
         }
         secretsFuture.subscribe(json -> {
             resultPromise.complete(Buffer.buffer(json.encode()));
