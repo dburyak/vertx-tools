@@ -69,6 +69,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     @Override
     public Future<Void> close() {
         // nothing to close here, this object is aggregate - collaborators are closed elsewhere
+        log.debug("gsm config store closed: instance={}", this);
         return Future.succeededFuture();
     }
 
@@ -118,6 +119,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
      */
     @Inject
     public void setSecretManager(GcpSecretManager secretManager) {
+        log.debug("gsm config store initialized: instance={}", this);
         this.secretManager = secretManager;
     }
 

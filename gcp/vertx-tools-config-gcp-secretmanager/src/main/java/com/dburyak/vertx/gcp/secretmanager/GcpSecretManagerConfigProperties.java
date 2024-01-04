@@ -2,6 +2,7 @@ package com.dburyak.vertx.gcp.secretmanager;
 
 import com.dburyak.vertx.core.validation.MinDuration;
 import io.micronaut.context.annotation.ConfigurationProperties;
+import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -51,34 +52,17 @@ public class GcpSecretManagerConfigProperties {
     private boolean pubsubNotificationsEnabled = false;
 
     /**
-     * Individual secrets config options.
+     * Individual secret config options.
      */
-    @NotNull
-    private List<SecretConfigEntry> secretConfigOptions = emptyList();
+    private List<SecretOptionConfigEntryProperties> secretConfigOptions = emptyList();
 
-    @Data
-    public class SecretConfigEntry {
-
-        /**
-         * Name of the config option. Required.
-         */
-        private String configOption;
-
-        /**
-         * Secret name (secret id). Required.
-         */
-        private String secretName;
-
-        /**
-         * GCP project ID to use for this secret instead of default one. Optional. If null or empty then default project
-         * ID is used.
-         */
-        private String projectId;
-
-        /**
-         * Pubsub subscription to listen for secret updates. Optional. If null or empty then secret updates
-         * notifications are disabled for this secret.
-         */
-        private String notificationSubscription;
+    /**
+     * Set individual secret config options.
+     *
+     * @param secretConfigOptions secret config options configurations
+     */
+    @Inject
+    public void setSecretConfigOptions(@NotNull List<SecretOptionConfigEntryProperties> secretConfigOptions) {
+        this.secretConfigOptions = secretConfigOptions;
     }
 }
