@@ -17,7 +17,6 @@ vertx:
         defaultTypes:
           - com.dburyak.vertx.test.SampleDtoOne
           - com.dburyak.vertx.test.SampleDtoTwo
-
   gcp:
     config:
       secret-manager:
