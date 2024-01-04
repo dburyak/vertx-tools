@@ -2,7 +2,6 @@ package com.dburyak.vertx.config;
 
 import com.dburyak.vertx.core.validation.MinDuration;
 import io.micronaut.context.annotation.ConfigurationProperties;
-import io.micronaut.context.annotation.Context;
 import lombok.Data;
 
 import java.time.Duration;
@@ -11,7 +10,6 @@ import java.time.Duration;
  * Configuration properties for {@link io.vertx.config.ConfigRetriever}.
  */
 @ConfigurationProperties("vertx.config")
-@Context
 @Data
 public class ConfigRetrieverProperties {
 
@@ -29,8 +27,7 @@ public class ConfigRetrieverProperties {
     private boolean includeDefaultStores = true;
 
     /**
-     * Period of scanning for changes in the configuration.
-     * Using vertx defaults (5s) when not specified explicitly.
+     * Period of scanning for changes in the configuration. Using vertx defaults (5s) when not specified explicitly.
      */
     @MinDuration("1s")
     private Duration scanPeriod;

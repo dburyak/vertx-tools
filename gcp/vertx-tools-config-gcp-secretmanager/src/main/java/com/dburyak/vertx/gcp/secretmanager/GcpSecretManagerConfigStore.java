@@ -1,5 +1,6 @@
 package com.dburyak.vertx.gcp.secretmanager;
 
+import com.dburyak.vertx.gcp.ProjectIdProvider;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.config.spi.ConfigStore;
@@ -37,28 +38,29 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     private volatile GcpSecretManager secretManager;
     private volatile JsonObject cachedSecrets;
     private volatile Instant lastRefreshedAt;
-    private volatile boolean isRefreshEnabled;
+    private volatile ProjectIdProvider projectIdProvider;
 
 
     @Override
     public Future<Buffer> get() {
+        // avoid extra volatile reads
+        var cfgRef = cfg;
+        var lastRefreshedAtRef = lastRefreshedAt;
+
         Single<JsonObject> secretsFuture;
         var resultPromise = Promise.<Buffer>promise();
-        var isFirstCall = lastRefreshedAt == null;
-        var isOutdated = !isFirstCall && isRefreshEnabled
-                && Duration.between(lastRefreshedAt, Instant.now()).compareTo(cfg.getRefreshPeriod()) < 0;
-        if (isFirstCall || isOutdated) { // fetch
-            secretsFuture = retrieveSecrets().doOnSuccess(json -> {
-                cachedSecrets = json;
-                lastRefreshedAt = Instant.now();
-            });
+        var isFirstCall = lastRefreshedAtRef == null;
+        var isRefreshNeeded = !isFirstCall && cfgRef.isRefreshEnabled()
+                && Duration.between(lastRefreshedAtRef, Instant.now()).compareTo(cfgRef.getRefreshPeriod()) < 0;
+        if (isFirstCall || isRefreshNeeded) { // fetch
+            secretsFuture = retrieveAndCacheSecrets();
         } else { // use cached
             secretsFuture = Single.just(cachedSecrets);
         }
         secretsFuture.subscribe(json -> {
             resultPromise.complete(Buffer.buffer(json.encode()));
         }, err -> {
-            log.error("gsm secrets retrieval failed: err={}", err.toString(), err);
+            log.error("gsm secrets retrieval failed: err={}", err.toString());
             resultPromise.fail(err);
         });
         return resultPromise.future();
@@ -70,14 +72,35 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         return Future.succeededFuture();
     }
 
+    private Single<JsonObject> retrieveAndCacheSecrets() {
+        return retrieveSecrets().doOnSuccess(json -> {
+            cachedSecrets = json;
+            lastRefreshedAt = Instant.now();
+        });
+    }
+
     private Single<JsonObject> retrieveSecrets() {
-        if (cfg.getSecretConfigOptions().isEmpty()) {
+        // avoid extra volatile reads
+        var cfgRef = cfg;
+        var projectIdProviderRef = projectIdProvider;
+        var secretManagerRef = secretManager;
+
+        if (cfgRef.getSecretConfigOptions().isEmpty()) {
             return Single.just(new JsonObject());
         }
         var startedAt = Instant.now();
-        return Observable.fromIterable(cfg.getSecretConfigOptions().entrySet())
-                .flatMapSingle(secretOpt -> secretManager.getSecretString(secretOpt.getValue())
-                        .map(secretValue -> Map.entry(secretOpt.getKey(), secretValue)))
+        return Observable.fromIterable(cfgRef.getSecretConfigOptions())
+                .flatMapSingle(secretOpt -> {
+                    var projectId = secretOpt.getProjectId();
+                    if (projectId == null || projectId.isBlank()) {
+                        projectId = cfgRef.getProjectId();
+                    }
+                    if (projectId == null || projectId.isBlank()) {
+                        projectId = projectIdProviderRef.getProjectId();
+                    }
+                    return secretManagerRef.getSecretString(projectId, secretOpt.getSecretName(), null)
+                            .map(secretValue -> Map.entry(secretOpt.getConfigOption(), secretValue));
+                })
                 .toMap(Map.Entry::getKey, Map.Entry::getValue)
                 .doOnSuccess(m -> log.debug("gsm secret options retrieved: numSecrets={}, duration={}",
                         m.size(), Duration.between(startedAt, Instant.now())))
@@ -106,7 +129,15 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     @Inject
     public void setCfg(GcpSecretManagerConfigProperties cfg) {
         this.cfg = cfg;
-        this.isRefreshEnabled = cfg.getRefreshPeriod() != null
-                && !cfg.getRefreshPeriod().isNegative() && !cfg.getRefreshPeriod().isZero();
+    }
+
+    /**
+     * Set project ID provider.
+     *
+     * @param projectIdProvider project ID provider
+     */
+    @Inject
+    public void setProjectIdProvider(ProjectIdProvider projectIdProvider) {
+        this.projectIdProvider = projectIdProvider;
     }
 }
