@@ -4,5 +4,6 @@ plugins {
 
 dependencies {
     api project(':vertx-tools-core')
+    api project(':gcp:vertx-tools-gcp-core')
     api 'com.google.cloud:google-cloud-pubsub'
 }
