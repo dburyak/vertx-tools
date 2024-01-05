@@ -31,6 +31,13 @@ public class TestApp extends VertxApp {
                 VerticleDeploymentDescriptor.builder()
                         .verticleClass(HelloVerticle2.class)
                         .deploymentOptions(new DeploymentOptions().setInstances(7))
+                        .build(),
+                VerticleDeploymentDescriptor.builder()
+                        .verticleClass(PubSubVerticle1.class)
+                        .build(),
+                VerticleDeploymentDescriptor.builder()
+                        .verticleClass(PubSubVerticle2.class)
+                        .deploymentOptions(new DeploymentOptions().setInstances(2))
                         .build()
         );
     }

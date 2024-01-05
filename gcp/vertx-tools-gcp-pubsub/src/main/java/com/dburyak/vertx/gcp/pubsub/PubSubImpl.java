@@ -8,14 +8,20 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
+import io.micronaut.context.annotation.Requires;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.exceptions.CompositeException;
 import io.vertx.rxjava3.core.Vertx;
+import jakarta.annotation.PreDestroy;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +34,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.synchronizedList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+@Singleton
+@Requires(missingBeans = PubSub.class)
 @RequiredArgsConstructor
-public class PubSubImpl implements PubSub, AutoCloseable {
+@Slf4j
+public class PubSubImpl implements PubSub {
     private final Vertx vertx;
     private final PubSubProperties cfg;
 
@@ -95,8 +104,10 @@ public class PubSubImpl implements PubSub, AutoCloseable {
                 });
     }
 
-    @Override
-    public void close() {
+    @PreDestroy
+    public void destroy() {
+        var shutdownStartedAt = Instant.now();
+        log.debug("closing pubsub: publishers={}, subscribers={}", publishers.size(), subscribers.size());
         var failures = new ArrayList<Exception>();
         subscribers.forEach(Subscriber::stopAsync);
         var subscriberShutdownTimeoutMs = cfg.getSubscriberProperties().getShutdownTimeout().toMillis();
@@ -120,6 +131,8 @@ public class PubSubImpl implements PubSub, AutoCloseable {
         }
         publishers.clear();
         vertxCtxExecutors.clear();
+        var shutdownTime = Duration.between(shutdownStartedAt, Instant.now());
+        log.debug("closed pubsub: shutdownTime={}, failures={}", shutdownTime, failures.size());
         if (!failures.isEmpty()) {
             // using CompositeException from rxjava3, as we use rxjava3 everywhere already
             throw new CompositeException(failures);

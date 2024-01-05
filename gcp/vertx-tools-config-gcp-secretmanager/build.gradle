@@ -5,4 +5,5 @@ plugins {
 dependencies {
     api project(':vertx-tools-config')
     api project(':gcp:vertx-tools-gcp-secretmanager')
+    api project(':gcp:vertx-tools-gcp-pubsub')
 }
