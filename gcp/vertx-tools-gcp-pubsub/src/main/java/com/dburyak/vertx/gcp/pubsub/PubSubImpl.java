@@ -1,6 +1,7 @@
 package com.dburyak.vertx.gcp.pubsub;
 
 import com.dburyak.vertx.core.executor.VertxCtxMinimalStrictScheduledExecutorService;
+import com.dburyak.vertx.gcp.ProjectIdProvider;
 import com.dburyak.vertx.gcp.pubsub.config.PubSubProperties;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.pubsub.v1.MessageReceiverWithAckResponse;
@@ -16,7 +17,6 @@ import io.reactivex.rxjava3.exceptions.CompositeException;
 import io.vertx.rxjava3.core.Vertx;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Singleton;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -36,44 +36,54 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @Singleton
 @Requires(missingBeans = PubSub.class)
-@RequiredArgsConstructor
 @Slf4j
 public class PubSubImpl implements PubSub {
+    private static final String FQN_PREFIX = "projects/";
+
     private final Vertx vertx;
     private final PubSubProperties cfg;
+    private final String projectId;
 
     private final ConcurrentMap<String, Publisher> publishers = new ConcurrentHashMap<>();
     private final ConcurrentMap<Thread, ScheduledExecutorService> vertxCtxExecutors = new ConcurrentHashMap<>();
     private final List<Subscriber> subscribers = synchronizedList(new ArrayList<>());
+    private final ConcurrentMap<String, String> canonicalTopics = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> canonicalSubscriptions = new ConcurrentHashMap<>();
+
+    public PubSubImpl(Vertx vertx, PubSubProperties cfg, ProjectIdProvider projectIdProvider) {
+        this.vertx = vertx;
+        this.cfg = cfg;
+        this.projectId = projectIdProvider.getProjectId();
+    }
 
     @Override
     public Single<String> publish(String topic, PubsubMessage msg) {
-        return getPublisherFor(topic)
+        return getPublisherFor(fqnTopic(topic))
                 .flatMap(publisher -> toSingle(publisher.publish(msg)));
     }
 
     @Override
     public Single<String> publish(String topic, String msg) {
         return Single.fromSupplier(() -> toPubsubMessage(msg, null))
-                .flatMap(pubsubMsg -> publish(topic, pubsubMsg));
+                .flatMap(pubsubMsg -> publish(fqnTopic(topic), pubsubMsg));
     }
 
     @Override
     public Single<String> publish(String topic, String msg, Map<String, String> attributes) {
         return Single.fromSupplier(() -> toPubsubMessage(msg, attributes))
-                .flatMap(pubsubMsg -> publish(topic, pubsubMsg));
+                .flatMap(pubsubMsg -> publish(fqnTopic(topic), pubsubMsg));
     }
 
     @Override
     public Single<String> publish(String topic, byte[] msg) {
         return Single.fromSupplier(() -> toPubsubMessage(msg, null))
-                .flatMap(pubsubMsg -> publish(topic, pubsubMsg));
+                .flatMap(pubsubMsg -> publish(fqnTopic(topic), pubsubMsg));
     }
 
     @Override
     public Single<String> publish(String topic, byte[] msg, Map<String, String> attributes) {
         return Single.fromSupplier(() -> toPubsubMessage(msg, attributes))
-                .flatMap(pubsubMsg -> publish(topic, pubsubMsg));
+                .flatMap(pubsubMsg -> publish(fqnTopic(topic), pubsubMsg));
     }
 
     @Override
@@ -88,7 +98,7 @@ public class PubSubImpl implements PubSub {
                             emitter.onNext(new AckMsg(msg, ack));
                         }
                     });
-                    var subscriber = Subscriber.newBuilder(subscription, msgReceiver)
+                    var subscriber = Subscriber.newBuilder(fqnSub(subscription), msgReceiver)
                             .setExecutorProvider(new FixedExecutorProvider(vertxCtxExecutor))
                             // TODO: provide advanced config (batching, retry, etc)
                             .build();
@@ -183,5 +193,20 @@ public class PubSubImpl implements PubSub {
     private ScheduledExecutorService currentVertxCtxExecutor() {
         return vertxCtxExecutors.computeIfAbsent(Thread.currentThread(),
                 t -> new VertxCtxMinimalStrictScheduledExecutorService(vertx));
+    }
+
+    private String fqnTopic(String topic) {
+        if (topic.startsWith(FQN_PREFIX)) {
+            return topic;
+        }
+        return canonicalTopics.computeIfAbsent(topic, t -> FQN_PREFIX + projectId + "/topics/" + t);
+    }
+
+    private String fqnSub(String subscription) {
+        if (subscription.startsWith(FQN_PREFIX)) {
+            return subscription;
+        }
+        return canonicalSubscriptions.computeIfAbsent(subscription,
+                s -> FQN_PREFIX + projectId + "/subscriptions/" + s);
     }
 }

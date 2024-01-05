@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 @Bean
 @Slf4j
 public class PubSubVerticle1 extends AbstractDiVerticle {
-    private final String topicName = "projects/kuznya-build/topics/dmytro-test-1";
-    private final String subName = "projects/kuznya-build/subscriptions/dmytro-test-1-sub";
+    private final String topicName = "dmytro-test-1";
+    private final String subName = "dmytro-test-1-sub";
     private PubSub pubSub;
     private Disposable subscription;
     private Disposable publisher;
