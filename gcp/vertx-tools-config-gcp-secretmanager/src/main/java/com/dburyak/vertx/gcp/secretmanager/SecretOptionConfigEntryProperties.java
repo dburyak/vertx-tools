@@ -1,6 +1,7 @@
 package com.dburyak.vertx.gcp.secretmanager;
 
 import io.micronaut.context.annotation.EachProperty;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -13,11 +14,13 @@ public class SecretOptionConfigEntryProperties {
     /**
      * Name of the config option. Required.
      */
+    @NotBlank
     private String configOption;
 
     /**
      * Secret name (secret id). Required.
      */
+    @NotBlank
     private String secretName;
 
     /**
@@ -27,8 +30,8 @@ public class SecretOptionConfigEntryProperties {
     private String projectId;
 
     /**
-     * Pubsub subscription to listen for secret updates. Optional. If null or empty then secret updates notifications
-     * are disabled for this secret.
+     * Pubsub topic to listen for secret updates. Optional. If null or empty then secret updates notifications are
+     * disabled for this secret.
      */
-    private String notificationSubscription;
+    private String notificationTopic;
 }

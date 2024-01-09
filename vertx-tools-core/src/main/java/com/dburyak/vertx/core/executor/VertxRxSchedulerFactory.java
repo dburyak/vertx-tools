@@ -37,6 +37,6 @@ public class VertxRxSchedulerFactory {
     @Singleton
     @ForWorker
     public Scheduler vertxRxBlockingScheduler(Vertx vertx) {
-        return RxHelper.blockingScheduler(vertx);
+        return RxHelper.blockingScheduler(vertx, false);
     }
 }

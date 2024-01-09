@@ -11,6 +11,7 @@ public class VertxOptsFactory {
     @Singleton
     @Named("eventLoopSizeConfigurer")
     public VertxOptionsConfigurer eventLoopSizeConfigurer() {
-        return opts -> opts.setEventLoopPoolSize(2);
+        var numCpu = Runtime.getRuntime().availableProcessors();
+        return opts -> opts.setEventLoopPoolSize(numCpu);
     }
 }
