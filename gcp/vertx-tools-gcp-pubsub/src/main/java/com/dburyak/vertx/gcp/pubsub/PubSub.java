@@ -40,9 +40,9 @@ public interface PubSub {
         return publish(topic.toString(), msg, attributes);
     }
 
-    Flowable<AckMsg> subscribe(String subscription);
+    Flowable<DeliverableMsg> subscribe(String subscription);
 
-    default Flowable<AckMsg> subscribe(ProjectSubscriptionName subscription) {
+    default Flowable<DeliverableMsg> subscribe(ProjectSubscriptionName subscription) {
         return subscribe(subscription.toString());
     }
 }

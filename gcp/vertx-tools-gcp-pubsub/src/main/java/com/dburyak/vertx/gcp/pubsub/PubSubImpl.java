@@ -38,11 +38,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Requires(missingBeans = PubSub.class)
 @Slf4j
 public class PubSubImpl implements PubSub {
-    private static final String FQN_PREFIX = "projects/";
 
     private final Vertx vertx;
     private final PubSubProperties cfg;
     private final String projectId;
+    private final PubSubUtil pubSubUtil;
 
     private final ConcurrentMap<String, Publisher> publishers = new ConcurrentHashMap<>();
     private final ConcurrentMap<Thread, ScheduledExecutorService> vertxCtxExecutors = new ConcurrentHashMap<>();
@@ -50,10 +50,11 @@ public class PubSubImpl implements PubSub {
     private final ConcurrentMap<String, String> canonicalTopics = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> canonicalSubscriptions = new ConcurrentHashMap<>();
 
-    public PubSubImpl(Vertx vertx, PubSubProperties cfg, ProjectIdProvider projectIdProvider) {
+    public PubSubImpl(Vertx vertx, PubSubProperties cfg, ProjectIdProvider projectIdProvider, PubSubUtil pubSubUtil) {
         this.vertx = vertx;
         this.cfg = cfg;
         this.projectId = projectIdProvider.getProjectId();
+        this.pubSubUtil = pubSubUtil;
     }
 
     @Override
@@ -87,15 +88,15 @@ public class PubSubImpl implements PubSub {
     }
 
     @Override
-    public Flowable<AckMsg> subscribe(String subscription) {
+    public Flowable<DeliverableMsg> subscribe(String subscription) {
         var vertxCtxExecutor = currentVertxCtxExecutor();
         var subscriberRef = new AtomicReference<Subscriber>();
-        return Flowable.<AckMsg>create(emitter -> {
+        return Flowable.<DeliverableMsg>create(emitter -> {
                     MessageReceiverWithAckResponse msgReceiver = (msg, ack) -> vertxCtxExecutor.execute(() -> {
                         if (emitter.isCancelled()) {
                             ack.nack();
                         } else {
-                            emitter.onNext(new AckMsg(msg, ack));
+                            emitter.onNext(new DeliverableMsg(msg, new PubSubDelivery(ack)));
                         }
                     });
                     var subscriber = Subscriber.newBuilder(fqnSub(subscription), msgReceiver)
@@ -196,17 +197,16 @@ public class PubSubImpl implements PubSub {
     }
 
     private String fqnTopic(String topic) {
-        if (topic.startsWith(FQN_PREFIX)) {
+        if (pubSubUtil.isFqn(topic)) {
             return topic;
         }
-        return canonicalTopics.computeIfAbsent(topic, t -> FQN_PREFIX + projectId + "/topics/" + t);
+        return canonicalTopics.computeIfAbsent(topic, t -> pubSubUtil.fqnTopic(projectId, t));
     }
 
     private String fqnSub(String subscription) {
-        if (subscription.startsWith(FQN_PREFIX)) {
+        if (pubSubUtil.isFqn(subscription)) {
             return subscription;
         }
-        return canonicalSubscriptions.computeIfAbsent(subscription,
-                s -> FQN_PREFIX + projectId + "/subscriptions/" + s);
+        return canonicalSubscriptions.computeIfAbsent(subscription, s -> pubSubUtil.fqnSubscription(projectId, s));
     }
 }

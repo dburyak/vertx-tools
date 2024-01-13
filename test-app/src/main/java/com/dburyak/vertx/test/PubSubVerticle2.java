@@ -27,7 +27,7 @@ public class PubSubVerticle2 extends AbstractDiVerticle {
             subscription = pubSub.subscribe(subName)
                     .subscribe(msg -> {
                         log.info("received pubsub msg: sub={}, msg={}", subName, msg.msg());
-                        msg.ack().ack();
+                        msg.delivery().ack();
                     });
             log.debug("publishing to pubsub: topic={}", topicName);
             publisher = Observable.interval(1, TimeUnit.SECONDS)
