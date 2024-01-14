@@ -28,11 +28,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.synchronizedList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Singleton
 @Requires(missingBeans = PubSub.class)
@@ -107,11 +109,14 @@ public class PubSubImpl implements PubSub {
                     subscriber.startAsync();
                     subscribers.add(subscriber);
                 }, BackpressureStrategy.BUFFER)
+                .doOnSubscribe(ignr -> log.debug("subscribing to pubsub: sub={}", subscription))
                 .doOnTerminate(() -> {
-                    var subscriber = subscriberRef.get();
-                    if (subscriber != null) {
-                        subscriber.stopAsync();
-                    }
+                    log.debug("DELETEME: doOnTerminate: sub={}", subscription);
+                    stopSubscriber(subscriberRef, subscription);
+                })
+                .doOnCancel(() -> {
+                    log.debug("DELETEME: doOnCancel: sub={}", subscription);
+                    stopSubscriber(subscriberRef, subscription);
                 });
     }
 
@@ -120,6 +125,9 @@ public class PubSubImpl implements PubSub {
         var shutdownStartedAt = Instant.now();
         log.debug("closing pubsub: publishers={}, subscribers={}", publishers.size(), subscribers.size());
         var failures = new ArrayList<Exception>();
+        log.debug("DELETEME: subscribers={}", subscribers.stream()
+                .map(Subscriber::getSubscriptionNameString)
+                .toList());
         subscribers.forEach(Subscriber::stopAsync);
         var subscriberShutdownTimeoutMs = cfg.getSubscriberProperties().getShutdownTimeout().toMillis();
         for (var subscriber : subscribers) {
@@ -127,6 +135,7 @@ public class PubSubImpl implements PubSub {
                 subscriber.awaitTerminated(subscriberShutdownTimeoutMs, MILLISECONDS);
             } catch (Exception e) {
                 failures.add(e);
+                log.debug("DELETEME: subscriber failed to shutdown: sub={}", subscriber.getSubscriptionNameString());
             }
         }
         subscribers.clear();
@@ -147,6 +156,18 @@ public class PubSubImpl implements PubSub {
         if (!failures.isEmpty()) {
             // using CompositeException from rxjava3, as we use rxjava3 everywhere already
             throw new CompositeException(failures);
+        }
+    }
+
+    private void stopSubscriber(AtomicReference<Subscriber> subscriberRef, String subName) throws TimeoutException {
+        var subscriber = subscriberRef.getAndSet(null);
+        if (subscriber != null) {
+            log.debug("DELETEME: stopping subscriber: sub={}", subscriber.getSubscriptionNameString());
+            subscriber.stopAsync();
+            subscriber.awaitTerminated(30, SECONDS);
+            log.debug("DELETEME: stopped subscriber: sub={}", subscriber.getSubscriptionNameString());
+        } else {
+            log.debug("DELETEME: subscriber is null: subName={}", subName);
         }
     }
 

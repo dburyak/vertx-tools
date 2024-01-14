@@ -2,6 +2,9 @@ package com.dburyak.vertx.gcp.secretmanager;
 
 import com.dburyak.vertx.core.di.ForEventLoop;
 import com.dburyak.vertx.core.di.ForWorker;
+import com.dburyak.vertx.core.util.Tuple;
+import com.dburyak.vertx.core.util.Tuple2;
+import com.dburyak.vertx.core.util.Tuple3;
 import com.dburyak.vertx.gcp.ProjectIdProvider;
 import com.dburyak.vertx.gcp.pubsub.PubSub;
 import com.dburyak.vertx.gcp.pubsub.PubSubUtil;
@@ -22,15 +25,17 @@ import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.synchronizedList;
 
@@ -47,6 +52,8 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     private static final Duration MSG_RETENTION_DURATION = Duration.ofMinutes(10);
     private static final Duration SUB_INACTIVITY_EXPIRATION = Duration.ofDays(1);
     private static final Duration MSG_ACK_DEADLINE = Duration.ofSeconds(10);
+    private static final String POD_NAME_ENV = "POD_NAME";
+    private static final String POD_NAME_SYS_PROP = "pod.name";
 
     /**
      * Config store type for registering in vertx.
@@ -65,9 +72,12 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     private volatile String projectId;
     private volatile JsonObject cachedSecrets;
     private volatile Instant lastRefreshedAt;
+    private volatile Disposable gsmUpdNotificationSubscriber;
     private final Collection<Subscription> notificationSubscriptions = synchronizedList(new ArrayList<>());
-    private final Collection<Disposable> notificationSubscribers = synchronizedList(new ArrayList<>());
-    private final Random rnd = new Random();
+    private final AtomicInteger subscriptionSuffixCounter = new AtomicInteger();
+    private final int rndInstanceId = new Random().nextInt();
+    private String hostname = null;
+    private final Object hostnameLock = new Object();
 
 
     @Override
@@ -100,7 +110,6 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         // avoid extra volatile reads
         var cfgRef = cfg;
         var projectIdRef = projectId;
-        var instanceSuffix = instanceSuffix();
         log.debug("init gsm config store: proj={}", projectIdRef);
         if (!cfgRef.isEnabled()) {
             return;
@@ -110,24 +119,22 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         }
         var subscriptionAdminClientRef = subscriptionAdminClient;
         var secretManagerRef = secretManager;
-
-        Observable.fromIterable(cfgRef.getSecretConfigOptions())
+        gsmUpdNotificationSubscriber = Observable.fromIterable(cfgRef.getSecretConfigOptions())
                 .filter(opt -> opt.getNotificationTopic() != null && !opt.getNotificationTopic().isBlank())
                 .map(cfgOpt -> {
                     var proj = evaluateProjectForOption(projectIdRef, cfgRef, cfgOpt);
                     // secret and topic may be in different projects, but subscriptions will be created/deleted in this
                     // project, so managing subscriptions won't require cross-project "pubsub editor" role
                     var fqnTopic = pubSubUtil.ensureFqnTopic(proj, cfgOpt.getNotificationTopic());
-                    var fqnSub = pubSubUtil.forceProjectForSubscription(projectIdRef,
-                            cfgOpt.getNotificationTopic() + "-" + instanceSuffix);
-                    return Tuple4.of(cfgOpt, proj, fqnTopic, fqnSub);
+                    return Tuple.of(cfgOpt, proj, fqnTopic);
                 })
-                .distinct(Tuple4::getV3) // distinct by fqnTopic, we need single subscription per topic
+                .distinct(Tuple3::getV3) // distinct by fqnTopic, we need single subscription per topic
                 .flatMapSingle(t -> {
                     var cfgOpt = t.getV1();
                     var proj = t.getV2();
                     var fqnTopic = t.getV3();
-                    var fqnSub = t.getV4();
+                    var fqnSub = pubSubUtil.forceProjectForSubscription(projectIdRef,
+                            cfgOpt.getNotificationTopic() + "-" + subscriptionSuffix());
                     return createSubscriptionAndSubscribe(proj, fqnTopic, fqnSub, cfgOpt, subscriptionAdminClientRef,
                             secretManagerRef)
                             .andThen(Single.just(Tuple2.of(cfgOpt, fqnSub)));
@@ -141,16 +148,27 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     public Future<Void> close() {
         // TODO: close and delete subscriptions here
         log.debug("closing gsm config store: instance={}", this);
-        notificationSubscribers.forEach(Disposable::dispose);
-        notificationSubscriptions.forEach(subscription -> {
-            log.debug("deleting gsm config updates subscription: sub={}", subscription.getName());
-            try {
-                subscriptionAdminClient.deleteSubscription(subscription.getName());
-            } catch (Exception e) {
-                log.error("failed to delete gsm config updates subscription: sub={}", subscription.getName(), e);
-            }
-        });
-        return Future.succeededFuture();
+        gsmUpdNotificationSubscriber.dispose();
+        var closeFuture = Promise.<Void>promise();
+        Flowable.fromIterable(notificationSubscriptions)
+                .parallel().runOn(blockingScheduler)
+                .flatMap(subscription -> {
+                    var subName = subscription.getName();
+                    log.debug("deleting gsm config updates subscription: sub={}", subName);
+                    try {
+                        subscriptionAdminClient.deleteSubscription(subscription.getName());
+                        return Flowable.just(subName);
+                    } catch (Exception e) {
+                        log.error("failed to delete gsm config updates subscription: sub={}", subName, e);
+                        return Flowable.error(e);
+                    }
+                })
+                .sequential()
+                .subscribe((ignr) -> {}, err -> {}, () -> {
+                    log.debug("closed gsm config store: instance={}", this);
+                    closeFuture.complete();
+                });
+        return closeFuture.future();
     }
 
     private Single<JsonObject> retrieveAndCacheSecrets() {
@@ -207,8 +225,8 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     log.debug("gsm config updates subscription created: sub={}", fqnSub);
                     notificationSubscriptions.add(subscription);
                 })
-                .ignoreElement().andThen(Flowable.defer(() -> pubSub.subscribe(fqnSub)))
-                .doOnSubscribe(ignr -> log.debug("subscribing to gsm config updates: sub={}", fqnSub))
+                .ignoreElement().andThen(pubSub.subscribe(fqnSub)
+                        .doOnSubscribe(ignr -> log.debug("subscribing to gsm config updates: sub={}", fqnSub)))
                 .flatMapCompletable(upd -> {
                     // TODO: check thread hopping carefully for this code and ack
                     // TODO: examine payload, and filter only updates relevant to this secret
@@ -253,15 +271,26 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         return proj;
     }
 
-    private String instanceSuffix() {
-        var podName = System.getenv("POD_NAME");
+    private String subscriptionSuffix() {
+        var podName = System.getenv(POD_NAME_ENV);
         if (podName == null || podName.isBlank()) {
-            podName = System.getProperty("pod.name");
+            podName = System.getProperty(POD_NAME_SYS_PROP);
         }
         if (podName == null || podName.isBlank()) {
-            podName = "listener-" + rnd.nextInt(1000);
+            synchronized (hostnameLock) {
+                if (hostname == null) {
+                    try {
+                        hostname = InetAddress.getLocalHost().getHostName();
+                    } catch (UnknownHostException e) {
+                        hostname = "listener-" + rndInstanceId;
+                    }
+                }
+                podName = hostname;
+            }
         }
-        return podName;
+        var res = podName + "-" + subscriptionSuffixCounter.getAndIncrement();
+        log.debug("DELETEME: subscriptionSuffix: {}", res);
+        return res;
     }
 
     /**
@@ -342,38 +371,5 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     @Inject
     public void setProjectIdProvider(ProjectIdProvider projectIdProvider) {
         projectId = projectIdProvider.getProjectId();
-    }
-
-    @Value
-    private static class Tuple2<V1, V2> {
-        V1 v1;
-        V2 v2;
-
-        static <V1, V2> Tuple2<V1, V2> of(V1 v1, V2 v2) {
-            return new Tuple2<>(v1, v2);
-        }
-    }
-
-    @Value
-    private static class Tuple3<V1, V2, V3> {
-        V1 v1;
-        V2 v2;
-        V3 v3;
-
-        static <V1, V2, V3> Tuple3<V1, V2, V3> of(V1 v1, V2 v2, V3 v3) {
-            return new Tuple3<>(v1, v2, v3);
-        }
-    }
-
-    @Value
-    private static class Tuple4<V1, V2, V3, V4> {
-        V1 v1;
-        V2 v2;
-        V3 v3;
-        V4 v4;
-
-        static <V1, V2, V3, V4> Tuple4<V1, V2, V3, V4> of(V1 v1, V2 v2, V3 v3, V4 v4) {
-            return new Tuple4<>(v1, v2, v3, v4);
-        }
     }
 }
