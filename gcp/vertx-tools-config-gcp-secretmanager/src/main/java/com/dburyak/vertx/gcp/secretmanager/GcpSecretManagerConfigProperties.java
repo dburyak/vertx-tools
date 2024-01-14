@@ -52,6 +52,12 @@ public class GcpSecretManagerConfigProperties {
     private boolean pubsubNotificationsEnabled = false;
 
     /**
+     * Pubsub topic to listen for secret updates. Optional. If null or empty then secret updates notifications are
+     * enabled only for secrets with individual per-option notification topics configured.
+     */
+    private String pubsubNotificationTopic;
+
+    /**
      * Individual secret config options.
      */
     private List<SecretOptionConfigEntryProperties> secretConfigOptions = emptyList();

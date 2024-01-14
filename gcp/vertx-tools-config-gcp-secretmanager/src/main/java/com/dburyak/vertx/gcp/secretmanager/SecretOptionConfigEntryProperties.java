@@ -24,14 +24,15 @@ public class SecretOptionConfigEntryProperties {
     private String secretName;
 
     /**
-     * GCP project ID to use for this secret instead of default one. Optional. If null or empty then default project ID
-     * is used.
+     * GCP project ID to use for this secret and topic instead of default one. Optional. If null or empty then default
+     * project ID is used.
      */
     private String projectId;
 
     /**
-     * Pubsub topic to listen for secret updates. Optional. If null or empty then secret updates notifications are
-     * disabled for this secret.
+     * Pubsub topic to listen for secret updates instead of default notification topic configured globally for gsm
+     * config store. Optional. If this option is null or empty and global one is null or empty too, then secret updates
+     * notifications are disabled for this secret.
      */
     private String notificationTopic;
 }

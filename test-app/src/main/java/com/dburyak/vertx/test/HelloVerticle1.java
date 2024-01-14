@@ -28,7 +28,7 @@ public class HelloVerticle1 extends AbstractDiVerticle {
         return Completable.fromRunnable(() -> {
             log.info("hello from verticle 1: instance={}, elBean={}, vBean={}",
                     this, sampleEventLoopBean, sampleVerticleBean);
-            ticker = Observable.interval(1, TimeUnit.SECONDS)
+            ticker = Observable.interval(4, TimeUnit.SECONDS)
                     .doOnNext(tick -> {
                         log.info("tick verticle 1: {}", tick);
                         sampleEventLoopBean.hello();

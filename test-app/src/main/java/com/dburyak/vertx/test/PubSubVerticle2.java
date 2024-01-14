@@ -31,7 +31,7 @@ public class PubSubVerticle2 extends AbstractDiVerticle {
                     })
                     .subscribe();
             log.debug("publishing to pubsub: topic={}", topicName);
-            publisher = Observable.interval(1, TimeUnit.SECONDS)
+            publisher = Observable.interval(5, TimeUnit.SECONDS)
                     .flatMapSingle(tick -> pubSub.publish(topicName, "hello " + tick + " " + Thread.currentThread()))
                     .subscribe(msgId -> log.info("published pubsub msg: topic={}, msgId={}", topicName, msgId));
         });

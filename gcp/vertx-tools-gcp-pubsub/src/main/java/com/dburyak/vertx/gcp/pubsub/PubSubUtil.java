@@ -61,4 +61,18 @@ public class PubSubUtil {
                     .toString();
         }
     }
+
+    public String topicShortName(String topic) {
+        if (!isFqn(topic)) {
+            return topic;
+        }
+        return topic.substring(topic.lastIndexOf('/') + 1);
+    }
+
+    public String subscriptionShortName(String subscription) {
+        if (!isFqn(subscription)) {
+            return subscription;
+        }
+        return subscription.substring(subscription.lastIndexOf('/') + 1);
+    }
 }

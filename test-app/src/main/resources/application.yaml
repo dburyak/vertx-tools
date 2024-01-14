@@ -22,16 +22,14 @@ vertx:
       secret-manager:
         enabled: true
         pubsub-notifications-enabled: true
+        pubsub-notification-topic: gsm-updates
         secret-config-options:
           - config-option: app.test.secret-1
             secret-name: dmytro-test-secret-1
             project-id: kuznya-d
-            notification-topic: gsm-updates
           - config-option: app.test.secret-2
             secret-name: dmytro-test-secret-2
             project-id: kuznya-d
-            notification-topic: gsm-updates
           - config-option: app.test.secret-3
             secret-name: dmytro-test-secret-3
             project-id: kuznya-p
-            notification-topic: gsm-updates

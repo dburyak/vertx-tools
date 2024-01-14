@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Collection;
 import java.util.List;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Slf4j
 public class TestApp extends VertxApp {
@@ -17,7 +17,7 @@ public class TestApp extends VertxApp {
         log.info("starting ....");
         var app = new TestApp();
         app.start()
-                .delay(12_500, MILLISECONDS)
+                .delay(30, SECONDS)
                 .andThen(app.stop())
                 .blockingAwait();
     }
