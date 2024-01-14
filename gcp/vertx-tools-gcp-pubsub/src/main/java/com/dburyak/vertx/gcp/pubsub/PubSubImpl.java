@@ -111,12 +111,12 @@ public class PubSubImpl implements PubSub {
                 }, BackpressureStrategy.BUFFER)
                 .doOnSubscribe(ignr -> log.debug("subscribing to pubsub: sub={}", subscription))
                 .doOnTerminate(() -> {
-                    log.debug("DELETEME: doOnTerminate: sub={}", subscription);
-                    stopSubscriber(subscriberRef, subscription);
+                    log.debug("pubsub subscriber flowable terminated: sub={}", subscription);
+                    stopSubscriber(subscriberRef);
                 })
                 .doOnCancel(() -> {
-                    log.debug("DELETEME: doOnCancel: sub={}", subscription);
-                    stopSubscriber(subscriberRef, subscription);
+                    log.debug("pubsub subscriber flowable cancelled: sub={}", subscription);
+                    stopSubscriber(subscriberRef);
                 });
     }
 
@@ -125,9 +125,6 @@ public class PubSubImpl implements PubSub {
         var shutdownStartedAt = Instant.now();
         log.debug("closing pubsub: publishers={}, subscribers={}", publishers.size(), subscribers.size());
         var failures = new ArrayList<Exception>();
-        log.debug("DELETEME: subscribers={}", subscribers.stream()
-                .map(Subscriber::getSubscriptionNameString)
-                .toList());
         subscribers.forEach(Subscriber::stopAsync);
         var subscriberShutdownTimeoutMs = cfg.getSubscriberProperties().getShutdownTimeout().toMillis();
         for (var subscriber : subscribers) {
@@ -135,7 +132,7 @@ public class PubSubImpl implements PubSub {
                 subscriber.awaitTerminated(subscriberShutdownTimeoutMs, MILLISECONDS);
             } catch (Exception e) {
                 failures.add(e);
-                log.debug("DELETEME: subscriber failed to shutdown: sub={}", subscriber.getSubscriptionNameString());
+                log.error("subscriber failed to shutdown in time: sub={}", subscriber.getSubscriptionNameString());
             }
         }
         subscribers.clear();
@@ -159,15 +156,16 @@ public class PubSubImpl implements PubSub {
         }
     }
 
-    private void stopSubscriber(AtomicReference<Subscriber> subscriberRef, String subName) throws TimeoutException {
+    private void stopSubscriber(AtomicReference<Subscriber> subscriberRef) throws TimeoutException {
         var subscriber = subscriberRef.getAndSet(null);
         if (subscriber != null) {
-            log.debug("DELETEME: stopping subscriber: sub={}", subscriber.getSubscriptionNameString());
+            var subName = subscriber.getSubscriptionNameString();
+            var shutdownStartedAt = Instant.now();
+            log.debug("stopping pubsub subscriber: sub={}", subName);
             subscriber.stopAsync();
-            subscriber.awaitTerminated(30, SECONDS);
-            log.debug("DELETEME: stopped subscriber: sub={}", subscriber.getSubscriptionNameString());
-        } else {
-            log.debug("DELETEME: subscriber is null: subName={}", subName);
+            subscriber.awaitTerminated(30, SECONDS); // TODO: make timeout configurable
+            var shutdownDuration = Duration.between(shutdownStartedAt, Instant.now());
+            log.debug("stopped pubsub subscriber: sub={}, shutdownDuration={}", subName, shutdownDuration);
         }
     }
 

@@ -3,7 +3,6 @@ package com.dburyak.vertx.gcp.secretmanager;
 import com.dburyak.vertx.core.di.ForEventLoop;
 import com.dburyak.vertx.core.di.ForWorker;
 import com.dburyak.vertx.core.util.Tuple;
-import com.dburyak.vertx.core.util.Tuple2;
 import com.dburyak.vertx.core.util.Tuple3;
 import com.dburyak.vertx.gcp.ProjectIdProvider;
 import com.dburyak.vertx.gcp.pubsub.PubSub;
@@ -75,7 +74,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     private volatile Disposable gsmUpdNotificationSubscriber;
     private final Collection<Subscription> notificationSubscriptions = synchronizedList(new ArrayList<>());
     private final AtomicInteger subscriptionSuffixCounter = new AtomicInteger();
-    private final int rndInstanceId = new Random().nextInt();
+    private final int rndInstanceId = new Random().nextInt(Integer.MAX_VALUE);
     private String hostname = null;
     private final Object hostnameLock = new Object();
 
@@ -87,7 +86,6 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         var lastRefreshedAtRef = lastRefreshedAt;
 
         Single<JsonObject> secretsFuture;
-        var resultPromise = Promise.<Buffer>promise();
         if (lastRefreshedAtRef == null || isCacheOutdated(lastRefreshedAtRef, cfgRef)) { // fetch
             secretsFuture = retrieveAndCacheSecrets();
         } else { // use cached
@@ -96,13 +94,13 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     cachedSecretsRef.size(), lastRefreshedAtRef);
             secretsFuture = Single.just(cachedSecretsRef);
         }
-        secretsFuture.subscribe(json -> {
-            resultPromise.complete(Buffer.buffer(json.encode()));
-        }, err -> {
-            log.error("gsm secrets retrieval failed: err={}", err.toString());
-            resultPromise.fail(err);
-        });
-        return resultPromise.future();
+        var result = Promise.<Buffer>promise();
+        secretsFuture.subscribe(json -> result.complete(Buffer.buffer(json.encode())),
+                err -> {
+                    log.error("gsm secrets retrieval failed: err={}", err.toString());
+                    result.fail(err);
+                });
+        return result.future();
     }
 
     @PostConstruct
@@ -129,27 +127,25 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     return Tuple.of(cfgOpt, proj, fqnTopic);
                 })
                 .distinct(Tuple3::getV3) // distinct by fqnTopic, we need single subscription per topic
-                .flatMapSingle(t -> {
+                .flatMapCompletable(t -> {
                     var cfgOpt = t.getV1();
                     var proj = t.getV2();
                     var fqnTopic = t.getV3();
                     var fqnSub = pubSubUtil.forceProjectForSubscription(projectIdRef,
                             cfgOpt.getNotificationTopic() + "-" + subscriptionSuffix());
                     return createSubscriptionAndSubscribe(proj, fqnTopic, fqnSub, cfgOpt, subscriptionAdminClientRef,
-                            secretManagerRef)
-                            .andThen(Single.just(Tuple2.of(cfgOpt, fqnSub)));
+                            secretManagerRef);
                 })
-                .subscribe(t2 -> log.debug("gsm config updated: cfgOpt={}, secretName={}",
-                                t2.getV1().getConfigOption(), t2.getV1().getSecretName()),
+                .subscribe(() -> log.debug("gsm config update listener initialized"),
                         err -> log.error("gsm config update failed", err));
     }
 
     @Override
     public Future<Void> close() {
-        // TODO: close and delete subscriptions here
-        log.debug("closing gsm config store: instance={}", this);
+        log.debug("closing gsm config store");
         gsmUpdNotificationSubscriber.dispose();
-        var closeFuture = Promise.<Void>promise();
+        var startedAt = Instant.now();
+        // parallelize subscription deletion on blockingScheduler, as it can take a while
         Flowable.fromIterable(notificationSubscriptions)
                 .parallel().runOn(blockingScheduler)
                 .flatMap(subscription -> {
@@ -157,6 +153,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     log.debug("deleting gsm config updates subscription: sub={}", subName);
                     try {
                         subscriptionAdminClient.deleteSubscription(subscription.getName());
+                        log.debug("gsm config updates subscription deleted: sub={}", subName);
                         return Flowable.just(subName);
                     } catch (Exception e) {
                         log.error("failed to delete gsm config updates subscription: sub={}", subName, e);
@@ -164,11 +161,16 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     }
                 })
                 .sequential()
-                .subscribe((ignr) -> {}, err -> {}, () -> {
-                    log.debug("closed gsm config store: instance={}", this);
-                    closeFuture.complete();
-                });
-        return closeFuture.future();
+                .toList()
+                // need blocking wait here as config stores shutdown is actually synchronous (as of vertx 4.5.1)
+                // if we don't wait, then vertx along with vertx rx schedulers and subscriptionAdminClient may be
+                // closed before start subscription deletions
+                .blockingGet();
+        var deletionDuration = Duration.between(startedAt, Instant.now());
+        log.debug("gsm config store closed: duration={}, numSubscriptionsDeleted={}",
+                deletionDuration, notificationSubscriptions.size());
+        notificationSubscriptions.clear();
+        return Future.succeededFuture();
     }
 
     private Single<JsonObject> retrieveAndCacheSecrets() {
@@ -179,7 +181,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     }
 
     private Single<JsonObject> retrieveSecrets() {
-        log.debug("retrieving gsm secrets config options");
+        log.debug("retrieving secrets config options from gsm");
         // avoid extra volatile reads
         var cfgRef = cfg;
         var projectIdRef = projectId;
@@ -233,7 +235,11 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     log.debug("received gsm config update notification: cfgOpt={}, secretName={}",
                             secretOpt.getConfigOption(), secretOpt.getSecretName());
                     return secretManagerRef.getSecretString(proj, secretOpt.getSecretName(), null)
-                            .doOnSuccess(secretValue -> cachedSecrets.put(secretOpt.getConfigOption(), secretValue))
+                            .doOnSuccess(secretValue -> {
+                                cachedSecrets.put(secretOpt.getConfigOption(), secretValue);
+                                log.debug("gsm config opt updated: cfgOpt={}, secretName={}",
+                                        secretOpt.getConfigOption(), secretOpt.getSecretName());
+                            })
                             .ignoreElement()
                             .andThen(upd.delivery().ack());
                 });
@@ -282,15 +288,13 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     try {
                         hostname = InetAddress.getLocalHost().getHostName();
                     } catch (UnknownHostException e) {
-                        hostname = "listener-" + rndInstanceId;
+                        hostname = "listener";
                     }
                 }
                 podName = hostname;
             }
         }
-        var res = podName + "-" + subscriptionSuffixCounter.getAndIncrement();
-        log.debug("DELETEME: subscriptionSuffix: {}", res);
-        return res;
+        return podName + "-" + rndInstanceId + "-" + subscriptionSuffixCounter.getAndIncrement();
     }
 
     /**
