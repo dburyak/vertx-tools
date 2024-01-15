@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Requires(missingBeans = GcpSecretManager.class)
 @Slf4j
 public class GcpSecretManagerImpl implements GcpSecretManager {
+    public static final String LATEST_VERSION = "latest";
     private final Vertx vertx;
     private final String projectId;
     private final SecretManagerServiceClient secretManagerServiceClient;
@@ -73,31 +74,29 @@ public class GcpSecretManagerImpl implements GcpSecretManager {
         var vertxCtx = vertx.getOrCreateContext();
         return Single.create(emitter -> {
             try {
-                var secretVersionName = (version != null && !version.isBlank())
-                        ? gsmUtil.fqnSecretVersionName(projectId, secretId, version)
-                        : gsmUtil.fqnSecretName(projectId, secretId);
+                var evaluatedVersion = (version != null && !version.isBlank()) ? version : LATEST_VERSION;
+                var fqnSecret = gsmUtil.fqnSecret(projectId, secretId, evaluatedVersion);
                 var req = AccessSecretVersionRequest.newBuilder()
-                        .setName(secretVersionName.toString())
+                        .setName(fqnSecret)
                         .build();
                 var reqFuture = secretManagerServiceClient.accessSecretVersionCallable().futureCall(req);
                 reqFuture.addListener(() -> {
                     try {
                         if (reqFuture.isCancelled()) {
-                            log.debug("underlying gsm get secret request was cancelled: secret={}", secretVersionName);
+                            log.debug("underlying gsm get secret request was cancelled: secret={}", fqnSecret);
                             emitter.onError(new RuntimeException("underlying gsm get secret request was cancelled"));
                             return;
                         }
                         if (!reqFuture.isDone()) {
-                            log.debug("underlying gsm get secret request is not completed: secret={}",
-                                    secretVersionName);
+                            log.debug("underlying gsm get secret request is not completed: secret={}", fqnSecret);
                             emitter.onError(new RuntimeException("underlying gsm get secret request is not completed"));
                             return;
                         }
                         var secret = reqFuture.get();
-                        log.debug("underlying gsm get secret request completed: secret={}", secretVersionName);
+                        log.debug("underlying gsm get secret request completed: secret={}", fqnSecret);
                         emitter.onSuccess(secret.getPayload());
                     } catch (Exception e) {
-                        log.debug("underlying gsm get secret request failed: secret={}", secretVersionName, e);
+                        log.debug("underlying gsm get secret request failed: secret={}", fqnSecret, e);
                         emitter.onError(e);
                     }
                 }, action -> vertxCtx.runOnContext(ignr -> action.run()));
