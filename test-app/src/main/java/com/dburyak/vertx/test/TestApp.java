@@ -17,7 +17,7 @@ public class TestApp extends VertxApp {
         log.info("starting ....");
         var app = new TestApp();
         app.start()
-                .delay(30, SECONDS)
+                .delay(60, SECONDS)
                 .andThen(app.stop())
                 .blockingAwait();
     }
