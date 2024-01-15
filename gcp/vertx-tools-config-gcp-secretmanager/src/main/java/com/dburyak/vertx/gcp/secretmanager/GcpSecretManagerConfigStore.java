@@ -59,8 +59,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     private static final String POD_NAME_SYS_PROP = "pod.name";
     private static final String ATTR_KEY_EVENT_TYPE = "eventType";
     private static final String ATTR_KEY_SECRET_ID = "secretId";
-    private static final Set<String> SECRET_UPD_EVENT_TYPES = Set.of("SECRET_VERSION_ADD", "SECRET_VERSION_ENABLE",
-            "SECRET_VERSION_DISABLE", "SECRET_VERSION_DESTROY");
+    private static final Set<String> SECRET_UPD_EVENT_TYPES = Set.of("SECRET_VERSION_ADD");
 
     /**
      * Config store type for registering in vertx.
@@ -123,7 +122,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         if (!cfgRef.isEnabled()) {
             return;
         }
-        initSecretsToConfigOptsMapping(cfgRef);
+        initMappings(cfgRef);
         if (!cfgRef.isPubsubNotificationsEnabled()) {
             return;
         }
@@ -187,7 +186,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         return Future.succeededFuture();
     }
 
-    private void initSecretsToConfigOptsMapping(GcpSecretManagerConfigProperties cfgRef) {
+    private void initMappings(GcpSecretManagerConfigProperties cfgRef) {
         var shortMappingRef = secretShortNamesToConfigOpts;
         var fqnMappingRef = secretFqnNamesToConfigOpts;
         var projectIdRef = projectId;

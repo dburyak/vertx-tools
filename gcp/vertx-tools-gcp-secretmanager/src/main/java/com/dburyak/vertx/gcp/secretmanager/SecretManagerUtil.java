@@ -1,5 +1,6 @@
 package com.dburyak.vertx.gcp.secretmanager;
 
+import com.google.cloud.secretmanager.v1.SecretName;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import jakarta.inject.Singleton;
 
@@ -21,6 +22,10 @@ public class SecretManagerUtil {
         return secretName.startsWith(FQN_PREFIX);
     }
 
+    public boolean hasVersion(String secretName) {
+        return secretName.contains(VERSIONS_SUBSTR);
+    }
+
     public String getProject(String secretName) {
         if (!hasProject(secretName)) {
             throw new IllegalArgumentException("Secret name " + secretName + " does not contain project");
@@ -28,14 +33,13 @@ public class SecretManagerUtil {
         return secretName.substring(FQN_PREFIX.length(), secretName.indexOf('/', FQN_PREFIX.length()));
     }
 
-    public String getSecretName(String secretFullName) {
-        if (!hasProject(secretFullName)) {
-            throw new IllegalArgumentException("Secret name " + secretFullName + " is not FQN");
+    public String getSecretName(String secretName) {
+        if (!hasProject(secretName)) {
+            return secretName;
         }
-        var posStart = secretFullName.indexOf(SECRETS_SUBSTR) + SECRETS_SUBSTR.length();
-        var posEnd = secretFullName.indexOf("/", posStart);
-        // TODO: here ......................................... fails here, posEnd = -1, run with debugger
-        return secretFullName.substring(posStart, posEnd);
+        var posStart = secretName.indexOf(SECRETS_SUBSTR) + SECRETS_SUBSTR.length();
+        var posEnd = secretName.indexOf("/", posStart);
+        return posEnd > 0 ? secretName.substring(posStart, posEnd) : secretName.substring(posStart);
     }
 
     public String fqnSecret(String projectId, String secretName) {
@@ -64,6 +68,16 @@ public class SecretManagerUtil {
             return SecretVersionName.of(getProject(secretName), getSecretName(secretName), versionResolved);
         } else {
             return SecretVersionName.of(projectId, secretName, versionResolved);
+        }
+    }
+
+    public SecretName fqnSecretName(String projectId, String secretName) {
+        if (isFqn(secretName)) {
+            return SecretName.parse(secretName);
+        } else if (hasProject(secretName)) {
+            return SecretName.of(getProject(secretName), getSecretName(secretName));
+        } else {
+            return SecretName.of(projectId, secretName);
         }
     }
 

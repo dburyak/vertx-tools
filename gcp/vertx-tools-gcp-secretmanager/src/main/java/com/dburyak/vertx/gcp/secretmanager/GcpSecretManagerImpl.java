@@ -4,17 +4,18 @@ import com.dburyak.vertx.gcp.ProjectIdProvider;
 import com.google.cloud.secretmanager.v1.AccessSecretVersionRequest;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretPayload;
-import com.google.cloud.secretmanager.v1.SecretVersionName;
 import io.micronaut.context.annotation.Requires;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.core.Vertx;
 import jakarta.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Default implementation of GCP Secret Manager client.
  */
 @Singleton
 @Requires(missingBeans = GcpSecretManager.class)
+@Slf4j
 public class GcpSecretManagerImpl implements GcpSecretManager {
     private final Vertx vertx;
     private final String projectId;
@@ -42,8 +43,8 @@ public class GcpSecretManagerImpl implements GcpSecretManager {
     }
 
     @Override
-    public Single<String> getSecretString(String secretId, String version) {
-        return getSecretString(projectId, secretId, version);
+    public Single<String> getSecretString(String projectId, String secretId) {
+        return getSecretString(projectId, secretId, null);
     }
 
     @Override
@@ -58,8 +59,8 @@ public class GcpSecretManagerImpl implements GcpSecretManager {
     }
 
     @Override
-    public Single<byte[]> getSecretBinary(String secretId, String version) {
-        return getSecretBinary(projectId, secretId, version);
+    public Single<byte[]> getSecretBinary(String projectId, String secretId) {
+        return getSecretBinary(projectId, secretId, null);
     }
 
     @Override
@@ -72,25 +73,31 @@ public class GcpSecretManagerImpl implements GcpSecretManager {
         var vertxCtx = vertx.getOrCreateContext();
         return Single.create(emitter -> {
             try {
-                var secretVersionName = gsmUtil.fqnSecretVersionName(projectId, secretId, version);
+                var secretVersionName = (version != null && !version.isBlank())
+                        ? gsmUtil.fqnSecretVersionName(projectId, secretId, version)
+                        : gsmUtil.fqnSecretName(projectId, secretId);
                 var req = AccessSecretVersionRequest.newBuilder()
                         .setName(secretVersionName.toString())
                         .build();
                 var reqFuture = secretManagerServiceClient.accessSecretVersionCallable().futureCall(req);
                 reqFuture.addListener(() -> {
                     try {
-                        // this listener is expected to be called
                         if (reqFuture.isCancelled()) {
+                            log.debug("underlying gsm get secret request was cancelled: secret={}", secretVersionName);
                             emitter.onError(new RuntimeException("underlying gsm get secret request was cancelled"));
                             return;
                         }
                         if (!reqFuture.isDone()) {
+                            log.debug("underlying gsm get secret request is not completed: secret={}",
+                                    secretVersionName);
                             emitter.onError(new RuntimeException("underlying gsm get secret request is not completed"));
                             return;
                         }
                         var secret = reqFuture.get();
+                        log.debug("underlying gsm get secret request completed: secret={}", secretVersionName);
                         emitter.onSuccess(secret.getPayload());
                     } catch (Exception e) {
+                        log.debug("underlying gsm get secret request failed: secret={}", secretVersionName, e);
                         emitter.onError(e);
                     }
                 }, action -> vertxCtx.runOnContext(ignr -> action.run()));
