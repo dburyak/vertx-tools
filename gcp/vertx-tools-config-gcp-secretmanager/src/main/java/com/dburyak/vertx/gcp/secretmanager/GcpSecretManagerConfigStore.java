@@ -27,6 +27,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -34,13 +35,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.util.Collections.synchronizedList;
 
 /**
  * Config store implementation for GCP Secret Manager.
@@ -68,71 +66,68 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
 
     // it's safe to have only volatile here as config store is never called concurrently by vertx, but may be called
     // from different EL threads
-    private volatile GcpSecretManagerConfigProperties cfg;
-    private volatile GcpSecretManager secretManager;
-    private volatile PubSub pubSub;
-    private volatile SubscriptionAdminClient subscriptionAdminClient;
-    private volatile PubSubUtil pubSubUtil;
-    private volatile SecretManagerUtil gsmUtil;
-    private volatile Scheduler elScheduler;
-    private volatile Scheduler blockingScheduler;
-    private volatile String projectId;
-    private volatile JsonObject cachedSecretOpts;
-    private volatile Map<String, List<String>> secretShortNamesToConfigOpts = new HashMap<>();
-    private volatile Map<String, List<String>> secretFqnNamesToConfigOpts = new HashMap<>();
-    private volatile Map<String, String> optNamesToFqnSecretIds = new HashMap<>();
-    private volatile Instant lastRefreshedAt;
-    private volatile Disposable gsmUpdNotificationSubscriber;
-    private final Collection<Subscription> notificationSubscriptions = synchronizedList(new ArrayList<>());
-    private final AtomicInteger subscriptionSuffixCounter = new AtomicInteger();
+
+    // single volatile variable to ensure visibility of reads/writes of all fields below
+    private volatile int visibility = 0;
+    private GcpSecretManagerConfigProperties cfg;
+    private GcpSecretManager secretManager;
+    private PubSub pubSub;
+    private SubscriptionAdminClient subscriptionAdminClient;
+    private PubSubUtil pubSubUtil;
+    private SecretManagerUtil gsmUtil;
+    private Scheduler elScheduler;
+    private Scheduler blockingScheduler;
+    private String projectId;
+    private Instant lastRefreshedAt;
+    private Disposable gsmUpdNotificationSubscriber;
+    private final Collection<Subscription> notificationSubscriptions = new ArrayList<>();
+    private final Map<String, Set<String>> secretShortNamesToFqnSecretIds = new HashMap<>();
+    private final Map<String, Set<String>> fqnSecretIdsToConfigOpts = new HashMap<>();
+    private final Map<String, String> fqnTopicToFqnSub = new HashMap<>();
+    private int subscriptionSuffixCounter = 0;
     private final int rndInstanceId = new Random().nextInt(Integer.MAX_VALUE);
     private String hostname = null;
-    private final Object hostnameLock = new Object();
+
+    @GuardedBy("cachedSecretOptsLock")
+    private JsonObject cachedSecretOpts;
+    private final Object cachedSecretOptsLock = new Object();
 
 
     @Override
     public Future<Buffer> get() {
-        // avoid extra volatile reads
-        var cfgRef = cfg;
-        var lastRefreshedAtRef = lastRefreshedAt;
-
-        Single<JsonObject> secretsFuture;
-        if (lastRefreshedAtRef == null || isCacheOutdated(lastRefreshedAtRef, cfgRef)) { // fetch
+        beforeRead(); // ensure visibility
+        Single<Buffer> secretsFuture;
+        if (lastRefreshedAt == null || isCacheOutdated(lastRefreshedAt, cfg)) { // fetch
             secretsFuture = retrieveAndCacheSecrets();
         } else { // use cached
-            var cachedSecretOptsRef = cachedSecretOpts;
-            log.debug("using cached gsm secret options: numSecrets={}, lastRefreshedAt={}",
-                    cachedSecretOptsRef.size(), lastRefreshedAtRef);
-            secretsFuture = Single.just(cachedSecretOptsRef);
+            synchronized (cachedSecretOptsLock) {
+                log.debug("using cached gsm secret options: numSecrets={}, lastRefreshedAt={}",
+                        cachedSecretOpts.size(), lastRefreshedAt);
+                secretsFuture = Single.just(cachedSecretOpts.toBuffer());
+            }
         }
         var result = Promise.<Buffer>promise();
-        secretsFuture.subscribe(json -> result.complete(Buffer.buffer(json.encode())),
-                err -> {
-                    log.error("gsm secrets retrieval failed: err={}", err.toString());
-                    result.fail(err);
-                });
+        secretsFuture.subscribe(result::complete, err -> {
+            log.error("gsm secrets retrieval failed: err={}", err.toString());
+            result.fail(err);
+        });
         return result.future();
     }
 
     @PostConstruct
     public void init() {
-        // avoid extra volatile reads
-        var cfgRef = cfg;
-        var projectIdRef = projectId;
-        log.debug("init gsm config store: proj={}", projectIdRef);
-        if (!cfgRef.isEnabled() || !cfgRef.isPubsubNotificationsEnabled()) {
+        log.debug("init gsm config store");
+        if (!cfg.isEnabled() || !cfg.isPubsubNotificationsEnabled()) {
             return;
         }
-        initMappings(cfgRef);
-        var subscriptionAdminClientRef = subscriptionAdminClient;
-        var secretManagerRef = secretManager;
-        gsmUpdNotificationSubscriber = Observable.fromIterable(cfgRef.getSecretConfigOptions())
-                .map(opt -> Tuple.of(opt, evaluateNotificationTopicForOption(cfgRef.getPubsubNotificationTopic(), opt)))
+        initMappings();
+        gsmUpdNotificationSubscriber = Observable.fromIterable(cfg.getSecretConfigOptions())
+                .map(opt -> Tuple.of(opt, evaluateNotificationTopicForOption(cfg.getPubsubNotificationTopic(), opt)))
                 .filter(t2 -> t2.getV2() != null && !t2.getV2().isBlank())
                 .map(t2 -> {
                     var cfgOpt = t2.getV1();
                     var topic = t2.getV2();
-                    var proj = evaluateProjectForOption(projectIdRef, cfgRef, cfgOpt);
+                    var proj = evaluateProjectForOption(cfgOpt);
                     // secret and topic may be in different projects, but subscriptions will be created/deleted in this
                     // project, so managing subscriptions won't require cross-project "pubsub editor" role
                     var fqnTopic = pubSubUtil.ensureFqnTopic(proj, topic);
@@ -140,14 +135,12 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                 })
                 .distinct(Tuple2::getV2) // distinct by fqnTopic, we need single subscription per topic
                 .flatMapCompletable(t -> {
-                    var cfgOpt = t.getV1();
                     var fqnTopic = t.getV2();
                     var shortTopicName = pubSubUtil.topicShortName(fqnTopic);
-                    var fqnSub = pubSubUtil.fqnSubscription(projectIdRef, shortTopicName + "-" + subscriptionSuffix());
-                    return createSubscriptionAndSubscribe(fqnTopic, fqnSub, cfgOpt, subscriptionAdminClientRef,
-                            secretManagerRef);
+                    var fqnSub = pubSubUtil.fqnSubscription(projectId, shortTopicName + "-" + subscriptionSuffix());
+                    return createSubscriptionAndSubscribe(fqnTopic, fqnSub);
                 })
-                .subscribe(() -> log.debug("gsm config update listener initialized"),
+                .subscribe(() -> { /* subscription for upd events is infinite, completable never completes */ },
                         err -> log.error("gsm config update failed", err));
     }
 
@@ -184,70 +177,72 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         return Future.succeededFuture();
     }
 
-    private void initMappings(GcpSecretManagerConfigProperties cfgRef) {
-        var shortMappingRef = secretShortNamesToConfigOpts;
-        var fqnMappingRef = secretFqnNamesToConfigOpts;
-        var optNamesToFqnSecretIdsRef = optNamesToFqnSecretIds;
-        var projectIdRef = projectId;
-        for (var opt : cfgRef.getSecretConfigOptions()) {
+    private void beforeRead() {
+        var ignr = visibility;
+    }
+
+    private void afterWrite() {
+        visibility = 0;
+    }
+
+    private void initMappings() {
+        for (var opt : cfg.getSecretConfigOptions()) {
             var secretShortName = gsmUtil.extractSecretName(opt.getSecretName());
-            shortMappingRef.computeIfAbsent(secretShortName, ignr -> new ArrayList<>())
-                    .add(opt.getConfigOption());
-            var proj = evaluateProjectForOption(projectIdRef, cfgRef, opt);
-            var fqnSecretName = gsmUtil.ensureFqnSecret(proj, opt.getSecretName());
-            fqnMappingRef.computeIfAbsent(fqnSecretName, ignr -> new ArrayList<>())
-                    .add(opt.getConfigOption());
-            optNamesToFqnSecretIdsRef.put(opt.getConfigOption(), fqnSecretName);
+            var proj = evaluateProjectForOption(opt);
+            var fqnSecretId = gsmUtil.ensureFqnSecret(proj, opt.getSecretName());
+            secretShortNamesToFqnSecretIds.computeIfAbsent(secretShortName, k -> new HashSet<>()).add(fqnSecretId);
+            fqnSecretIdsToConfigOpts.computeIfAbsent(fqnSecretId, k -> new HashSet<>()).add(opt.getConfigOption());
+            var topic = evaluateNotificationTopicForOption(cfg.getPubsubNotificationTopic(), opt);
+            if (topic != null && !topic.isBlank()) {
+                var fqnTopic = pubSubUtil.ensureFqnTopic(proj, topic);
+                var shortTopicName = pubSubUtil.topicShortName(fqnTopic);
+                var fqnSubName = pubSubUtil.fqnSubscription(projectId, shortTopicName + "-" + subscriptionSuffix());
+                fqnTopicToFqnSub.put(fqnTopic, fqnSubName);
+            }
         }
     }
 
-    private Single<JsonObject> retrieveAndCacheSecrets() {
-        return retrieveSecrets().doOnSuccess(json -> {
-            cachedSecretOpts = json;
+    private Single<Buffer> retrieveAndCacheSecrets() {
+        return retrieveSecrets().map(secretsJson -> {
             lastRefreshedAt = Instant.now();
+            afterWrite(); // ensure visibility
+            synchronized (cachedSecretOptsLock) {
+                cachedSecretOpts = secretsJson;
+                return cachedSecretOpts.toBuffer();
+            }
         });
     }
 
     private Single<JsonObject> retrieveSecrets() {
         log.debug("retrieving secrets config options from gsm");
-        // avoid extra volatile reads
-        var cfgRef = cfg;
-        var projectIdRef = projectId;
-        var secretManagerRef = secretManager;
-
-        if (cfgRef.getSecretConfigOptions().isEmpty()) {
+        if (cfg.getSecretConfigOptions().isEmpty()) {
             return Single.just(new JsonObject());
         }
         var startedAt = Instant.now();
-        return Observable.fromIterable(cfgRef.getSecretConfigOptions())
-                .flatMapSingle(secretOpt -> {
-                    var proj = evaluateProjectForOption(projectIdRef, cfgRef, secretOpt);
-                    return secretManagerRef.getSecretString(proj, secretOpt.getSecretName(), null)
-                            .map(secretValue -> Map.entry(secretOpt.getConfigOption(), secretValue));
+        return Observable.fromIterable(fqnSecretIdsToConfigOpts.keySet())
+                .flatMap(secretId -> {
+                    var optNamesForSecretId = fqnSecretIdsToConfigOpts.get(secretId);
+                    return secretManager.getSecretString(secretId)
+                            .flatMapObservable(secretValue -> Observable.fromIterable(optNamesForSecretId)
+                                    .map(optName -> Map.<String, Object>entry(optName, secretValue)));
                 })
                 .toMap(Map.Entry::getKey, Map.Entry::getValue)
                 .doOnSuccess(m -> log.debug("gsm secret options retrieved: numSecrets={}, duration={}",
                         m.size(), Duration.between(startedAt, Instant.now())))
-                .map(m -> {
-                    var json = new JsonObject();
-                    m.forEach(json::put);
-                    return json;
-                });
+                .map(JsonObject::new);
     }
 
-    private Completable createSubscriptionAndSubscribe(String fqnTopic, String fqnSub,
-            SecretOptionConfigEntryProperties secretOpt, SubscriptionAdminClient subscriptionAdminClientRef,
-            GcpSecretManager secretManagerRef) {
+    private Completable createSubscriptionAndSubscribe(String fqnTopic, String fqnSub) {
         return Single.fromSupplier(() -> {
-                    log.debug("create gsm config updates subscription: opt={}, secret={}, topic={}, sub={}",
-                            secretOpt.getConfigOption(), secretOpt.getSecretName(), fqnTopic, fqnSub);
-                    return createCfgUpdNotificationSubscription(subscriptionAdminClientRef, fqnTopic, fqnSub);
+                    log.debug("create gsm config updates subscription: topic={}, sub={}", fqnTopic, fqnSub);
+                    return createCfgUpdNotificationSubscription(fqnTopic, fqnSub);
                 })
                 .subscribeOn(blockingScheduler) // makes block above to run on worker scheduler
                 .observeOn(elScheduler) // makes all blocks below to run on event loop scheduler
                 .doOnSuccess(subscription -> {
                     log.debug("gsm config updates subscription created: sub={}", fqnSub);
                     notificationSubscriptions.add(subscription);
+                    afterWrite(); // ensure visibility
                 })
                 .ignoreElement().andThen(pubSub.subscribe(fqnSub)
                         .doOnSubscribe(ignr -> log.debug("subscribing to gsm config updates: sub={}", fqnSub)))
@@ -259,35 +254,31 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                         return upd.delivery().ack();
                     }
                     // update references project by number, but config may reference it by projectId,
-                    // so we need to refresh all config options that have same secret *short* name to not miss updates
-                    var optsToRefresh = secretShortNamesToConfigOpts.get(gsmUtil.extractSecretName(updatedSecretId));
-                    log.debug("received gsm config update notification: secretName={}, cfgOptsToRefresh={}",
-                            updatedSecretId, optsToRefresh);
-                    var projectIdRef = projectId;
-                    var cfgRef = cfg;
-                    var cachedSecretOptsRef = cachedSecretOpts;
-                    return Observable.fromIterable(optsToRefresh)
-                            .flatMapCompletable(optName -> {
-                                var secretId = optNamesToFqnSecretIds.get(optName);
-                                return secretManagerRef.getSecretString(secretId)
-                                        .doOnSuccess(secretValue -> {
-                                            var optsForSecret = secretFqnNamesToConfigOpts.get(secretId);
-                                            for (var o : optsForSecret) {
-                                                cachedSecretOptsRef.put(o, secretValue);
-                                            }
-                                            // FIXME: remove secret value from log after debugging
-                                            log.debug("gsm config opt updated: secretName={}, optsForSecret={}, " +
-                                                    "secretValue={}", secretId, optsForSecret, secretValue);
-                                        })
-                                        .ignoreElement();
+                    // so we need to refresh all config options that have same secret *SHORT* name to not miss updates
+                    var secretShortName = gsmUtil.extractSecretName(updatedSecretId);
+                    log.debug("received gsm config update notification: shortName={}, longName={}",
+                            secretShortName, updatedSecretId);
+                    return Observable.fromIterable(secretShortNamesToFqnSecretIds.get(secretShortName))
+                            .flatMap(secretId -> {
+                                var optsForSecretId = fqnSecretIdsToConfigOpts.get(secretId);
+                                return secretManager.getSecretString(secretId)
+                                        .flatMapObservable(secretValue -> Observable.fromIterable(optsForSecretId)
+                                                .map(optName -> Map.<String, String>entry(optName, secretValue)));
                             })
+                            .doOnNext(e -> log.debug("gsm config opt updated: opt={}", e.getKey()))
+                            .toMap(Map.Entry::getKey, Map.Entry::getValue)
+                            .doOnSuccess(updMap -> {
+                                synchronized (cachedSecretOptsLock) {
+                                    updMap.forEach((optName, optValue) -> cachedSecretOpts.put(optName, optValue));
+                                }
+                            })
+                            .ignoreElement()
                             .andThen(upd.delivery().ack());
                 });
     }
 
-    private Subscription createCfgUpdNotificationSubscription(SubscriptionAdminClient subscriptionAdminClientRef,
-            String fqnTopic, String fqnSub) {
-        return subscriptionAdminClientRef.createSubscription(Subscription.newBuilder()
+    private Subscription createCfgUpdNotificationSubscription(String fqnTopic, String fqnSub) {
+        return subscriptionAdminClient.createSubscription(Subscription.newBuilder()
                 .setTopic(fqnTopic)
                 .setName(fqnSub)
                 .setMessageRetentionDuration(com.google.protobuf.Duration.newBuilder()
@@ -300,26 +291,18 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                 .build());
     }
 
-    private SecretOptionConfigEntryProperties getSecretOptionCfgByName(String cfgOptionName,
-            GcpSecretManagerConfigProperties cfgRef) {
-        return cfgRef.getSecretConfigOptions().stream()
-                .filter(it -> it.getConfigOption().equals(cfgOptionName))
-                .findAny().orElseThrow();
-    }
-
     private boolean isCacheOutdated(Instant lastRefreshedAt, GcpSecretManagerConfigProperties cfg) {
         var now = Instant.now();
         return cfg.isRefreshEnabled() && Duration.between(lastRefreshedAt, now).compareTo(cfg.getRefreshPeriod()) >= 0;
     }
 
-    private String evaluateProjectForOption(String defaultProjectId, GcpSecretManagerConfigProperties cfgRef,
-            SecretOptionConfigEntryProperties secretOpt) {
+    private String evaluateProjectForOption(SecretOptionConfigEntryProperties secretOpt) {
         var proj = secretOpt.getProjectId();
         if (proj == null || proj.isBlank()) {
-            proj = cfgRef.getProjectId();
+            proj = cfg.getProjectId();
         }
         if (proj == null || proj.isBlank()) {
-            proj = defaultProjectId;
+            proj = projectId;
         }
         return proj;
     }
@@ -339,23 +322,21 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
             podName = System.getProperty(POD_NAME_SYS_PROP);
         }
         if (podName == null || podName.isBlank()) {
-            synchronized (hostnameLock) {
-                if (hostname == null) {
-                    try {
-                        hostname = InetAddress.getLocalHost().getHostName();
-                    } catch (UnknownHostException e) {
-                        hostname = "listener";
-                    }
+            if (hostname == null) {
+                try {
+                    hostname = InetAddress.getLocalHost().getHostName();
+                } catch (UnknownHostException e) {
+                    hostname = "listener";
                 }
-                podName = hostname;
             }
+            podName = hostname;
         }
-        return podName + "-" + rndInstanceId + "-" + subscriptionSuffixCounter.getAndIncrement();
+        return podName + "-" + rndInstanceId + "-" + subscriptionSuffixCounter++;
     }
 
     private boolean isSecretValueUpdateEvent(DeliverableMsg secretUpd) {
         return SECRET_UPD_EVENT_TYPES.contains(getEventType(secretUpd))
-                && secretShortNamesToConfigOpts.containsKey(getSecretShortName(secretUpd));
+                && secretShortNamesToFqnSecretIds.containsKey(getSecretShortName(secretUpd));
     }
 
     private String getEventType(DeliverableMsg secretUpd) {
