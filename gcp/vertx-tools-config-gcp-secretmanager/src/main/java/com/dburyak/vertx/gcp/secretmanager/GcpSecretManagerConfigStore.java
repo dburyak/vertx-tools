@@ -80,6 +80,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     private volatile JsonObject cachedSecretOpts;
     private volatile Map<String, List<String>> secretShortNamesToConfigOpts = new HashMap<>();
     private volatile Map<String, List<String>> secretFqnNamesToConfigOpts = new HashMap<>();
+    private volatile Map<String, String> optNamesToFqnSecretIds = new HashMap<>();
     private volatile Instant lastRefreshedAt;
     private volatile Disposable gsmUpdNotificationSubscriber;
     private final Collection<Subscription> notificationSubscriptions = synchronizedList(new ArrayList<>());
@@ -119,13 +120,10 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         var cfgRef = cfg;
         var projectIdRef = projectId;
         log.debug("init gsm config store: proj={}", projectIdRef);
-        if (!cfgRef.isEnabled()) {
+        if (!cfgRef.isEnabled() || !cfgRef.isPubsubNotificationsEnabled()) {
             return;
         }
         initMappings(cfgRef);
-        if (!cfgRef.isPubsubNotificationsEnabled()) {
-            return;
-        }
         var subscriptionAdminClientRef = subscriptionAdminClient;
         var secretManagerRef = secretManager;
         gsmUpdNotificationSubscriber = Observable.fromIterable(cfgRef.getSecretConfigOptions())
@@ -189,15 +187,17 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     private void initMappings(GcpSecretManagerConfigProperties cfgRef) {
         var shortMappingRef = secretShortNamesToConfigOpts;
         var fqnMappingRef = secretFqnNamesToConfigOpts;
+        var optNamesToFqnSecretIdsRef = optNamesToFqnSecretIds;
         var projectIdRef = projectId;
         for (var opt : cfgRef.getSecretConfigOptions()) {
-            var secretShortName = gsmUtil.secretShortName(opt.getSecretName());
+            var secretShortName = gsmUtil.extractSecretName(opt.getSecretName());
             shortMappingRef.computeIfAbsent(secretShortName, ignr -> new ArrayList<>())
                     .add(opt.getConfigOption());
             var proj = evaluateProjectForOption(projectIdRef, cfgRef, opt);
             var fqnSecretName = gsmUtil.ensureFqnSecret(proj, opt.getSecretName());
             fqnMappingRef.computeIfAbsent(fqnSecretName, ignr -> new ArrayList<>())
                     .add(opt.getConfigOption());
+            optNamesToFqnSecretIdsRef.put(opt.getConfigOption(), fqnSecretName);
         }
     }
 
@@ -241,7 +241,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
         return Single.fromSupplier(() -> {
                     log.debug("create gsm config updates subscription: opt={}, secret={}, topic={}, sub={}",
                             secretOpt.getConfigOption(), secretOpt.getSecretName(), fqnTopic, fqnSub);
-                    return buildCfgUpdNotificationSubscription(subscriptionAdminClientRef, fqnTopic, fqnSub);
+                    return createCfgUpdNotificationSubscription(subscriptionAdminClientRef, fqnTopic, fqnSub);
                 })
                 .subscribeOn(blockingScheduler) // makes block above to run on worker scheduler
                 .observeOn(elScheduler) // makes all blocks below to run on event loop scheduler
@@ -252,15 +252,15 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                 .ignoreElement().andThen(pubSub.subscribe(fqnSub)
                         .doOnSubscribe(ignr -> log.debug("subscribing to gsm config updates: sub={}", fqnSub)))
                 .flatMapCompletable(upd -> {
-                    var eventType = getEventType(upd);
                     var updatedSecretId = getSecretId(upd);
                     if (!isSecretValueUpdateEvent(upd)) {
+                        var eventType = getEventType(upd);
                         log.debug("skip irrelevant gsm update: eventType={}, secretId={}", eventType, updatedSecretId);
                         return upd.delivery().ack();
                     }
                     // update references project by number, but config may reference it by projectId,
-                    // so we need to refresh all config options that have same secret short name to not miss updates
-                    var optsToRefresh = secretShortNamesToConfigOpts.get(gsmUtil.secretShortName(updatedSecretId));
+                    // so we need to refresh all config options that have same secret *short* name to not miss updates
+                    var optsToRefresh = secretShortNamesToConfigOpts.get(gsmUtil.extractSecretName(updatedSecretId));
                     log.debug("received gsm config update notification: secretName={}, cfgOptsToRefresh={}",
                             updatedSecretId, optsToRefresh);
                     var projectIdRef = projectId;
@@ -268,9 +268,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                     var cachedSecretOptsRef = cachedSecretOpts;
                     return Observable.fromIterable(optsToRefresh)
                             .flatMapCompletable(optName -> {
-                                var opt = getSecretOptionCfgByName(optName, cfgRef);
-                                var proj = evaluateProjectForOption(projectIdRef, cfgRef, opt);
-                                var secretId = gsmUtil.ensureFqnSecret(proj, opt.getSecretName());
+                                var secretId = optNamesToFqnSecretIds.get(optName);
                                 return secretManagerRef.getSecretString(secretId)
                                         .doOnSuccess(secretValue -> {
                                             var optsForSecret = secretFqnNamesToConfigOpts.get(secretId);
@@ -287,7 +285,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                 });
     }
 
-    private Subscription buildCfgUpdNotificationSubscription(SubscriptionAdminClient subscriptionAdminClientRef,
+    private Subscription createCfgUpdNotificationSubscription(SubscriptionAdminClient subscriptionAdminClientRef,
             String fqnTopic, String fqnSub) {
         return subscriptionAdminClientRef.createSubscription(Subscription.newBuilder()
                 .setTopic(fqnTopic)
@@ -370,7 +368,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
 
     private String getSecretShortName(DeliverableMsg secretUpd) {
         var fqnSecretId = getSecretId(secretUpd);
-        return fqnSecretId != null ? gsmUtil.secretShortName(fqnSecretId) : null;
+        return fqnSecretId != null ? gsmUtil.extractSecretName(fqnSecretId) : null;
     }
 
     /**
