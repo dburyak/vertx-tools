@@ -2,8 +2,6 @@ package com.dburyak.vertx.gcp.secretmanager;
 
 import com.dburyak.vertx.core.di.ForEventLoop;
 import com.dburyak.vertx.core.di.ForWorker;
-import com.dburyak.vertx.core.util.Tuple;
-import com.dburyak.vertx.core.util.Tuple2;
 import com.dburyak.vertx.gcp.ProjectIdProvider;
 import com.dburyak.vertx.gcp.pubsub.DeliverableMsg;
 import com.dburyak.vertx.gcp.pubsub.PubSub;
@@ -69,6 +67,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
 
     // single volatile variable to ensure visibility of reads/writes of all fields below
     private volatile int visibility = 0;
+    private int visibilityDummy = 0;
     private GcpSecretManagerConfigProperties cfg;
     private GcpSecretManager secretManager;
     private PubSub pubSub;
@@ -97,7 +96,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     public Future<Buffer> get() {
         beforeRead(); // ensure visibility
         Single<Buffer> secretsFuture;
-        if (lastRefreshedAt == null || isCacheOutdated(lastRefreshedAt, cfg)) { // fetch
+        if (lastRefreshedAt == null || isCacheOutdated()) { // fetch
             secretsFuture = retrieveAndCacheSecrets();
         } else { // use cached
             synchronized (cachedSecretOptsLock) {
@@ -121,31 +120,20 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
             return;
         }
         initMappings();
-        gsmUpdNotificationSubscriber = Observable.fromIterable(cfg.getSecretConfigOptions())
-                .map(opt -> Tuple.of(opt, evaluateNotificationTopicForOption(cfg.getPubsubNotificationTopic(), opt)))
-                .filter(t2 -> t2.getV2() != null && !t2.getV2().isBlank())
-                .map(t2 -> {
-                    var cfgOpt = t2.getV1();
-                    var topic = t2.getV2();
-                    var proj = evaluateProjectForOption(cfgOpt);
-                    // secret and topic may be in different projects, but subscriptions will be created/deleted in this
-                    // project, so managing subscriptions won't require cross-project "pubsub editor" role
-                    var fqnTopic = pubSubUtil.ensureFqnTopic(proj, topic);
-                    return Tuple.of(cfgOpt, fqnTopic);
-                })
-                .distinct(Tuple2::getV2) // distinct by fqnTopic, we need single subscription per topic
-                .flatMapCompletable(t -> {
-                    var fqnTopic = t.getV2();
-                    var shortTopicName = pubSubUtil.topicShortName(fqnTopic);
-                    var fqnSub = pubSubUtil.fqnSubscription(projectId, shortTopicName + "-" + subscriptionSuffix());
+        gsmUpdNotificationSubscriber = Observable.fromIterable(fqnTopicToFqnSub.entrySet())
+                .flatMapCompletable(e -> {
+                    var fqnTopic = e.getKey();
+                    var fqnSub = e.getValue();
                     return createSubscriptionAndSubscribe(fqnTopic, fqnSub);
                 })
                 .subscribe(() -> { /* subscription for upd events is infinite, completable never completes */ },
-                        err -> log.error("gsm config update failed", err));
+                        err -> log.error("gsm config init failed", err));
+        afterWrite(); // ensure visibility
     }
 
     @Override
     public Future<Void> close() {
+        beforeRead(); // ensure visibility
         log.debug("closing gsm config store");
         gsmUpdNotificationSubscriber.dispose();
         var startedAt = Instant.now();
@@ -178,11 +166,11 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
     }
 
     private void beforeRead() {
-        var ignr = visibility;
+        visibilityDummy = visibility; // volatile read
     }
 
     private void afterWrite() {
-        visibility = 0;
+        visibility = 0; // volatile write
     }
 
     private void initMappings() {
@@ -195,9 +183,12 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
             var topic = evaluateNotificationTopicForOption(cfg.getPubsubNotificationTopic(), opt);
             if (topic != null && !topic.isBlank()) {
                 var fqnTopic = pubSubUtil.ensureFqnTopic(proj, topic);
-                var shortTopicName = pubSubUtil.topicShortName(fqnTopic);
-                var fqnSubName = pubSubUtil.fqnSubscription(projectId, shortTopicName + "-" + subscriptionSuffix());
-                fqnTopicToFqnSub.put(fqnTopic, fqnSubName);
+                fqnTopicToFqnSub.computeIfAbsent(fqnTopic, t -> {
+                    var shortTopicName = pubSubUtil.topicShortName(fqnTopic);
+                    // secret and topic may be in different projects, but subscriptions will be created/deleted in this
+                    // project, so managing subscriptions won't require cross-project "pubsub editor" role
+                    return pubSubUtil.fqnSubscription(projectId, shortTopicName + "-" + subscriptionSuffix());
+                });
             }
         }
     }
@@ -265,9 +256,9 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                                         .flatMapObservable(secretValue -> Observable.fromIterable(optsForSecretId)
                                                 .map(optName -> Map.<String, String>entry(optName, secretValue)));
                             })
-                            .doOnNext(e -> log.debug("gsm config opt updated: opt={}", e.getKey()))
                             .toMap(Map.Entry::getKey, Map.Entry::getValue)
                             .doOnSuccess(updMap -> {
+                                log.debug("gsm config opts updated: opts={}", updMap.keySet());
                                 synchronized (cachedSecretOptsLock) {
                                     updMap.forEach((optName, optValue) -> cachedSecretOpts.put(optName, optValue));
                                 }
@@ -291,7 +282,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                 .build());
     }
 
-    private boolean isCacheOutdated(Instant lastRefreshedAt, GcpSecretManagerConfigProperties cfg) {
+    private boolean isCacheOutdated() {
         var now = Instant.now();
         return cfg.isRefreshEnabled() && Duration.between(lastRefreshedAt, now).compareTo(cfg.getRefreshPeriod()) >= 0;
     }

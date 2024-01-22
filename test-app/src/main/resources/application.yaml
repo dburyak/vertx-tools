@@ -27,6 +27,8 @@ vertx:
           - config-option: app.test.secret-1
             secret-name: dmytro-test-secret-1
             project-id: kuznya-d
+          - config-option: app.test.secret-1-dup
+            secret-name: dmytro-test-secret-1
           - config-option: app.test.secret-2
             secret-name: dmytro-test-secret-2
             project-id: kuznya-d

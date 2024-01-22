@@ -75,7 +75,7 @@ public class GcpSecretManagerImpl implements GcpSecretManager {
         return Single.create(emitter -> {
             try {
                 var evaluatedVersion = (version != null && !version.isBlank()) ? version : LATEST_VERSION;
-                var fqnSecret = gsmUtil.fqnSecret(projectId, secretId, evaluatedVersion);
+                var fqnSecret = gsmUtil.ensureFqnSecret(projectId, secretId, evaluatedVersion);
                 var req = AccessSecretVersionRequest.newBuilder()
                         .setName(fqnSecret)
                         .build();
