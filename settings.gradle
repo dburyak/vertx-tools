@@ -22,6 +22,7 @@ include ':vertx-tools-config-server'
 include ':gcp:vertx-tools-gcp-core'
 include ':gcp:vertx-tools-gcp-secretmanager'
 include ':gcp:vertx-tools-config-gcp-secretmanager'
+include ':gcp:vertx-tools-gcp-pubsub'
 
 // TODO: remove this after normal integ tests are created
 include ':test-app'

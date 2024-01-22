@@ -1,4 +1,4 @@
-package com.dburyak.vertx.core;
+package com.dburyak.vertx.core.executor;
 
 import com.dburyak.vertx.core.di.AppBootstrap;
 import com.dburyak.vertx.core.di.ForEventLoop;

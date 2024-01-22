@@ -10,6 +10,7 @@ dependencies {
     implementation project(':vertx-tools-cluster-hazelcast')
     implementation project(':vertx-tools-config')
     implementation project(':gcp:vertx-tools-config-gcp-secretmanager')
+    implementation project(':gcp:vertx-tools-gcp-pubsub')
 
     // log4j
     implementation 'org.apache.logging.log4j:log4j-api'

@@ -1,6 +1,7 @@
 package com.dburyak.vertx.core;
 
 import com.dburyak.vertx.core.di.AppBootstrap;
+import com.dburyak.vertx.core.util.Tuple;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.inject.qualifiers.Qualifiers;
 import io.reactivex.rxjava3.core.Completable;
@@ -12,9 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
+
+import static java.util.Collections.synchronizedList;
 
 /**
  * Base class for DI enabled vertx application.
@@ -26,6 +31,7 @@ import java.util.stream.IntStream;
 @Slf4j
 public abstract class VertxApp {
     private final Object startupLock = new Object();
+    private final List<String> verticlesDeploymentIds = synchronizedList(new ArrayList<>());
     private volatile ApplicationContext appCtx = null;
 
     /**
@@ -41,9 +47,10 @@ public abstract class VertxApp {
      * @return completable that completes when application is started
      */
     public final Completable start() {
-        var invokedAt = Instant.now();
+        var invokedAt = new AtomicReference<Instant>();
         return Observable.defer(() -> {
                     synchronized (startupLock) {
+                        invokedAt.set(Instant.now());
                         if (appCtx != null) {
                             log.debug("attempt to start vertx application that is already running");
                             return Observable.empty();
@@ -64,7 +71,7 @@ public abstract class VertxApp {
                                                     verticleInstance.setAppCtx(appCtx);
                                                     var modOpts = new DeploymentOptions(d.getDeploymentOptions())
                                                             .setInstances(1);
-                                                    return Map.entry(verticleInstance, d.toBuilder()
+                                                    return Tuple.of(verticleInstance, d.toBuilder()
                                                             .deploymentOptions(modOpts)
                                                             .build()
                                                     );
@@ -78,20 +85,21 @@ public abstract class VertxApp {
                                                 }
                                             });
                                 })
-                                .map(e -> vertx.rxDeployVerticle(e.getKey(), e.getValue().getDeploymentOptions())
-                                        .map(depId -> Map.entry(depId, e.getKey())))
+                                .map(t2 -> vertx.rxDeployVerticle(t2.getV1(), t2.getV2().getDeploymentOptions())
+                                        .map(depId -> Tuple.of(depId, t2.getV1())))
                                 .toList();
                         return Observable.fromIterable(deployments)
                                 .doOnSubscribe(ignr -> log.info("deploy verticles"));
                     }
                 })
-                .flatMapSingle(d -> d.doOnSuccess(depInfo ->
-                        log.debug("verticle deployed: depId={}, verticle={}", depInfo.getKey(), depInfo.getValue()))
-                )
+                .flatMapSingle(d -> d.doOnSuccess(depInfo -> {
+                    log.debug("verticle deployed: depId={}, verticle={}", depInfo.getV1(), depInfo.getV2());
+                    verticlesDeploymentIds.add(depInfo.getV1());
+                }))
                 .ignoreElements()
                 .doOnComplete(() -> log.info("verticles deployed"))
                 .doOnComplete(() -> log.info("vertx application started: time={}",
-                        Duration.between(invokedAt, Instant.now())));
+                        Duration.between(invokedAt.get(), Instant.now())));
     }
 
     /**
@@ -106,18 +114,41 @@ public abstract class VertxApp {
                     log.debug("attempt to stop vertx application that is already stopped");
                     return Completable.complete();
                 }
+                var invokedAt = Instant.now();
+                var verticlesUndeployStartedAt = new AtomicReference<Instant>();
+                var vertxShutdownStartedAt = new AtomicReference<Instant>();
                 var vertx = appCtx.getBean(Vertx.class);
-                return vertx.rxClose()
-                        .doOnSubscribe(ignr -> log.info("stopping vertx application"))
-                        .doOnComplete(() -> log.info("vertx stopped"))
+                return Observable.fromIterable(verticlesDeploymentIds)
+                        .doOnSubscribe(ignr -> {
+                            log.info("stopping vertx application");
+                            log.info("undeploying verticles: numVerticles={}", verticlesDeploymentIds.size());
+                            verticlesUndeployStartedAt.set(Instant.now());
+                        })
+                        .flatMapCompletable(depId -> vertx.rxUndeploy(depId)
+                                .doOnComplete(() -> log.debug("verticle undeployed: depId={}", depId)))
+                        .doOnComplete(() -> {
+                            log.info("all verticles undeployed, time={}",
+                                    Duration.between(verticlesUndeployStartedAt.get(), Instant.now()));
+                            verticlesDeploymentIds.clear();
+                        })
                         .andThen(Completable.fromRunnable(() -> {
+                            var beansClosingStartedAt = Instant.now();
+                            log.info("disposing beans");
                             synchronized (startupLock) {
                                 appCtx.stop();
                                 appCtx = null;
                             }
-                            log.info("beans disposed");
+                            log.info("beans disposed: time={}", Duration.between(beansClosingStartedAt, Instant.now()));
                         }))
-                        .doOnComplete(() -> log.info("vertx application stopped"));
+                        .andThen(vertx.rxClose().doOnSubscribe(ignr -> {
+                            log.debug("closing vertx instance");
+                            vertxShutdownStartedAt.set(Instant.now());
+                        }))
+                        .doOnComplete(() -> {
+                            log.info("vertx instance closed: time={}",
+                                    Duration.between(vertxShutdownStartedAt.get(), Instant.now()));
+                            log.info("vertx application stopped: time={}", Duration.between(invokedAt, Instant.now()));
+                        });
             }
         });
     }

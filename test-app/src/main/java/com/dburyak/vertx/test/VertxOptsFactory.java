@@ -5,12 +5,17 @@ import io.micronaut.context.annotation.Factory;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
+import java.util.concurrent.TimeUnit;
+
 @Factory
 public class VertxOptsFactory {
 
     @Singleton
     @Named("eventLoopSizeConfigurer")
     public VertxOptionsConfigurer eventLoopSizeConfigurer() {
-        return opts -> opts.setEventLoopPoolSize(2);
+        var numCpu = Runtime.getRuntime().availableProcessors();
+        return opts -> opts.setEventLoopPoolSize(numCpu)
+                .setBlockedThreadCheckInterval(10_000)
+                .setBlockedThreadCheckIntervalUnit(TimeUnit.MILLISECONDS);
     }
 }

@@ -1,6 +1,7 @@
 package com.dburyak.vertx.config;
 
 import io.micronaut.context.ApplicationContext;
+import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
 import io.vertx.config.ConfigRetrieverOptions;
@@ -31,6 +32,7 @@ public class ConfigRetrieverFactory {
      * @return config retriever bean
      */
     @Singleton
+    @Bean(preDestroy = "close")
     @Requires(missingBeans = ConfigRetriever.class)
     public ConfigRetriever configRetriever(Vertx vertx, ConfigRetrieverOptions configRetrieverOptions,
             List<ConfigProcessor> cfgProcessors, ApplicationContext appCtx) {

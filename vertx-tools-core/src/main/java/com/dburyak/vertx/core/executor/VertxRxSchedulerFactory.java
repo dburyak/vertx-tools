@@ -1,4 +1,4 @@
-package com.dburyak.vertx.core;
+package com.dburyak.vertx.core.executor;
 
 import com.dburyak.vertx.core.di.ForEventLoop;
 import com.dburyak.vertx.core.di.ForWorker;
@@ -37,6 +37,6 @@ public class VertxRxSchedulerFactory {
     @Singleton
     @ForWorker
     public Scheduler vertxRxBlockingScheduler(Vertx vertx) {
-        return RxHelper.blockingScheduler(vertx);
+        return RxHelper.blockingScheduler(vertx, false);
     }
 }

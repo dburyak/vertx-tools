@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Collection;
 import java.util.List;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Slf4j
 public class TestApp extends VertxApp {
@@ -17,7 +17,7 @@ public class TestApp extends VertxApp {
         log.info("starting ....");
         var app = new TestApp();
         app.start()
-                .delay(12_500, MILLISECONDS)
+                .delay(60, SECONDS)
                 .andThen(app.stop())
                 .blockingAwait();
     }
@@ -31,6 +31,17 @@ public class TestApp extends VertxApp {
                 VerticleDeploymentDescriptor.builder()
                         .verticleClass(HelloVerticle2.class)
                         .deploymentOptions(new DeploymentOptions().setInstances(7))
+                        .build(),
+                VerticleDeploymentDescriptor.builder()
+                        .verticleClass(PubSubVerticle1.class)
+                        .build(),
+                VerticleDeploymentDescriptor.builder()
+                        .verticleClass(PubSubVerticle2.class)
+                        .deploymentOptions(new DeploymentOptions().setInstances(2))
+                        .build(),
+                VerticleDeploymentDescriptor.builder()
+                        .verticleClass(CfgConsumerVerticle.class)
+                        .deploymentOptions(new DeploymentOptions().setInstances(1))
                         .build()
         );
     }
