@@ -99,12 +99,30 @@ public class ConfigService {
      *
      * @return filtered stream of configurations
      */
-    public Flowable<JsonObject> getStream(Set<String> keys) {
+    public Flowable<JsonObject> streamForKeys(Set<String> keys) {
         return changes.filter(cfgChange -> {
                     var prev = cfgChange.getPreviousConfiguration();
                     var next = cfgChange.getNewConfiguration();
                     return keys.stream()
                             .anyMatch(key -> !Objects.equals(prev.getValue(key), next.getValue(key)));
+                })
+                .map(ConfigChange::getNewConfiguration)
+                .startWith(getConfig());
+    }
+
+    /**
+     * Get stream of configurations. Current config is always emitted first, and then updated configs are emitted only
+     * if specified key was changed.
+     *
+     * @param key config key to watch for changes
+     *
+     * @return filtered stream of configurations
+     */
+    public Flowable<JsonObject> getStreamForKey(String key) {
+        return changes.filter(cfgChange -> {
+                    var prev = cfgChange.getPreviousConfiguration();
+                    var next = cfgChange.getNewConfiguration();
+                    return !Objects.equals(prev.getValue(key), next.getValue(key));
                 })
                 .map(ConfigChange::getNewConfiguration)
                 .startWith(getConfig());
@@ -118,7 +136,7 @@ public class ConfigService {
      *
      * @return filtered stream of configurations
      */
-    public Flowable<JsonObject> getStreamForPrefix(String prefix) {
+    public Flowable<JsonObject> streamForPrefix(String prefix) {
         return changes.filter(cfgChange -> {
                     var prev = cfgChange.getPreviousConfiguration();
                     var next = cfgChange.getNewConfiguration();
@@ -139,7 +157,7 @@ public class ConfigService {
      *
      * @return filtered stream of configurations
      */
-    public Flowable<JsonObject> getStreamForPrefixes(Set<String> prefixes) {
+    public Flowable<JsonObject> streamForPrefixes(Set<String> prefixes) {
         return changes.filter(cfgChange -> {
                     var prev = cfgChange.getPreviousConfiguration();
                     var next = cfgChange.getNewConfiguration();
