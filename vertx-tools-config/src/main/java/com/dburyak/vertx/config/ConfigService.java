@@ -118,7 +118,7 @@ public class ConfigService {
      *
      * @return filtered stream of configurations
      */
-    public Flowable<JsonObject> getStreamForKey(String key) {
+    public Flowable<JsonObject> streamForKey(String key) {
         return changes.filter(cfgChange -> {
                     var prev = cfgChange.getPreviousConfiguration();
                     var next = cfgChange.getNewConfiguration();
