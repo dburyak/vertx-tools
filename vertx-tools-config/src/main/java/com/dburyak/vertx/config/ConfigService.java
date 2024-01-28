@@ -3,7 +3,9 @@ package com.dburyak.vertx.config;
 import io.micronaut.context.annotation.Requires;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.vertx.config.ConfigChange;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.config.ConfigRetriever;
@@ -18,21 +20,30 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 
+/**
+ * More friendly wrapper around {@link ConfigRetriever}.
+ */
 @Singleton
 @Requires(missingBeans = ConfigService.class)
 @Slf4j
 public class ConfigService {
+    private static final ConfigChange DUMMY_CHANGE = new ConfigChange(new JsonObject(), new JsonObject());
+
     private final ConfigRetriever cfgRetriever;
 
+    /**
+     * Broadcasted hot stream of config changes. Config changes that happened before subscription are NOT emitted.
+     */
     @Getter
     private final Flowable<ConfigChange> changes;
 
-    private volatile boolean closed = false;
+    private volatile Disposable changesSubscription;
 
     public ConfigService(ConfigRetriever cfgRetriever) {
         this.cfgRetriever = cfgRetriever;
-        changes = Flowable.<ConfigChange>create(emitter -> cfgRetriever.listen(cfgChange -> {
-                    if (closed) {
+        var changesWithLastCached = Flowable.<ConfigChange>create(emitter -> cfgRetriever.listen(cfgChange -> {
+                    if (emitter.isCancelled()) {
+                        // CfgRetriever.listen() does not support unregistering listeners, so that's the best we can do
                         return;
                     }
                     if (log.isDebugEnabled()) {
@@ -46,19 +57,48 @@ public class ConfigService {
                         log.debug("config changed: updOpts={}", updOpts);
                     }
                     emitter.onNext(cfgChange);
-                }), BackpressureStrategy.DROP)
-                .publish(1).autoConnect();
+                }), BackpressureStrategy.BUFFER)
+                .replay(1, true)
+                .autoConnect(1, d -> changesSubscription = d);
+        // replay(1) + autoConnect + skip(1) - is the only way to have long-lived broadcast stream without any
+        // buffering/caching, so that new subscribers will receive only *NEW* config changes that happened *AFTER* they
+        // subscribed
+        changes = changesWithLastCached.ambWith(changesWithLastCached.startWithItem(DUMMY_CHANGE)).skip(1);
     }
 
+    /**
+     * Get current config. If config is loaded and cached already, then cached value is returned. Otherwise, config is
+     * loaded according to Vertx config retriever settings.
+     *
+     * @return current config
+     */
     public Single<JsonObject> getConfig() {
-        return cfgRetriever.rxGetConfig();
+        return Maybe.fromSupplier(() -> {
+                    var cachedCfg = cfgRetriever.getCachedConfig();
+                    return !cachedCfg.isEmpty() ? cachedCfg : null;
+                })
+                .switchIfEmpty(cfgRetriever.rxGetConfig());
     }
 
+    /**
+     * Get stream of configurations. Current config is always emitted first, and then updated configs are emitted on
+     * config changes.
+     *
+     * @return stream of all configurations
+     */
     public Flowable<JsonObject> getStream() {
         return changes.map(ConfigChange::getNewConfiguration)
-                .startWith(cfgRetriever.rxGetConfig());
+                .startWith(getConfig());
     }
 
+    /**
+     * Get stream of configurations. Current config is always emitted first, and then updated configs are emitted only
+     * if at least one of the specified keys was changed.
+     *
+     * @param keys config keys to watch for changes
+     *
+     * @return filtered stream of configurations
+     */
     public Flowable<JsonObject> getStream(Set<String> keys) {
         return changes.filter(cfgChange -> {
                     var prev = cfgChange.getPreviousConfiguration();
@@ -67,10 +107,18 @@ public class ConfigService {
                             .anyMatch(key -> !Objects.equals(prev.getValue(key), next.getValue(key)));
                 })
                 .map(ConfigChange::getNewConfiguration)
-                .startWith(cfgRetriever.rxGetConfig());
+                .startWith(getConfig());
     }
 
-    public Flowable<JsonObject> getStreamWithPrefix(String prefix) {
+    /**
+     * Get stream of configurations. Current config is always emitted first, and then updated configs are emitted only
+     * if at least one of keys starting with given prefix was changed.
+     *
+     * @param prefix prefix for config keys to watch for changes
+     *
+     * @return filtered stream of configurations
+     */
+    public Flowable<JsonObject> getStreamForPrefix(String prefix) {
         return changes.filter(cfgChange -> {
                     var prev = cfgChange.getPreviousConfiguration();
                     var next = cfgChange.getNewConfiguration();
@@ -80,10 +128,18 @@ public class ConfigService {
                             key.startsWith(prefix) && !Objects.equals(prev.getValue(key), next.getValue(key)));
                 })
                 .map(ConfigChange::getNewConfiguration)
-                .startWith(cfgRetriever.rxGetConfig());
+                .startWith(getConfig());
     }
 
-    public Flowable<JsonObject> getStreamWithPrefixes(Set<String> prefixes) {
+    /**
+     * Get stream of configurations. Current config is always emitted first, and then updated configs are emitted only
+     * if at least one of keys starting with given prefixes was changed.
+     *
+     * @param prefixes prefixes for config keys to watch for changes
+     *
+     * @return filtered stream of configurations
+     */
+    public Flowable<JsonObject> getStreamForPrefixes(Set<String> prefixes) {
         return changes.filter(cfgChange -> {
                     var prev = cfgChange.getPreviousConfiguration();
                     var next = cfgChange.getNewConfiguration();
@@ -94,11 +150,14 @@ public class ConfigService {
                             .anyMatch(key -> !Objects.equals(prev.getValue(key), next.getValue(key)));
                 })
                 .map(ConfigChange::getNewConfiguration)
-                .startWith(cfgRetriever.rxGetConfig());
+                .startWith(getConfig());
     }
 
     @PreDestroy
     public void destroy() {
-        closed = true;
+        var changesSubscriptionRef = changesSubscription;
+        if (changesSubscriptionRef != null) {
+            changesSubscriptionRef.dispose();
+        }
     }
 }
