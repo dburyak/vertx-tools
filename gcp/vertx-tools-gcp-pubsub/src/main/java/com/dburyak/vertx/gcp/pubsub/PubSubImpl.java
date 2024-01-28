@@ -122,6 +122,8 @@ public class PubSubImpl implements PubSub {
 
     @PreDestroy
     public void destroy() {
+        // TODO: parallelize waiting for shutdown
+
         var shutdownStartedAt = Instant.now();
         log.debug("closing pubsub: publishers={}, subscribers={}", publishers.size(), subscribers.size());
         var failures = new ArrayList<Exception>();
@@ -141,6 +143,7 @@ public class PubSubImpl implements PubSub {
         var publisherShutdownTimeoutMs = cfg.getPublisherProperties().getShutdownTimeout().toMillis();
         for (var publisher : publishers.values()) {
             try {
+                publisher.publishAllOutstanding();
                 publisher.awaitTermination(publisherShutdownTimeoutMs, MILLISECONDS);
             } catch (Exception e) {
                 failures.add(e);
@@ -163,6 +166,10 @@ public class PubSubImpl implements PubSub {
             var shutdownStartedAt = Instant.now();
             log.debug("stopping pubsub subscriber: sub={}", subName);
             subscriber.stopAsync();
+
+            // TODO: don't wait here for too long, if subscriber has dangling messages, it's safe to just ignorer it
+            // https://github.com/googleapis/google-cloud-java/issues/3752
+
             subscriber.awaitTerminated(30, SECONDS); // TODO: make timeout configurable
             var shutdownDuration = Duration.between(shutdownStartedAt, Instant.now());
             log.debug("stopped pubsub subscriber: sub={}, shutdownDuration={}", subName, shutdownDuration);
