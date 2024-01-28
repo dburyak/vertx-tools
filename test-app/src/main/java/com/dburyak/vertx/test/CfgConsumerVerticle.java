@@ -16,12 +16,14 @@ public class CfgConsumerVerticle extends AbstractDiVerticle {
 
     @Override
     public Completable rxStart() {
-        return Completable.fromRunnable(() -> {
-                    cfgRetriever.listen(cfgChange -> {
-                        log.info("config changed: prev={}, next={}", cfgChange.getPreviousConfiguration(),
-                                cfgChange.getNewConfiguration());
-                    });
-                })
-                .doOnComplete(() -> log.info("started cfg consumer verticle"));
+        return cfgRetriever.rxGetConfig()
+                .doOnSuccess(cfg -> log.info("initial config: {}", cfg))
+                .ignoreElement().andThen(Completable.fromRunnable(() -> {
+                            cfgRetriever.listen(cfgChange -> {
+                                log.info("config changed: prev={}, next={}", cfgChange.getPreviousConfiguration(),
+                                        cfgChange.getNewConfiguration());
+                            });
+                        })
+                        .doOnComplete(() -> log.info("started cfg consumer verticle")));
     }
 }

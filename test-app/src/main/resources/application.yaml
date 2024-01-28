@@ -9,12 +9,12 @@ vertx:
         enabled: true
         type: com.dburyak.vertx.eventbus.kryo.LocalAwareKryoUnsafeMessageCodec
         default: true
-        defaultTypes: com.dburyak.vertx.eventbus.VisibleObject
+        default-types: com.dburyak.vertx.eventbus.VisibleObject
       kryo-copying:
         enabled: true
         type: com.dburyak.vertx.eventbus.kryo.LocalAwareKryoCopyingMessageCodec
         default: true
-        defaultTypes:
+        default-types:
           - com.dburyak.vertx.test.SampleDtoOne
           - com.dburyak.vertx.test.SampleDtoTwo
   gcp:

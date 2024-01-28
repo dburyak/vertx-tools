@@ -16,4 +16,17 @@ public class Tuple7<T1, T2, T3, T4, T5, T6, T7> {
             T6 v6, T7 v7) {
         return new Tuple7<>(v1, v2, v3, v4, v5, v6, v7);
     }
+
+    public <T> T getAt(int idx) {
+        return switch (idx) {
+            case 0 -> (T) v1;
+            case 1 -> (T) v2;
+            case 2 -> (T) v3;
+            case 3 -> (T) v4;
+            case 4 -> (T) v5;
+            case 5 -> (T) v6;
+            case 6 -> (T) v7;
+            default -> throw new IndexOutOfBoundsException("Tuple7 does not have an element at index " + idx);
+        };
+    }
 }

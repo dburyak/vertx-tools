@@ -1,7 +1,8 @@
-package com.dburyak.vertx.eventbus;
+package com.dburyak.vertx.eventbus.config;
 
 import com.dburyak.vertx.core.VertxOptionsConfigurer;
-import com.dburyak.vertx.eventbus.config.EventBusProperties;
+import com.dburyak.vertx.eventbus.EventBusConfigurer;
+import com.dburyak.vertx.eventbus.NamedMessageCodec;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Factory;
