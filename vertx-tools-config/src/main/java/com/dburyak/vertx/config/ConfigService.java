@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -55,6 +56,31 @@ public class ConfigService {
 
     public Flowable<JsonObject> getStream() {
         return changes.map(ConfigChange::getNewConfiguration)
+                .startWith(cfgRetriever.rxGetConfig());
+    }
+
+    public Flowable<JsonObject> getStream(Set<String> keys) {
+        return changes.filter(cfgChange -> {
+                    var prev = cfgChange.getPreviousConfiguration();
+                    var next = cfgChange.getNewConfiguration();
+                    return keys.stream()
+                            .anyMatch(key -> !Objects.equals(prev.getValue(key), next.getValue(key)));
+                })
+                .map(ConfigChange::getNewConfiguration)
+                .startWith(cfgRetriever.rxGetConfig());
+    }
+
+    public Flowable<JsonObject> getStreamOfPrefixes(Set<String> prefixes) {
+        return changes.filter(cfgChange -> {
+                    var prev = cfgChange.getPreviousConfiguration();
+                    var next = cfgChange.getNewConfiguration();
+                    var allKeys = new HashSet<>(prev.fieldNames());
+                    allKeys.addAll(next.fieldNames());
+                    return allKeys.stream()
+                            .filter(key -> prefixes.stream().anyMatch(key::startsWith))
+                            .anyMatch(key -> !Objects.equals(prev.getValue(key), next.getValue(key)));
+                })
+                .map(ConfigChange::getNewConfiguration)
                 .startWith(cfgRetriever.rxGetConfig());
     }
 
