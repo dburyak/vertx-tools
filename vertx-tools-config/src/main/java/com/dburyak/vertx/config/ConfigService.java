@@ -70,6 +70,19 @@ public class ConfigService {
                 .startWith(cfgRetriever.rxGetConfig());
     }
 
+    public Flowable<JsonObject> getStreamWithPrefix(String prefix) {
+        return changes.filter(cfgChange -> {
+                    var prev = cfgChange.getPreviousConfiguration();
+                    var next = cfgChange.getNewConfiguration();
+                    var allKeys = new HashSet<>(prev.fieldNames());
+                    allKeys.addAll(next.fieldNames());
+                    return allKeys.stream().anyMatch(key ->
+                            key.startsWith(prefix) && !Objects.equals(prev.getValue(key), next.getValue(key)));
+                })
+                .map(ConfigChange::getNewConfiguration)
+                .startWith(cfgRetriever.rxGetConfig());
+    }
+
     public Flowable<JsonObject> getStreamWithPrefixes(Set<String> prefixes) {
         return changes.filter(cfgChange -> {
                     var prev = cfgChange.getPreviousConfiguration();
