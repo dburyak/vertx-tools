@@ -9,14 +9,14 @@ vertx:
         enabled: true
         type: com.dburyak.vertx.eventbus.kryo.LocalAwareKryoUnsafeMessageCodec
         default: true
-        default-types: com.dburyak.vertx.eventbus.VisibleObject
+        default-types:
+          - com.dburyak.vertx.test.SampleDtoOne
+          - com.dburyak.vertx.test.SampleDtoTwo
       kryo-copying:
         enabled: true
         type: com.dburyak.vertx.eventbus.kryo.LocalAwareKryoCopyingMessageCodec
         default: true
-        default-types:
-          - com.dburyak.vertx.test.SampleDtoOne
-          - com.dburyak.vertx.test.SampleDtoTwo
+        default-types: []
   gcp:
     config:
       secret-manager:
