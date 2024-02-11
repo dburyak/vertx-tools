@@ -3,8 +3,6 @@ package com.dburyak.vertx.core.di;
 import io.micronaut.context.scope.AbstractConcurrentCustomScope;
 import io.micronaut.context.scope.CreatedBean;
 import io.micronaut.inject.BeanIdentifier;
-import io.vertx.rxjava3.core.Vertx;
-import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
@@ -17,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @param <T> scope annotation type
  */
-@Slf4j
 public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractConcurrentCustomScope<T> {
 
     /**
@@ -79,27 +76,12 @@ public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractCo
      */
     protected abstract boolean vertxThreadMatches();
 
-    private boolean isOnCtx() {
-        var currentVertxContext = Vertx.currentContext();
-        if (currentVertxContext == null
-                || (!currentVertxContext.isEventLoopContext() && !currentVertxContext.isWorkerContext())) {
-
-            // FIXME: remove this debug output
-            log.debug("not on vertx thread before name checks: currentVertxContext={}, currentThread={}",
-                    currentVertxContext, Thread.currentThread().getName());
-
-
-            return false;
-        }
-        return vertxThreadMatches();
-    }
-
     private Map<BeanIdentifier, CreatedBean<?>> getVertxCtxBeans(boolean assertOnVertxCtx) {
-        if (assertOnVertxCtx && !isOnCtx()) {
-
-            // FIXME: remove this debug output
-            log.debug("vertx thread check failed: currentThread={}", Thread.currentThread().getName());
-
+        if (assertOnVertxCtx && !vertxThreadMatches()) {
+            // turned out that Vertx.currentContext().isEventLoopContext() and Vertx.currentContext().isWorkerContext()
+            // is not a reliable way to check if current thread is vertx one or not. Sometimes Vertx.currentContext()
+            // returns null on EL threads. Not sure what this behavior depends on. So the simplest way is to check by
+            // thread name.
             throw new IllegalArgumentException(notOnCtxErrorMessage());
         }
         return beans.computeIfAbsent(Thread.currentThread().getName(), tn -> new HashMap<>());
