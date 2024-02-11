@@ -4,6 +4,7 @@ import io.micronaut.context.scope.AbstractConcurrentCustomScope;
 import io.micronaut.context.scope.CreatedBean;
 import io.micronaut.inject.BeanIdentifier;
 import io.vertx.rxjava3.core.Vertx;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @param <T> scope annotation type
  */
+@Slf4j
 public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractConcurrentCustomScope<T> {
 
     /**
@@ -81,6 +83,12 @@ public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractCo
         var currentVertxContext = Vertx.currentContext();
         if (currentVertxContext == null
                 || (!currentVertxContext.isEventLoopContext() && !currentVertxContext.isWorkerContext())) {
+
+            // FIXME: remove this debug output
+            log.debug("not on vertx thread before name checks: currentVertxContext={}, currentThread={}",
+                    currentVertxContext, Thread.currentThread().getName());
+
+
             return false;
         }
         return vertxThreadMatches();
@@ -88,6 +96,10 @@ public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractCo
 
     private Map<BeanIdentifier, CreatedBean<?>> getVertxCtxBeans(boolean assertOnVertxCtx) {
         if (assertOnVertxCtx && !isOnCtx()) {
+
+            // FIXME: remove this debug output
+            log.debug("vertx thread check failed: currentThread={}", Thread.currentThread().getName());
+
             throw new IllegalArgumentException(notOnCtxErrorMessage());
         }
         return beans.computeIfAbsent(Thread.currentThread().getName(), tn -> new HashMap<>());
