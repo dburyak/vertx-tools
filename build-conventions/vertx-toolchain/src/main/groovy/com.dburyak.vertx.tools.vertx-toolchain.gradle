@@ -13,10 +13,6 @@ java {
     }
 }
 
-dependencyLocking {
-    lockAllConfigurations()
-}
-
 repositories {
     mavenCentral()
 }
@@ -46,6 +42,8 @@ dependencies {
     implementation 'io.micronaut.validation:micronaut-validation'
     annotationProcessor 'io.micronaut:micronaut-inject-java'
     annotationProcessor 'io.micronaut.validation:micronaut-validation-processor'
+    implementation 'io.micronaut:micronaut-context' // required for immutable config properties
+
 
     // logging
     implementation 'org.slf4j:slf4j-api'

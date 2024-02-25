@@ -1,43 +1,31 @@
 package com.dburyak.vertx.gcp.pubsub.config;
 
+import io.micronaut.context.annotation.ConfigurationInject;
 import io.micronaut.context.annotation.ConfigurationProperties;
-import jakarta.inject.Inject;
-import lombok.Data;
+import lombok.Getter;
 
 /**
  * PubSub configuration properties.
  */
 @ConfigurationProperties("vertx.gcp.pubsub")
-@Data
+@Getter
 public class PubSubProperties {
 
     /**
      * PubSub publisher configuration properties.
      */
-    private PubSubPublisherProperties publisherProperties;
+    private final PubSubPublisherProperties publisherProperties;
 
     /**
      * PubSub subscriber configuration properties.
      */
-    private PubSubSubscriberProperties subscriberProperties;
+    private final PubSubSubscriberProperties subscriberProperties;
 
-    /**
-     * Set publisher properties.
-     *
-     * @param publisherProperties publisher properties
-     */
-    @Inject
-    public void setPublisherProperties(PubSubPublisherProperties publisherProperties) {
+    @ConfigurationInject
+    public PubSubProperties(
+            PubSubPublisherProperties publisherProperties,
+            PubSubSubscriberProperties subscriberProperties) {
         this.publisherProperties = publisherProperties;
-    }
-
-    /**
-     * Set subscriber properties.
-     *
-     * @param subscriberProperties subscriber properties
-     */
-    @Inject
-    public void setSubscriberProperties(PubSubSubscriberProperties subscriberProperties) {
         this.subscriberProperties = subscriberProperties;
     }
 }

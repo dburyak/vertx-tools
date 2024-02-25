@@ -1,8 +1,9 @@
 package com.dburyak.vertx.eventbus.config;
 
+import io.micronaut.context.annotation.ConfigurationInject;
 import io.micronaut.context.annotation.ConfigurationProperties;
-import jakarta.inject.Inject;
-import lombok.Data;
+import io.micronaut.core.bind.annotation.Bindable;
+import lombok.Getter;
 
 import java.util.List;
 
@@ -10,30 +11,20 @@ import java.util.List;
  * EventBus configuration.
  */
 @ConfigurationProperties("vertx.event-bus")
-@Data
+@Getter
 public class EventBusProperties {
 
     /**
      * EventBus message codecs configurations.
      */
-    private List<CodecProperties> codecs;
+    private final List<CodecProperties> codecs;
 
     /**
      * Whether to fail application startup process if error happened while loading/registering codec. Setting this
      * option to true allows to fail fast if any codec is misconfigured. Otherwise, such erroneous codec will be
      * skipped.
      */
-    private boolean failOnCodecError = false;
-
-    /**
-     * Set EventBus message codecs configurations.
-     *
-     * @param codecs codecs
-     */
-    @Inject
-    public void setCodecs(List<CodecProperties> codecs) {
-        this.codecs = codecs;
-    }
+    private final boolean failOnCodecError;
 
     /**
      * Whether to fail application startup process if error happened while loading/registering codec. Setting this
@@ -44,5 +35,13 @@ public class EventBusProperties {
      */
     public boolean shouldFailOnCodecError() {
         return failOnCodecError;
+    }
+
+    @ConfigurationInject
+    public EventBusProperties(
+            List<CodecProperties> codecs,
+            @Bindable(defaultValue = "false") boolean failOnCodecError) {
+        this.codecs = codecs;
+        this.failOnCodecError = failOnCodecError;
     }
 }
