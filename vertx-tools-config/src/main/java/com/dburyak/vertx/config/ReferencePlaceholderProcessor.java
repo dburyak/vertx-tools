@@ -10,7 +10,8 @@ import static java.util.Objects.requireNonNullElse;
  * Config processor that replaces {@code ${}} placeholders in the configuration.
  */
 @Singleton
-@Requires(property = "vertx.config.process-placeholders", value = "true", defaultValue = "true")
+@Requires(bean = ConfigRetrieverProperties.class, beanProperty = "processPlaceholders", value = "true",
+        defaultValue = "true")
 public class ReferencePlaceholderProcessor implements ConfigProcessor {
 
     /**

@@ -21,7 +21,8 @@ public class GcpSecretManagerConfigStoreFactory {
      * @return GSM config store options
      */
     @Bean
-    @Requires(property = "vertx.gcp.config.secret-manager.enabled", value = "true", defaultValue = "true")
+    @Requires(bean = GcpSecretManagerConfigProperties.class, beanProperty = "enabled", value = "true",
+            defaultValue = "true")
     public ConfigStoreOptions gcpSecretManagerConfigStore(GcpSecretManagerConfigProperties cfg) {
         return new ConfigStoreOptions()
                 .setType(TYPE)
