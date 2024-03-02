@@ -84,147 +84,147 @@ public class Memory implements Comparable<Memory> {
         return ofTb(teraBytes);
     }
 
-    long getBytes() {
+    public long getBytes() {
         return bytes;
     }
 
-    long getB() {
+    public long getB() {
         return bytes;
     }
 
-    String getBytesString() {
+    public String getBytesString() {
         return String.format(FMT_INT, bytes, "B");
     }
 
-    String getbString() {
+    public String getbString() {
         return getBytesString();
     }
 
-    double getKiloBytes() {
+    public double getKiloBytes() {
         return getKb();
     }
 
-    double getKb() {
+    public double getKb() {
         return (double) bytes / 1024;
     }
 
-    String getKiloBytesString() {
+    public String getKiloBytesString() {
         return getKbString();
     }
 
-    String getKbString() {
+    public String getKbString() {
         return String.format(FMT_FLOAT, getKb(), "KB");
     }
 
-    long getKiloBytesRounded() {
+    public long getKiloBytesRounded() {
         return getKbRounded();
     }
 
-    long getKbRounded() {
+    public long getKbRounded() {
         return Math.round(getKb());
     }
 
-    String getKiloBytesRoundedString() {
+    public String getKiloBytesRoundedString() {
         return getKbRoundedString();
     }
 
-    String getKbRoundedString() {
+    public String getKbRoundedString() {
         return String.format(FMT_INT, getKbRounded(), "KB");
     }
 
-    double getMegaBytes() {
+    public double getMegaBytes() {
         return getMb();
     }
 
-    double getMb() {
+    public double getMb() {
         return getKb() / 1024;
     }
 
-    String getMegaBytesString() {
+    public String getMegaBytesString() {
         return getMbString();
     }
 
-    String getMbString() {
+    public String getMbString() {
         return String.format(FMT_FLOAT, getMb(), "MB");
     }
 
-    long getMegaBytesRounded() {
+    public long getMegaBytesRounded() {
         return getMbRounded();
     }
 
-    long getMbRounded() {
+    public long getMbRounded() {
         return Math.round(getMb());
     }
 
-    String getMegaBytesRoundedString() {
+    public String getMegaBytesRoundedString() {
         return getMbRoundedString();
     }
 
-    String getMbRoundedString() {
+    public String getMbRoundedString() {
         return String.format(FMT_INT, getMbRounded(), "MB");
     }
 
-    double getGigaBytes() {
+    public double getGigaBytes() {
         return getGb();
     }
 
-    double getGb() {
+    public double getGb() {
         return getMb() / 1024;
     }
 
-    String getGigaBytesString() {
+    public String getGigaBytesString() {
         return getGbString();
     }
 
-    String getGbString() {
+    public String getGbString() {
         return String.format(FMT_FLOAT, getGb(), "GB");
     }
 
-    long getGigaBytesRounded() {
+    public long getGigaBytesRounded() {
         return getGbRounded();
     }
 
-    long getGbRounded() {
+    public long getGbRounded() {
         return Math.round(getGb());
     }
 
-    String getGigaBytesRoundedString() {
+    public String getGigaBytesRoundedString() {
         return getGbRoundedString();
     }
 
-    String getGbRoundedString() {
+    public String getGbRoundedString() {
         return String.format(FMT_INT, getGbRounded(), "GB");
     }
 
-    double getTeraBytes() {
+    public double getTeraBytes() {
         return getTb();
     }
 
-    double getTb() {
+    public double getTb() {
         return getGb() / 1024;
     }
 
-    String getTeraBytesString() {
+    public String getTeraBytesString() {
         return getTbString();
     }
 
-    String getTbString() {
+    public String getTbString() {
         return String.format(FMT_FLOAT, getTb(), "TB");
     }
 
-    long getTeraBytesRounded() {
+    public long getTeraBytesRounded() {
         return getTbRounded();
     }
 
-    long getTbRounded() {
+    public long getTbRounded() {
         return Math.round(getTb());
     }
 
-    String getTeraBytesRoundedString() {
+    public String getTeraBytesRoundedString() {
         return getTbRoundedString();
     }
 
-    String getTbRoundedString() {
+    public String getTbRoundedString() {
         return String.format(FMT_INT, getTbRounded(), "TB");
     }
 
