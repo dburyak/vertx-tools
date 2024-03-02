@@ -1,8 +1,11 @@
 package com.dburyak.vertx.core.config;
 
+import lombok.EqualsAndHashCode;
+
 /**
  * Memory size. All prefixes are based on 1024 (binary system).
  */
+@EqualsAndHashCode
 public class Memory {
     private static final String FMT_FLOAT = "%.2f %s";
     private static final String FMT_INT = "%d %s";

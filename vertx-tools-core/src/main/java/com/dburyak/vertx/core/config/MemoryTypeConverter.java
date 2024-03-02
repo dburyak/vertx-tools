@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 @Singleton
 public class MemoryTypeConverter implements TypeConverter<String, Memory> {
     private static final Pattern SPACES = Pattern.compile("[\\s_]+");
-    private static final Pattern MEMORY_PATTERN = Pattern.compile("^(?<num>\\d+|\\d+\\.\\d+)(?<unit>[a-zA-Z]+)?$");
+    private static final Pattern MEMORY_PATTERN = Pattern.compile("^(?<num>\\d+|\\d+\\.\\d+)\\s*(?<unit>[a-zA-Z]+)?$");
 
     @Override
     public Optional<Memory> convert(String propValueStr, Class<Memory> targetType, ConversionContext context) {
@@ -38,7 +38,7 @@ public class MemoryTypeConverter implements TypeConverter<String, Memory> {
         if (unitStr == null) {
             return longNum != null ? Optional.of(Memory.ofBytes(longNum)) : Optional.empty();
         }
-        return switch (unitStr) {
+        return switch (unitStr.toLowerCase()) {
             case "b", "byte", "bytes" -> longNum != null ? Optional.of(Memory.ofBytes(longNum)) : Optional.empty();
             case "k", "kb", "kilobyte", "kilobytes" ->
                     Optional.of(longNum != null ? Memory.ofKb(longNum) : Memory.ofKb(doubleNum));
