@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
  * Memory size. All prefixes are based on 1024 (binary system).
  */
 @EqualsAndHashCode
-public class Memory {
+public class Memory implements Comparable<Memory> {
     private static final String FMT_FLOAT = "%.2f %s";
     private static final String FMT_INT = "%d %s";
 
@@ -235,5 +235,10 @@ public class Memory {
                         : getMb() >= 1 ? getMbString()
                                 : getKb() >= 1 ? getKbString()
                                         : getBytesString();
+    }
+
+    @Override
+    public int compareTo(Memory otherMem) {
+        return Long.compare(bytes, otherMem.bytes);
     }
 }
