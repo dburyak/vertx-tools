@@ -2,6 +2,7 @@ package com.dburyak.vertx.gcp.pubsub.config;
 
 import io.micronaut.context.annotation.ConfigurationInject;
 import io.micronaut.context.annotation.ConfigurationProperties;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 /**
@@ -23,8 +24,8 @@ public class PubSubProperties {
 
     @ConfigurationInject
     public PubSubProperties(
-            PubSubPublisherProperties publisherProperties,
-            PubSubSubscriberProperties subscriberProperties) {
+            @NotNull PubSubPublisherProperties publisherProperties,
+            @NotNull PubSubSubscriberProperties subscriberProperties) {
         this.publisherProperties = publisherProperties;
         this.subscriberProperties = subscriberProperties;
     }

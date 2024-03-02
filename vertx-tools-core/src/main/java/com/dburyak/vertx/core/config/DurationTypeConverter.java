@@ -5,6 +5,7 @@ import io.micronaut.core.convert.TypeConverter;
 import jakarta.inject.Singleton;
 
 import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
 /**
@@ -30,7 +31,11 @@ public class DurationTypeConverter implements TypeConverter<String, Duration> {
                 return Optional.of(Duration.parse("PT" + durationStr));
             }
         } else {
-            return Optional.of(Duration.parse(durationStr));
+            try {
+                return Optional.of(Duration.parse(durationStr));
+            } catch (DateTimeParseException e) {
+                return Optional.empty();
+            }
         }
     }
 
