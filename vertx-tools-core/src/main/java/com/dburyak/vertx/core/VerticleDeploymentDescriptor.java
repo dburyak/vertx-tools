@@ -14,4 +14,17 @@ public class VerticleDeploymentDescriptor {
 
     @Builder.Default
     DeploymentOptions deploymentOptions = new DeploymentOptions().setInstances(1);
+
+    public static VerticleDeploymentDescriptor of(Class<? extends AbstractDiVerticle> verticleClass) {
+        return VerticleDeploymentDescriptor.builder()
+                .verticleClass(verticleClass)
+                .build();
+    }
+
+    public static VerticleDeploymentDescriptor of(Class<? extends AbstractDiVerticle> verticleClass, int instances) {
+        return VerticleDeploymentDescriptor.builder()
+                .verticleClass(verticleClass)
+                .deploymentOptions(new DeploymentOptions().setInstances(instances))
+                .build();
+    }
 }
