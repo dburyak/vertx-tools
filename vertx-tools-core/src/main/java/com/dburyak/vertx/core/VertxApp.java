@@ -152,4 +152,17 @@ public abstract class VertxApp {
             }
         });
     }
+
+    /**
+     * Get bean of specified type from the underlying DI container. This method is expected to be used only for
+     * singleton beans.
+     *
+     * @param beanType type of bean to get
+     * @param <T> type of bean
+     *
+     * @return bean instance
+     */
+    public <T> T getBean(Class<T> beanType) {
+        return appCtx.getBean(beanType);
+    }
 }
