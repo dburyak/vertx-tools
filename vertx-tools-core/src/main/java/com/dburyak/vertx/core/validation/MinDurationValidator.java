@@ -4,6 +4,7 @@ import com.dburyak.vertx.core.config.DurationTypeConverter;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.validation.validator.constraints.ConstraintValidator;
 import io.micronaut.validation.validator.constraints.ConstraintValidatorContext;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
@@ -11,6 +12,7 @@ import java.time.Duration;
 /**
  * Validator implementation for {@link MinDuration} annotation.
  */
+@Singleton
 @RequiredArgsConstructor
 public class MinDurationValidator implements ConstraintValidator<MinDuration, Duration> {
     private final DurationTypeConverter durationTypeConverter;

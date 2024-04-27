@@ -35,3 +35,6 @@ vertx:
           - config-option: app.test.secret-3
             secret-name: dmytro-test-secret-3
             project-id: kuznya-p
+memory:
+  value: 13mb
+  duration: 17s

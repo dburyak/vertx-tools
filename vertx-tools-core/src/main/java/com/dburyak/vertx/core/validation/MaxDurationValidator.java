@@ -7,6 +7,7 @@ import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.validation.validator.constraints.ConstraintValidator;
 import io.micronaut.validation.validator.constraints.ConstraintValidatorContext;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
@@ -14,6 +15,7 @@ import java.time.Duration;
 /**
  * Validator implementation for {@link MaxDuration} annotation.
  */
+@Singleton
 @RequiredArgsConstructor
 public class MaxDurationValidator implements ConstraintValidator<MaxDuration, Duration> {
     private final DurationTypeConverter durationTypeConverter;

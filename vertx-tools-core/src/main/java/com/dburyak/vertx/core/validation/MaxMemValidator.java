@@ -7,11 +7,13 @@ import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.validation.validator.constraints.ConstraintValidator;
 import io.micronaut.validation.validator.constraints.ConstraintValidatorContext;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 /**
  * Validator implementation for {@link MaxMem} annotation.
  */
+@Singleton
 @RequiredArgsConstructor
 public class MaxMemValidator implements ConstraintValidator<MaxMem, Memory> {
     private final MemoryTypeConverter memoryTypeConverter;

@@ -7,11 +7,13 @@ import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.validation.validator.constraints.ConstraintValidator;
 import io.micronaut.validation.validator.constraints.ConstraintValidatorContext;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 /**
  * Validation annotation for minimal memory.
  */
+@Singleton
 @RequiredArgsConstructor
 public class MinMemValidator implements ConstraintValidator<MinMem, Memory> {
     private final MemoryTypeConverter memoryTypeConverter;

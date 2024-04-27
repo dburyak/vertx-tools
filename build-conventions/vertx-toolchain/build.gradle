@@ -13,5 +13,5 @@ repositories {
 dependencies {
     implementation 'com.dburyak.vertx.tools:dependency-management'
     implementation 'com.coditory.gradle:integration-test-plugin:1.4.5'
-    implementation 'io.micronaut.gradle:micronaut-minimal-plugin:4.3.3'
+    implementation 'io.micronaut.gradle:micronaut-minimal-plugin:4.3.8'
 }

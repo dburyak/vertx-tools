@@ -38,11 +38,12 @@ dependencies {
     implementation 'io.vertx:vertx-rx-java3'
 
     // micronaut
-    implementation 'io.micronaut:micronaut-aop'
-    implementation 'io.micronaut.validation:micronaut-validation'
     annotationProcessor 'io.micronaut:micronaut-inject-java'
     annotationProcessor 'io.micronaut.validation:micronaut-validation-processor'
+    implementation 'io.micronaut.validation:micronaut-validation'
     implementation 'io.micronaut:micronaut-context' // required for immutable config properties
+    implementation 'io.micronaut:micronaut-aop'
+//    runtimeOnly 'io.micronaut:micronaut-core' // for bean introspection
 
 
     // logging

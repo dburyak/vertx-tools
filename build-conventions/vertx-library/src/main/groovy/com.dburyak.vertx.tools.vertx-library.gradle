@@ -17,6 +17,7 @@ dependencies {
     api 'io.vertx:vertx-core'
     api 'io.vertx:vertx-rx-java3'
     api 'io.micronaut.validation:micronaut-validation'
+    api 'io.micronaut:micronaut-context'
     api 'io.micronaut:micronaut-aop'
     api 'org.slf4j:slf4j-api'
 }
