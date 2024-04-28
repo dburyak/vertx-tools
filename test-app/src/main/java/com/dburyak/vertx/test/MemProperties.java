@@ -26,7 +26,7 @@ public class MemProperties {
     @ConfigurationInject
     public MemProperties(
             @Bindable(defaultValue = "5mb") @MinMem("1mb") @MaxMem("10mb") @NotNull Memory value,
-            @Bindable(defaultValue = "13s") @MinDuration("1s") @MaxDuration("10s") @NotNull Duration duration) {
+            @Bindable(defaultValue = "5s") @MinDuration("1s") @MaxDuration("10s") @NotNull Duration duration) {
         this.value = value;
         this.duration = duration;
     }

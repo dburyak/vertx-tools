@@ -1,7 +1,10 @@
 package com.dburyak.vertx.core.config;
 
 import io.micronaut.core.convert.ConversionContext;
+import io.micronaut.core.convert.ConversionService;
+import io.micronaut.core.convert.DefaultMutableConversionService;
 import io.micronaut.core.convert.TypeConverter;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 
 import java.time.Duration;
@@ -37,6 +40,12 @@ public class DurationTypeConverter implements TypeConverter<String, Duration> {
                 return Optional.empty();
             }
         }
+    }
+
+    @PostConstruct
+    public void registerInShared() {
+        // doing this allows to use this converter in @Bindable(defaultValue = "10s")
+        ((DefaultMutableConversionService) ConversionService.SHARED).addConverter(String.class, Duration.class, this);
     }
 
     private Long longValueWithoutSuffix(String durationStr, String suffix) {

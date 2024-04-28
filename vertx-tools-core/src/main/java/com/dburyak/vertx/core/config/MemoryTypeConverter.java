@@ -1,7 +1,10 @@
 package com.dburyak.vertx.core.config;
 
 import io.micronaut.core.convert.ConversionContext;
+import io.micronaut.core.convert.ConversionService;
+import io.micronaut.core.convert.DefaultMutableConversionService;
 import io.micronaut.core.convert.TypeConverter;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 
 import java.util.Optional;
@@ -50,5 +53,11 @@ public class MemoryTypeConverter implements TypeConverter<String, Memory> {
                     Optional.of(longNum != null ? Memory.ofTb(longNum) : Memory.ofTb(doubleNum));
             default -> Optional.empty();
         };
+    }
+
+    @PostConstruct
+    public void registerInShared() {
+        // doing this allows to use this converter in @Bindable(defaultValue = "10mb")
+        ((DefaultMutableConversionService) ConversionService.SHARED).addConverter(String.class, Memory.class, this);
     }
 }

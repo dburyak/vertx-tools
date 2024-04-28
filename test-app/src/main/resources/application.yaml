@@ -36,5 +36,5 @@ vertx:
             secret-name: dmytro-test-secret-3
             project-id: kuznya-p
 memory:
-  value: 13mb
-  duration: 17s
+  value: 3mb
+  duration: 7s
