@@ -10,8 +10,7 @@ import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import io.micronaut.context.annotation.Requires;
-import io.reactivex.rxjava3.core.BackpressureStrategy;
-import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.exceptions.CompositeException;
 import io.vertx.rxjava3.core.Vertx;
@@ -90,12 +89,12 @@ public class PubSubImpl implements PubSub {
     }
 
     @Override
-    public Flowable<DeliverableMsg> subscribe(String subscription) {
+    public Observable<DeliverableMsg> subscribe(String subscription) {
         var vertxCtxExecutor = currentVertxCtxExecutor();
         var subscriberRef = new AtomicReference<Subscriber>();
-        return Flowable.<DeliverableMsg>create(emitter -> {
+        return Observable.<DeliverableMsg>create(emitter -> {
                     MessageReceiverWithAckResponse msgReceiver = (msg, ack) -> vertxCtxExecutor.execute(() -> {
-                        if (emitter.isCancelled()) {
+                        if (emitter.isDisposed()) {
                             ack.nack();
                         } else {
                             emitter.onNext(new DeliverableMsg(msg, new PubSubDelivery(ack)));
@@ -108,14 +107,14 @@ public class PubSubImpl implements PubSub {
                     subscriberRef.set(subscriber);
                     subscriber.startAsync();
                     subscribers.add(subscriber);
-                }, BackpressureStrategy.BUFFER)
+                    emitter.setCancellable(() -> {
+                        log.debug("pubsub subscriber observable cancelled: sub={}", subscription);
+                        stopSubscriber(subscriberRef);
+                    });
+                })
                 .doOnSubscribe(ignr -> log.debug("subscribing to pubsub: sub={}", subscription))
                 .doOnTerminate(() -> {
-                    log.debug("pubsub subscriber flowable terminated: sub={}", subscription);
-                    stopSubscriber(subscriberRef);
-                })
-                .doOnCancel(() -> {
-                    log.debug("pubsub subscriber flowable cancelled: sub={}", subscription);
+                    log.debug("pubsub subscriber observable terminated: sub={}", subscription);
                     stopSubscriber(subscriberRef);
                 });
     }
@@ -167,7 +166,7 @@ public class PubSubImpl implements PubSub {
             log.debug("stopping pubsub subscriber: sub={}", subName);
             subscriber.stopAsync();
 
-            // TODO: don't wait here for too long, if subscriber has dangling messages, it's safe to just ignorer it
+            // TODO: don't wait here for too long, if subscriber has dangling messages, it's safe to just ignore it
             // https://github.com/googleapis/google-cloud-java/issues/3752
 
             subscriber.awaitTerminated(30, SECONDS); // TODO: make timeout configurable

@@ -3,7 +3,7 @@ package com.dburyak.vertx.gcp.pubsub;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.PubsubMessage;
 import com.google.pubsub.v1.TopicName;
-import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 
 import java.util.Map;
@@ -40,9 +40,9 @@ public interface PubSub {
         return publish(topic.toString(), msg, attributes);
     }
 
-    Flowable<DeliverableMsg> subscribe(String subscription);
+    Observable<DeliverableMsg> subscribe(String subscription);
 
-    default Flowable<DeliverableMsg> subscribe(ProjectSubscriptionName subscription) {
+    default Observable<DeliverableMsg> subscribe(ProjectSubscriptionName subscription) {
         return subscribe(subscription.toString());
     }
 }

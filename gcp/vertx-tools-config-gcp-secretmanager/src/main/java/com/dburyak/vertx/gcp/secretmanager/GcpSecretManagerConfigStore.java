@@ -156,7 +156,7 @@ public class GcpSecretManagerConfigStore implements ConfigStore {
                 .toList()
                 // need blocking wait here as config stores shutdown is actually synchronous (as of vertx 4.5.1)
                 // if we don't wait, then vertx along with vertx rx schedulers and subscriptionAdminClient may be
-                // closed before start subscription deletions
+                // closed before we start subscription deletions
                 .blockingGet();
         var deletionDuration = Duration.between(startedAt, Instant.now());
         log.debug("gsm config store closed: duration={}, numSubscriptionsDeleted={}",
