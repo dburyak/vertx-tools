@@ -71,7 +71,7 @@ public class EventBusFactory {
                         try {
                             var defaultTypeStr = codecProps.getDefaultTypes().get(i);
                             var defaultType = Class.forName(defaultTypeStr);
-                            var namedCodec = NamedMessageCodec.of(codecProps.getName() + "-" + i, codec);
+                            var namedCodec = NamedMessageCodec.of(codecProps.getName() + "-" + defaultTypeStr, codec);
                             log.info("register eb default codec: forType={}, codec={}", defaultType, namedCodec);
                             eb.registerDefaultCodec(defaultType, namedCodec);
                         } catch (ClassNotFoundException e) {
