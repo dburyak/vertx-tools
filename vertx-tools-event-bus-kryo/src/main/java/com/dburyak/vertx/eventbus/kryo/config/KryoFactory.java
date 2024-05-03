@@ -1,7 +1,6 @@
-package com.dburyak.vertx.eventbus.kryo;
+package com.dburyak.vertx.eventbus.kryo.config;
 
 import com.dburyak.vertx.core.di.VertxThreadScope;
-import com.dburyak.vertx.eventbus.kryo.config.KryoCodecProperties;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.SerializerFactory;
 import com.esotericsoftware.kryo.io.Input;
@@ -9,6 +8,8 @@ import com.esotericsoftware.kryo.io.Output;
 import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
+
+import java.util.List;
 
 /**
  * Factory for Kryo related default implementations beans.
@@ -22,16 +23,20 @@ public class KryoFactory {
      * thread has its own instance of Kryo.
      *
      * @param defaultKryoSerializerFactory default serializer factory
+     * @param configurers list of Kryo configurers
      *
      * @return Kryo instance
      */
     @Bean
     @VertxThreadScope
     @Requires(missingBeans = Kryo.class)
-    public Kryo kryo(SerializerFactory<?> defaultKryoSerializerFactory) {
+    public Kryo kryo(SerializerFactory<?> defaultKryoSerializerFactory, List<KryoConfigurer> configurers) {
         var kryo = new Kryo();
         kryo.setDefaultSerializer(defaultKryoSerializerFactory);
         kryo.setRegistrationRequired(false);
+        for (var configurer : configurers) {
+            kryo = configurer.configure(kryo);
+        }
         return kryo;
     }
 
