@@ -23,3 +23,22 @@ dependencies {
     vertxToolsInternal platform(project(':build-conventions:versions'))
     annotationProcessor platform(project(':build-conventions:versions'))
 }
+
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+// https://docs.gradle.org/current/userguide/dependency_locking.html#lock_all_configurations_in_one_build_execution
+tasks.register('updateLockedVersions') {
+    notCompatibleWithConfigurationCache('Filters configurations at execution time')
+    doFirst {
+        assert gradle.startParameter.writeDependencyLocks:
+                "$path must be run from the command line with the `--write-locks` flag"
+    }
+    doLast {
+        configurations.findAll {
+            // Add any custom filtering on the configurations to be resolved
+            it.canBeResolved
+        }.each { it.resolve() }
+    }
+}

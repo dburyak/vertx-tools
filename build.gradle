@@ -1,7 +1,3 @@
 wrapper {
     gradleVersion = project.property('org.gradle.version')
 }
-
-dependencyLocking {
-    lockAllConfigurations()
-}

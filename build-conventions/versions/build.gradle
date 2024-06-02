@@ -9,16 +9,16 @@ javaPlatform {
 dependencies {
     // micronautVersion is defined in gradle.properties (in repo root)
     api platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
-    api platform('com.fasterxml.jackson:jackson-bom:[2.17, 3)!!2.17.0')
+    api platform('com.fasterxml.jackson:jackson-bom:[2.17, 3)!!2.17.1')
     api platform('org.apache.logging.log4j:log4j-bom:[2.23, 3)!!2.23.1')
-    api platform('org.assertj:assertj-bom:[3.25, 4)!!3.25.3')
+    api platform('org.assertj:assertj-bom:[3.26, 4)!!3.26.0')
     api platform('org.spockframework:spock-bom:2.4-M4-groovy-4.0')
-    api platform('com.google.cloud:libraries-bom:[26.37, 27)!!26.37.0')
+    api platform('com.google.cloud:libraries-bom:[26.40, 27)!!26.40.0')
 
     constraints {
 
         // vertx
-        def vertxVersion = '[4, 5)!!4.5.7'
+        def vertxVersion = '[4, 5)!!4.5.8'
         api "io.vertx:vertx-core:$vertxVersion"
         api "io.vertx:vertx-rx-java3:$vertxVersion"
         api "io.vertx:vertx-lang-groovy:$vertxVersion"
@@ -33,7 +33,7 @@ dependencies {
         api "org.slf4j:slf4j-nop:$slf4jVersion"
         api 'com.esotericsoftware:kryo:[5.6, 6)!!5.6.0'
 
-        api 'net.bytebuddy:byte-buddy:[1.14, 2)!!1.14.14'
-        api 'org.objenesis:objenesis:[3.3, 4)!!3.3'
+        api 'net.bytebuddy:byte-buddy:[1.14, 2)!!1.14.17'
+        api 'org.objenesis:objenesis:[3.3, 4)!!3.4'
     }
 }
