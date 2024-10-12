@@ -27,7 +27,7 @@ dependencies {
         api "io.vertx:vertx-config:$vertxVersion"
 
         api 'org.projectlombok:lombok:[1.18.32, 1.19)!!1.18.32'
-        api 'org.apache.groovy:groovy-all:[4.0, 5)!!4.0.21'
+        api 'org.apache.groovy:groovy-all:[4.0, 5)!!4.0.23'
         def slf4jVersion = '[2, 3)!!2.0.13'
         api "org.slf4j:slf4j-api:$slf4jVersion"
         api "org.slf4j:slf4j-nop:$slf4jVersion"
