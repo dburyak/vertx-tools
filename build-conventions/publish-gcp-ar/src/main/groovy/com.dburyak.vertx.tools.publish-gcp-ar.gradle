@@ -1,6 +1,35 @@
 plugins {
-    id 'maven-publish' apply false
+    id 'maven-publish'
     id 'com.google.cloud.artifactregistry.gradle-plugin' apply false
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+javadoc {
+    options.addBooleanOption('html5', true)
+}
+
+publishing {
+    publications {
+        library(MavenPublication) {
+            from components.java
+            versionMapping {
+                usage(Usage.JAVA_API) {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage(Usage.JAVA_RUNTIME) {
+                    fromResolutionResult()
+                }
+            }
+        }
+    }
+
+    repositories {
+        mavenLocal()
+    }
 }
 
 def enabled = findProperty('publishToGcpArtifactRegistry') ?: System.getenv('GCP_AR_PUBLISH_ENABLED')?.toBoolean()
@@ -14,34 +43,11 @@ if (enabled) {
                 'publish to GCP Artifact Registry')
     }
 
-    project.plugins.apply 'maven-publish'
     project.plugins.apply 'com.google.cloud.artifactregistry.gradle-plugin'
 
-    java {
-        withJavadocJar()
-        withSourcesJar()
-    }
-
-    javadoc {
-        options.addBooleanOption('html5', true)
-    }
-
     publishing {
-        publications {
-            library(MavenPublication) {
-                from components.java
-                versionMapping {
-                    usage(Usage.JAVA_API) {
-                        fromResolutionOf('runtimeClasspath')
-                    }
-                    usage(Usage.JAVA_RUNTIME) {
-                        fromResolutionResult()
-                    }
-                }
-            }
-        }
-
         repositories {
+            mavenLocal()
             maven { url "artifactregistry://$location-maven.pkg.dev/$gcpProjectId/$repoName" }
         }
     }
