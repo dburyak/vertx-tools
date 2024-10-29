@@ -11,5 +11,5 @@ repositories {
 }
 
 dependencies {
-    implementation 'gradle.plugin.com.google.cloud.artifactregistry:artifactregistry-gradle-plugin:2.2.1'
+    implementation 'gradle.plugin.com.google.cloud.artifactregistry:artifactregistry-gradle-plugin:2.2.2'
 }
