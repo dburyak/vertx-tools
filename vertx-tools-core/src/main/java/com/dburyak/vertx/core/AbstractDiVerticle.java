@@ -63,6 +63,7 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
 
     @Override
     public final void init(Vertx vertx, Context context) {
+        super.init(vertx, context);
         // this call triggers DI on the vertx event loop thread assigned to this verticle
         appCtx.registerSingleton(this);
         doOnInit(vertx, context);
