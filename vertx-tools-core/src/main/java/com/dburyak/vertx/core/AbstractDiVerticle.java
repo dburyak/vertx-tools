@@ -87,10 +87,8 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
                                         .orElse(Object.class);
                                 return requiredVerticleType.isAssignableFrom(thisVerticleClass);
                             })
-                            .map(beanDef -> {
-                                // this triggers synchronous initialization of the bean
-                                return appCtx.getBean(beanDef.getBeanType());
-                            })
+                            // this triggers synchronous initialization of the bean
+                            .map(beanDef -> appCtx.getBean(beanDef.getBeanType()))
                             .filter(AsyncAction.class::isInstance)
                             .map(bean -> ((AsyncAction) bean).execute())
                             .toList();
