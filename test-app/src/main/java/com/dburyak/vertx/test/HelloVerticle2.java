@@ -24,7 +24,7 @@ public class HelloVerticle2 extends AbstractDiVerticle {
     private MessageConsumer echoMsgConsumer;
 
     @Override
-    public Completable rxStart() {
+    public Completable startup() {
         return Completable.fromRunnable(() -> {
             log.info("hello from verticle 2: instance={}, elBean={}, vBean={}",
                     this, sampleEventLoopBean, sampleVerticleBean);

@@ -24,7 +24,7 @@ public class HelloVerticle1 extends AbstractDiVerticle {
     private Disposable configPoll;
 
     @Override
-    public Completable rxStart() {
+    public Completable startup() {
         return Completable.fromRunnable(() -> {
             log.info("hello from verticle 1: instance={}, elBean={}, vBean={}",
                     this, sampleEventLoopBean, sampleVerticleBean);

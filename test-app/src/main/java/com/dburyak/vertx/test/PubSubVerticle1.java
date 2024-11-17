@@ -21,7 +21,7 @@ public class PubSubVerticle1 extends AbstractDiVerticle {
     private Disposable publisher;
 
     @Override
-    public Completable rxStart() {
+    public Completable startup() {
         return Completable.fromRunnable(() -> {
             log.debug("subscribing to pubsub: sub={}", subName);
             subscription = pubSub.subscribe(subName)

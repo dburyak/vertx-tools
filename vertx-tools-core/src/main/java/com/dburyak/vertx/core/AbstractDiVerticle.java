@@ -1,8 +1,13 @@
 package com.dburyak.vertx.core;
 
 import com.dburyak.vertx.core.di.VerticleBeanBaseClass;
+import com.dburyak.vertx.core.di.VerticleStartup;
 import io.micronaut.context.ApplicationContext;
+import io.micronaut.inject.qualifiers.Qualifiers;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.Context;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.rxjava3.core.AbstractVerticle;
 import jakarta.inject.Inject;
@@ -67,6 +72,46 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
         // this call triggers DI on the vertx event loop thread assigned to this verticle
         appCtx.registerSingleton(this);
         doOnInit(vertx, context);
+    }
+
+    @Override
+    public final Completable rxStart() {
+        var thisVerticleClass = getClass();
+        return Single.fromCallable(() ->
+                        appCtx.getBeanDefinitions(Object.class, Qualifiers.byStereotype(VerticleStartup.class)))
+                .flatMapCompletable(allVerticleStartupBeans -> {
+                    var asyncVerticleStartupActions = allVerticleStartupBeans.stream()
+                            .filter(beanDef -> {
+                                var metadata = beanDef.getAnnotationMetadata();
+                                var requiredVerticleType = metadata.classValue(VerticleStartup.class, "value")
+                                        .orElse(Object.class);
+                                return requiredVerticleType.isAssignableFrom(thisVerticleClass);
+                            })
+                            .map(beanDef -> {
+                                // this triggers synchronous initialization of the bean
+                                return appCtx.getBean(beanDef.getBeanType());
+                            })
+                            .filter(AsyncAction.class::isInstance)
+                            .map(bean -> ((AsyncAction) bean).execute())
+                            .toList();
+                    return Completable.merge(asyncVerticleStartupActions);
+                })
+                .andThen(startup());
+    }
+
+    @Override
+    public final void start(Promise<Void> startFuture) {
+        rxStart().subscribe(startFuture::complete, startFuture::fail);
+    }
+
+    /**
+     * Subclasses can define verticle startup logic in this method. At the point of this method invocation, all the
+     * dependencies are already injected and initialized, including {@link com.dburyak.vertx.core.di.VerticleStartup}
+     * beans.
+     */
+    protected Completable startup() {
+        // subclasses can define startup logic in this method
+        return Completable.complete();
     }
 
     /**

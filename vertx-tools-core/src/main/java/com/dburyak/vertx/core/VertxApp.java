@@ -1,11 +1,15 @@
 package com.dburyak.vertx.core;
 
 import com.dburyak.vertx.core.di.AppBootstrap;
+import com.dburyak.vertx.core.di.AppStartup;
+import com.dburyak.vertx.core.di.ForEventLoop;
 import com.dburyak.vertx.core.util.Tuple;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.inject.qualifiers.Qualifiers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Scheduler;
+import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.rxjava3.core.Vertx;
 import lombok.extern.slf4j.Slf4j;
@@ -58,8 +62,20 @@ public abstract class VertxApp {
                         log.info("starting vertx application");
                         appCtx = ApplicationContext.run();
                         var vertx = appCtx.getBean(Vertx.class);
-                        log.info("initialization");
+                        log.info("bootstrap phase");
                         appCtx.getBeansOfType(Object.class, Qualifiers.byStereotype(AppBootstrap.class));
+                        log.info("startup phase");
+                        var elScheduler = appCtx.getBean(Scheduler.class, Qualifiers.byStereotype(ForEventLoop.class));
+                        Single.fromCallable(() ->
+                                        appCtx.getBeansOfType(Object.class, Qualifiers.byStereotype(AppStartup.class)))
+                                .flatMapCompletable(startupBeans ->
+                                        Completable.merge(startupBeans.stream()
+                                                .filter(AsyncAction.class::isInstance)
+                                                .map(AsyncAction.class::cast)
+                                                .map(AsyncAction::execute)
+                                                .toList()))
+                                .subscribeOn(elScheduler)
+                                .blockingAwait(); // blocks "main" thread, not the EL
                         var deployments = verticlesDeploymentDescriptors().stream()
                                 .flatMap(d -> {
                                     var verticleDeploymentOpts = d.getDeploymentOptions();

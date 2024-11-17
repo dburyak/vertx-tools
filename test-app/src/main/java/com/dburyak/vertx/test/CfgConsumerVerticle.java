@@ -15,7 +15,7 @@ public class CfgConsumerVerticle extends AbstractDiVerticle {
     private ConfigRetriever cfgRetriever;
 
     @Override
-    public Completable rxStart() {
+    public Completable startup() {
         return cfgRetriever.rxGetConfig()
                 .doOnSuccess(cfg -> log.info("initial config: {}", cfg))
                 .ignoreElement().andThen(Completable.fromRunnable(() -> {
