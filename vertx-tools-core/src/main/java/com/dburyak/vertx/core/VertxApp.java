@@ -46,6 +46,17 @@ public abstract class VertxApp {
     protected abstract Collection<VerticleDeploymentDescriptor> verticlesDeploymentDescriptors();
 
     /**
+     * Application ctx configurers to tweak DI application context before it is started. Is useful to control which
+     * config files to load, which config mechanisms to enable/disable, etc. By default, returns an empty list.
+     * Implementations can override this method to provide custom configurers.
+     *
+     * @return list of application context configurers
+     */
+    protected List<AppCtxConfigurer> appCtxConfigurers() {
+        return List.of();
+    }
+
+    /**
      * Start DI enabled vertx application.
      *
      * @return completable that completes when application is started
@@ -60,7 +71,11 @@ public abstract class VertxApp {
                             return Observable.empty();
                         }
                         log.info("starting vertx application");
-                        appCtx = ApplicationContext.run();
+                        var appCtxBuilder = ApplicationContext.builder();
+                        for (var appCtxConfigurer : appCtxConfigurers()) {
+                            appCtxBuilder = appCtxConfigurer.configure(appCtxBuilder);
+                        }
+                        appCtx = appCtxBuilder.build().start();
                         var vertx = appCtx.getBean(Vertx.class);
                         log.info("bootstrap phase");
                         appCtx.getBeansOfType(Object.class, Qualifiers.byStereotype(AppBootstrap.class));
