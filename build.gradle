@@ -3,7 +3,7 @@ plugins {
     id 'groovy'
     id 'maven-publish'
     id 'com.palantir.git-version' version '0.12.3'
-    id "com.coditory.integration-test" version "1.1.11"
+    id "com.coditory.integration-test" version "1.4.0"
     id 'io.micronaut.library' version '1.2.0'
 }
 
@@ -92,10 +92,10 @@ dependencies {
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${junitEngineVersion}"
 
     // spock
-    testCompile "org.spockframework:spock-core:${spockVersion}"
-    testCompile "org.spockframework:spock-junit4:${spockVersion}"
-    testRuntime "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
-    testRuntime "org.objenesis:objenesis:${objenesisVersion}"
+//    testCompile "org.spockframework:spock-core:${spockVersion}"
+//    testCompile "org.spockframework:spock-junit4:${spockVersion}"
+//    testRuntime "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
+//    testRuntime "org.objenesis:objenesis:${objenesisVersion}"
 
     // vertx testing
     testImplementation "io.vertx:vertx-unit:${vertxVersion}"

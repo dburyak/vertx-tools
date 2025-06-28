@@ -1,7 +1,9 @@
 package com.dburyak.vertx.core.deployment;
 
-public interface DeploymentConfigParser {
-    boolean canParse(DeploymentConfigFormat format);
+import java.io.InputStream;
 
-    DeploymentConfigFormat parse(Object encodedRoutingConfig);
+public interface DeploymentConfigParser {
+    boolean canParse(String deploymentConfigPath);
+
+    DeploymentConfigFormat parse(InputStream encodedRoutingConfig);
 }
