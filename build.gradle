@@ -3,7 +3,7 @@ plugins {
     id 'groovy'
     id 'maven-publish'
     id 'com.palantir.git-version' version '0.12.3'
-    id "com.coditory.integration-test" version "1.4.0"
+    // id "com.coditory.integration-test" version "1.4.0"
     id 'io.micronaut.library' version '1.2.0'
 }
 
@@ -13,7 +13,13 @@ ext {
     githubArtifactRepoName = project.name
 }
 
-group = 'com.dburyak.vertx.tools.core'
+java {
+    group = 'com.dburyak.vertx.tools.core'
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 version gitVersion()
 description = 'Basic tools for vertx based projects'
 ext { isRelease = versionDetails().isCleanTag }
@@ -22,12 +28,8 @@ if (!isRelease) {
 }
 archivesBaseName = project.name
 
-sourceCompatibility = 15
-targetCompatibility = 15
-
 repositories {
     mavenLocal()
-    jcenter()
     mavenCentral()
     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
@@ -42,8 +44,8 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    integrationCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-    integrationAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    // integrationCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    // integrationAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     implementation "org.codehaus.groovy:groovy-all:${groovyVersion}"
     implementation "io.vertx:vertx-core:${vertxVersion}"
