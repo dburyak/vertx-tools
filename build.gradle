@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'jvm-test-suite'
     id 'groovy'
     id 'maven-publish'
     id 'com.palantir.git-version' version '0.12.3'
@@ -98,6 +99,10 @@ dependencies {
 //    testCompile "org.spockframework:spock-junit4:${spockVersion}"
 //    testRuntime "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
 //    testRuntime "org.objenesis:objenesis:${objenesisVersion}"
+    testImplementation "org.spockframework:spock-core:$spockVersion"
+    testRuntimeOnly "net.bytebuddy:byte-buddy:$byteBuddyVersion"
+//    testRuntimeOnly 'cglib:cglib-nodep'
+    testRuntimeOnly "org.objenesis:objenesis:$objenesisVersion"
 
     // vertx testing
     testImplementation "io.vertx:vertx-unit:${vertxVersion}"
@@ -191,7 +196,31 @@ wrapper {
     distributionType = 'ALL'
 }
 
-tasks.withType(Test) {
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
     systemProperty 'vertx.logger-delegate-factory-class-name', 'io.vertx.core.logging.SLF4JLogDelegateFactory'
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+testing {
+    suites {
+        test {
+            useSpock(spockVersion)
+        }
+        integrationTest(JvmTestSuite) {
+            useSpock(spockVersion)
+            dependencies {
+                implementation project()
+            }
+            targets {
+                all {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
+        }
+    }
 }
