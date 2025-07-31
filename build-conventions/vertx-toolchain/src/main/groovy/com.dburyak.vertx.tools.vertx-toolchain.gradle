@@ -3,7 +3,6 @@ plugins {
     id 'groovy'
     id 'com.dburyak.vertx.tools.dependency-management'
     id 'io.micronaut.minimal.library'
-    id 'com.coditory.integration-test'
     id 'jacoco'
 }
 

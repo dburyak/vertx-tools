@@ -9,16 +9,16 @@ javaPlatform {
 dependencies {
     // micronautVersion is defined in gradle.properties (in repo root)
     api platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
-    api platform('com.fasterxml.jackson:jackson-bom:[2.18, 3)!!2.18.2')
-    api platform('org.apache.logging.log4j:log4j-bom:[2.24, 3)!!2.24.3')
+    api platform('com.fasterxml.jackson:jackson-bom:[2.18, 3)!!2.19.2')
+    api platform('org.apache.logging.log4j:log4j-bom:[2.24, 3)!!2.25.1')
     api platform('org.assertj:assertj-bom:[3.26, 4)!!3.27.3')
-    api platform('org.spockframework:spock-bom:2.4-M5-groovy-4.0')
-    api platform('com.google.cloud:libraries-bom:[26.49, 27)!!26.53.0')
+    api platform('org.spockframework:spock-bom:2.4-M6-groovy-4.0')
+    api platform('com.google.cloud:libraries-bom:[26.49, 27)!!26.64.0')
 
     constraints {
 
         // vertx
-        def vertxVersion = '[4, 5)!!4.5.11'
+        def vertxVersion = '[5, 6)!!5.0.1'
         api "io.vertx:vertx-core:$vertxVersion"
         api "io.vertx:vertx-rx-java3:$vertxVersion"
         api "io.vertx:vertx-lang-groovy:$vertxVersion"
@@ -26,14 +26,14 @@ dependencies {
         api "io.vertx:vertx-hazelcast:$vertxVersion"
         api "io.vertx:vertx-config:$vertxVersion"
 
-        api 'org.projectlombok:lombok:[1.18.34, 1.19)!!1.18.36'
-        api 'org.apache.groovy:groovy-all:[4.0, 5)!!4.0.24'
-        def slf4jVersion = '[2, 3)!!2.0.16'
+        api 'org.projectlombok:lombok:[1.18.34, 1.19)!!1.18.38'
+        api 'org.apache.groovy:groovy-all:[4.0, 5)!!4.0.28'
+        def slf4jVersion = '[2, 3)!!2.0.17'
         api "org.slf4j:slf4j-api:$slf4jVersion"
         api "org.slf4j:slf4j-nop:$slf4jVersion"
         api 'com.esotericsoftware:kryo:[5.6, 6)!!5.6.2'
 
-        api 'net.bytebuddy:byte-buddy:[1.15.7, 2)!!1.16.1'
+        api 'net.bytebuddy:byte-buddy:[1.15.7, 2)!!1.17.6'
         api 'org.objenesis:objenesis:[3.4, 4)!!3.4'
     }
 }
