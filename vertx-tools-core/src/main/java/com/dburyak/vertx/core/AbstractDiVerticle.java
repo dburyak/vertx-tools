@@ -1,6 +1,7 @@
 package com.dburyak.vertx.core;
 
 import com.dburyak.vertx.core.di.VerticleBeanBaseClass;
+import com.dburyak.vertx.core.di.VerticleScopeImpl;
 import com.dburyak.vertx.core.di.VerticleStartup;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.inject.qualifiers.Qualifiers;
@@ -10,7 +11,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.rxjava3.core.AbstractVerticle;
-import jakarta.inject.Inject;
 import lombok.Setter;
 
 /**
@@ -18,7 +18,7 @@ import lombok.Setter;
  * <p>
  * This is a base building block for actor-based system that adds important features on top of Vertx
  * {@link io.vertx.core.AbstractVerticle}/{@link AbstractVerticle}. Implementations should be used through
- * {@link VertxApp} instead of default Vertx mechanisms otherwise DI won't work.
+ * {@link VertxDiApp} instead of default Vertx mechanisms otherwise DI won't work.
  * <p>
  * DI verticles have 2 major limitations compared to regular DI beans:
  * <ul>
@@ -36,7 +36,7 @@ import lombok.Setter;
  * Subclasses should not put any scope annotations since instantiation and initialization of DI Verticles
  * happens not through regular DI mechanisms but through manual bean creation and injection.
  * Instead, use standard vertx verticle {@link io.vertx.core.DeploymentOptions} specified as part of
- * {@link VerticleDeploymentDescriptor} provided for {@link VertxApp} for controlling number of instances.
+ * {@link VerticleDeploymentDescriptor} provided for {@link VertxDiApp} for controlling number of instances.
  * <p>
  * DiVerticle deployment happens in five phases:
  * <ul>
@@ -60,10 +60,8 @@ import lombok.Setter;
 public abstract class AbstractDiVerticle extends AbstractVerticle {
 
     /**
-     * DI application context. Is set by {@link VertxApp} during verticle deployment.
-     * TODO: make it final, set it in constructor
+     * DI application context. Is set by {@link VertxDiApp} during verticle deployment.
      */
-    @Setter
     protected volatile ApplicationContext appCtx;
 
     @Override
@@ -77,8 +75,8 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
     @Override
     public final Completable rxStart() {
         var thisVerticleClass = getClass();
-        return Single.fromCallable(() ->
-                        appCtx.getBeanDefinitions(Object.class, Qualifiers.byStereotype(VerticleStartup.class)))
+        return Single.fromCallable(() -> appCtx.getBeanDefinitions(Object.class,
+                        Qualifiers.byStereotype(VerticleStartup.class)))
                 .flatMapCompletable(allVerticleStartupBeans -> {
                     var asyncVerticleStartupActions = allVerticleStartupBeans.stream()
                             .filter(beanDef -> {
@@ -89,8 +87,9 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
                             })
                             // this triggers synchronous initialization of the bean
                             .map(beanDef -> appCtx.getBean(beanDef.getBeanType()))
-                            .filter(AsyncAction.class::isInstance)
-                            .map(bean -> ((AsyncAction) bean).execute())
+                            .filter(AsyncInitializable.class::isInstance)
+                            .map(AsyncInitializable.class::cast)
+                            .map(AsyncInitializable::initAsync)
                             .toList();
                     return Completable.merge(asyncVerticleStartupActions);
                 })
@@ -100,6 +99,31 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
     @Override
     public final void start(Promise<Void> startFuture) {
         rxStart().subscribe(startFuture::complete, startFuture::fail);
+    }
+
+    @Override
+    public final void start() throws Exception {
+        // fixed as no-op here to avoid confusion in subclasses - allow only "startup" method to be overridden as the
+        // only way to define verticle startup logic
+    }
+
+    @Override
+    public final Completable rxStop() {
+        return shutdown().andThen(Completable.defer(() -> {
+            var verticleScopeImpl = appCtx.getBean(VerticleScopeImpl.class);
+            return verticleScopeImpl.destroyScopeForThisVerticle();
+        }));
+    }
+
+    @Override
+    public final void stop(Promise<Void> stopFuture) throws Exception {
+        rxStop().subscribe(stopFuture::complete, stopFuture::fail);
+    }
+
+    @Override
+    public final void stop() throws Exception {
+        // fixed as no-op here to avoid confusion in subclasses - allow only "shutdown" method to be overridden as
+        // the only way to define verticle shutdown logic
     }
 
     /**
@@ -113,6 +137,16 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
     }
 
     /**
+     * Subclasses can define verticle shutdown logic in this method. Is invoked as the very first step of verticle
+     * shutdown routine, if we only undeploy some verticle(s). And therefore as the very first step of the application
+     * shutdown routine if we are shutting down the whole application.
+     */
+    protected Completable shutdown() {
+        // subclasses can define shutdown logic in this method
+        return Completable.complete();
+    }
+
+    /**
      * Subclasses can extend verticle initialization behavior with this method.
      *
      * @param vertx vertx
@@ -122,13 +156,13 @@ public abstract class AbstractDiVerticle extends AbstractVerticle {
         // subclasses can extend verticle initialization behavior with this method
     }
 
-    /**
-     * Setter for vertx instance that is used for dependency injection.
-     *
-     * @param vertx vertx instance
-     */
-    @Inject
-    protected void setVertx(io.vertx.rxjava3.core.Vertx vertx) {
+    // package private setter called by VertxDiApp, not supposed to be used for any other purposes
+    void setVertx(io.vertx.rxjava3.core.Vertx vertx) {
         this.vertx = vertx;
+    }
+
+    // package private setter called by VertxDiApp, not supposed to be used for any other purposes
+    void setAppCtx(ApplicationContext appCtx) {
+        this.appCtx = appCtx;
     }
 }

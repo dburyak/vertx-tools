@@ -1,5 +1,6 @@
 package com.dburyak.vertx.core.di;
 
+import com.dburyak.vertx.core.AsyncInitializable;
 import jakarta.inject.Qualifier;
 
 import java.lang.annotation.Documented;
@@ -13,13 +14,18 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <p>
  * Beans are requested only once per application, so they should be singletons. Such beans are expected to either do
  * their initialization work in {@link jakarta.annotation.PostConstruct} methods. Or they can implement
- * {@link com.dburyak.vertx.core.AsyncAction} interface and do their initialization work asynchronously in the
- * {@link com.dburyak.vertx.core.AsyncAction#execute()} method. Async action is guaranteed to be executed on vertx
- * context. Ordering of async actions is not supported as of now, no any assumptions should be made about the order of
- * async actions execution.
+ * {@link AsyncInitializable} interface and do their initialization work asynchronously in the
+ * {@link AsyncInitializable#initAsync()} method. Async action is guaranteed to be executed on vertx context. Ordering
+ * of async actions is not supported as of now, no any assumptions should be made about the order of async actions
+ * execution.
  * <p>
  * Typical usage: eagerly create connections to DB so that some are available when the first requests arrive,
  * pre-populate caches with rarely changing data to avoid cold starts, etc.
+ * <p>
+ * <b>WARNING:</b> use this annotation sparingly, as it results in eager initialization of beans that are present on
+ * the classpath but are not actually needed for the application. At best, this will result in a slightly longer startup
+ * time, at worst - in initialization of resources that are not actually needed and may even lead to errors and
+ * application startup failure.
  */
 @Qualifier
 @Retention(RUNTIME)

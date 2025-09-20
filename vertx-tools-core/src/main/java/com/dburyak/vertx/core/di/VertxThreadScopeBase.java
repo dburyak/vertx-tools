@@ -1,8 +1,11 @@
 package com.dburyak.vertx.core.di;
 
+import com.dburyak.vertx.core.AsyncCloseable;
 import io.micronaut.context.scope.AbstractConcurrentCustomScope;
 import io.micronaut.context.scope.CreatedBean;
 import io.micronaut.inject.BeanIdentifier;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Observable;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
@@ -15,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @param <T> scope annotation type
  */
-public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractConcurrentCustomScope<T> {
+public abstract class VertxThreadScopeBase<T extends Annotation> extends AbstractConcurrentCustomScope<T> {
 
     /**
      * Map of all beans created in the scope. Key is thread name. Value is map of beans created for given thread.
@@ -27,7 +30,7 @@ public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractCo
      *
      * @param annotationType scope annotation type specific for the implementation subclass
      */
-    protected VertxCtxScopeBase(Class<T> annotationType) {
+    protected VertxThreadScopeBase(Class<T> annotationType) {
         super(annotationType);
     }
 
@@ -55,11 +58,28 @@ public abstract class VertxCtxScopeBase<T extends Annotation> extends AbstractCo
     }
 
     /**
-     * Destroy all beans in the scope on close.
+     * Synchronously destroy all beans in the scope on close.
      */
     @Override
     public final void close() {
         beans.values().forEach(this::destroyScope);
+    }
+
+    /**
+     * Asynchronously dispose of all {@link com.dburyak.vertx.core.AsyncCloseable} beans in the scope for ALL vertx
+     * contexts/threads.
+     * This method is supposed to be called right before the synchronous {@link #stop()} method for the scope, during
+     * the application shutdown routine.
+     */
+    public final Completable stopAsync() {
+        return Observable.fromIterable(beans.values())
+                .flatMapIterable(Map::values)
+                .map(CreatedBean::bean)
+                .filter(AsyncCloseable.class::isInstance)
+                .cast(AsyncCloseable.class)
+                .flatMapCompletable(AsyncCloseable::closeAsync);
+        // Note that we do not remove the beans from the container map yet, as that will be done in the synchronous
+        // close() method that is supposed to be called right after the resulting Completable is completed.
     }
 
     /**

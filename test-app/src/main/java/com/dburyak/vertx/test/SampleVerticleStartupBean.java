@@ -5,7 +5,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
-@VerticleStartup
+@VerticleStartup(Object.class)
 @Singleton
 @Slf4j
 public class SampleVerticleStartupBean {

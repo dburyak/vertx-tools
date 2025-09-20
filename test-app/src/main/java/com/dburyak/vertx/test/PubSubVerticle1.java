@@ -38,7 +38,7 @@ public class PubSubVerticle1 extends AbstractDiVerticle {
     }
 
     @Override
-    public Completable rxStop() {
+    public Completable shutdown() {
         return Completable.fromRunnable(() -> {
             log.debug("disposing pubsub verticle for topic: topic={}", topicName);
             publisher.dispose();

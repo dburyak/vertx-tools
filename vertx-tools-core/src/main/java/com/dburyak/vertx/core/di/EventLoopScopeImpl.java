@@ -8,7 +8,7 @@ import jakarta.inject.Singleton;
  * @see EventLoopScope
  */
 @Singleton
-public class EventLoopScopeImpl extends VertxCtxScopeBase<EventLoopScope> {
+public class EventLoopScopeImpl extends VertxThreadScopeBase<EventLoopScope> {
 
     /**
      * Default constructor.

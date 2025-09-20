@@ -1,7 +1,7 @@
 package com.dburyak.vertx.test;
 
 import com.dburyak.vertx.core.VerticleDeploymentDescriptor;
-import com.dburyak.vertx.core.VertxApp;
+import com.dburyak.vertx.core.VertxDiApp;
 import io.vertx.core.DeploymentOptions;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,7 +11,7 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Slf4j
-public class TestApp extends VertxApp {
+public class TestApp extends VertxDiApp {
 
     public static void main(String[] args) {
         log.info("starting ....");

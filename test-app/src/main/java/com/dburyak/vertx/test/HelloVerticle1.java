@@ -50,7 +50,7 @@ public class HelloVerticle1 extends AbstractDiVerticle {
     }
 
     @Override
-    public Completable rxStop() {
+    public Completable shutdown() {
         return Completable.fromRunnable(() -> {
             log.info("stop verticle 1: instance={}, elBean={}, vBean={}",
                     this, sampleEventLoopBean, sampleVerticleBean);

@@ -6,7 +6,7 @@ import jakarta.inject.Singleton;
  * Vertx worker bean scope implementation.
  */
 @Singleton
-public class WorkerScopeImpl extends VertxCtxScopeBase<WorkerScope> {
+public class WorkerScopeImpl extends VertxThreadScopeBase<WorkerScope> {
 
     /**
      * Default constructor.
