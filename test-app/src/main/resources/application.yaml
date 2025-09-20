@@ -2,7 +2,7 @@ vertx:
   di:
     scope:
       thread-local:
-        cleanup-checker-period: 7.2s
+        cleanup-checker-period: ${THREAD_LOCAL_CLEANUP_PERIOD:7.2s}
   event-bus:
     codec:
       kryo:
