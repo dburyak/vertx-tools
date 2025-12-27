@@ -62,7 +62,7 @@ public class GcpSecretManagerConfigProperties {
 
     @ConfigurationInject
     public GcpSecretManagerConfigProperties(
-            @Bindable(defaultValue = "true") @Nullable boolean enabled,
+            @Bindable(defaultValue = "true") boolean enabled,
             @Bindable(defaultValue = "false") boolean optional,
             @Nullable String projectId,
             @Bindable(defaultValue = "false") boolean refreshEnabled,
